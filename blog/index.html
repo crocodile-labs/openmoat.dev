@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Blog · OpenMoat</title>
 <meta name="description" content="News and notes from the OpenMoat team at Crocodile Labs.">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="dark">
 <link rel="icon" href="data:,">
 <link rel="alternate" type="application/rss+xml" title="OpenMoat blog" href="rss.xml">
 <link rel="stylesheet" href="../style.css">
@@ -13,14 +13,17 @@
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
-<header class="top top-plain">
+<header class="bar">
   <div class="wrap">
-    <a class="brand" href="../"><span class="logo" aria-hidden="true">🐊</span> openmoat</a>
+    <a class="brand" href="../"><span aria-hidden="true">🐊</span> openmoat <span class="ver">v0.2.0</span></a>
     <nav aria-label="Main">
       <ul>
-        <li><a href="./" aria-current="page">Blog</a></li>
-        <li><a href="https://github.com/crocodile-labs/openmoat#documentation">Docs</a></li>
-        <li><a class="nav-github" href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+        <li><a href="../#how"><span class="k">h</span>ow it works</a></li>
+        <li><a href="../#limits"><span class="k">l</span>imits</a></li>
+        <li><a href="../#install"><span class="k">i</span>nstall</a></li>
+        <li><a href="./" aria-current="page"><span class="k">b</span>log</a></li>
+        <li><a href="https://github.com/crocodile-labs/openmoat#documentation"><span class="k">d</span>ocs</a></li>
+        <li><a href="https://github.com/crocodile-labs/openmoat"><span class="k">g</span>ithub</a></li>
       </ul>
     </nav>
   </div>
@@ -29,25 +32,30 @@
 <main id="main">
 <section class="post">
   <div class="wrap narrow">
+    <p class="rule"><span><b>~/blog</b> · 1 post</span></p>
     <h1>Blog</h1>
     <p class="post-lead">News and notes from the people building OpenMoat. <a href="rss.xml">RSS</a></p>
     <ul class="post-list">
       <li>
-        <p class="post-meta"><span class="tag">Latest</span> <time datetime="2026-10-10">October 10, 2026</time> · Dhanasekaran Kathiresan · 3 min read</p>
-        <h2><a href="introducing-openmoat.html">Introducing OpenMoat</a></h2>
-        <p>Security for AI coding agents. What it is, why it is open source, what is in 0.2.0 and what comes next.</p>
+        <time datetime="2026-10-10">2026-10-10</time>
+        <div>
+          <h2><a href="introducing-openmoat.html">Introducing OpenMoat</a></h2>
+          <p>Security for AI coding agents. What it is, why it is open source, what is in 0.2.0 and what comes next.</p>
+          <p class="post-meta"><span class="tag">announcement</span> · Dhanasekaran Kathiresan · 3 min read</p>
+        </div>
       </li>
     </ul>
   </div>
 </section>
 </main>
 
-<footer>
+<footer class="foot">
   <div class="wrap">
-    <p class="muted">Open source (MIT / Apache-2.0) · by Crocodile Labs · no tracking, no cookies</p>
+    <p><span class="croc" aria-hidden="true">🐊</span> Open source (MIT / Apache-2.0) · by Crocodile Labs · no tracking, no cookies</p>
     <ul>
       <li><a href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
       <li><a href="https://github.com/crocodile-labs/openmoat#documentation">Docs</a></li>
+      <li><a href="rss.xml">RSS</a></li>
       <li><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md">Report a bypass</a></li>
     </ul>
   </div>
