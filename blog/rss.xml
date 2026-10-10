@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>OpenMoat blog</title>
+  <link>https://openmoat.dev/blog/</link>
+  <atom:link href="https://openmoat.dev/blog/rss.xml" rel="self" type="application/rss+xml"/>
+  <description>News and notes from the people building OpenMoat.</description>
+  <language>en</language>
+  <item>
+    <title>Introducing OpenMoat</title>
+    <link>https://openmoat.dev/blog/introducing-openmoat.html</link>
+    <guid>https://openmoat.dev/blog/introducing-openmoat.html</guid>
+    <pubDate>Sat, 10 Oct 2026 00:00:00 GMT</pubDate>
+    <description>Security for AI coding agents. Open source, and it runs on your own machine.</description>
+  </item>
+</channel>
+</rss>
