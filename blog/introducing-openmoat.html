@@ -12,7 +12,7 @@
 <meta property="og:url" content="https://openmoat.dev/blog/introducing-openmoat.html">
 <meta property="article:published_time" content="2026-10-10">
 <meta name="twitter:card" content="summary">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:,">
 <link rel="alternate" type="application/rss+xml" title="OpenMoat blog" href="rss.xml">
 <link rel="stylesheet" href="../style.css">
@@ -22,15 +22,16 @@
 
 <header class="bar">
   <div class="wrap">
-    <a class="brand" href="../"><span aria-hidden="true">🐊</span> openmoat <span class="ver">v0.2.0</span></a>
+    <a class="brand" href="../"><span class="croc" aria-hidden="true">🐊</span> OpenMoat <span class="ver">v0.5.0</span></a>
     <nav aria-label="Main">
       <ul>
-        <li><a href="../#how"><span class="k">h</span>ow it works</a></li>
-        <li><a href="../#limits"><span class="k">l</span>imits</a></li>
-        <li><a href="../#install"><span class="k">i</span>nstall</a></li>
-        <li><a href="./" aria-current="page"><span class="k">b</span>log</a></li>
-        <li><a href="https://github.com/crocodile-labs/openmoat#documentation"><span class="k">d</span>ocs</a></li>
-        <li><a href="https://github.com/crocodile-labs/openmoat"><span class="k">g</span>ithub</a></li>
+        <li><a href="../#how">How it works</a></li>
+        <li><a href="../#blocks">What it blocks</a></li>
+        <li><a href="../#limits">Limits</a></li>
+        <li><a href="../#start">Install</a></li>
+        <li><a href="./">Blog</a></li>
+        <li><a href="https://github.com/crocodile-labs/openmoat#documentation">Docs</a></li>
+        <li><a class="gh" href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
       </ul>
     </nav>
   </div>
@@ -47,6 +48,8 @@
       <img class="avatar" src="../assets/dhanasekaran.jpg" alt="" width="44" height="44">
       <span><strong><a href="https://github.com/iamdotk">Dhanasekaran Kathiresan</a></strong><br><span class="post-meta"><time datetime="2026-10-10">October 10, 2026</time> · 3 min read</span></span>
     </p>
+
+    <p class="notice">This post describes OpenMoat 0.2.0. Since 0.5.0, anything the policy has no rule for goes to your agent's own prompt instead of an OpenMoat ask, so OpenMoat no longer asks about a push or a package install. <a href="../">What OpenMoat does today</a></p>
 
     <div class="prose">
     <p>AI coding agents now run commands on our computers with our full permissions. They also read text that strangers wrote. Those two facts together are a problem, and that is why I built OpenMoat.</p>
@@ -118,12 +121,13 @@ moat init</pre>
 
 <footer class="foot">
   <div class="wrap">
-    <p><span class="croc" aria-hidden="true">🐊</span> Open source (MIT / Apache-2.0) · by Crocodile Labs · no tracking, no cookies</p>
+    <p><span class="croc" aria-hidden="true">🐊</span> OpenMoat by Crocodile Labs · open source · no tracking, no cookies</p>
     <ul>
       <li><a href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
       <li><a href="https://github.com/crocodile-labs/openmoat#documentation">Docs</a></li>
+      <li><a href="./">Blog</a></li>
       <li><a href="rss.xml">RSS</a></li>
-      <li><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md">Report a bypass</a></li>
+      <li><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md">Security</a></li>
     </ul>
   </div>
 </footer>
