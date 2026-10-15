@@ -78,6 +78,10 @@ const text = encodeURIComponent(d.title);
   .prose :global(code) { font-family: 'Geist Mono', monospace; font-size: 0.88em; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 5px; padding: 1px 6px; }
   .prose :global(pre) { margin: 0 0 22px; padding: 18px 20px; overflow-x: auto; border: 1px solid var(--line-2); border-radius: 8px; background: var(--term) !important; font-size: 14px; line-height: 1.6; }
   .prose :global(pre code) { background: none; border: 0; padding: 0; font-size: inherit; }
+  .prose :global(table) { display: block; overflow-x: auto; width: 100%; margin: 0 0 22px; border-collapse: collapse; font-size: 15px; line-height: 1.5; }
+  .prose :global(th), .prose :global(td) { padding: 10px 14px; border: 1px solid var(--line-2); text-align: left; vertical-align: top; }
+  .prose :global(th) { background: var(--panel); color: var(--fg); font-weight: 600; }
+  .prose :global(em) { color: var(--muted); }
   .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 48px; }
   .button { font-family: 'Geist Mono', monospace; font-size: 14px; text-decoration: none; padding: 12px 18px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--fg); }
   .button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
