@@ -23,6 +23,7 @@ export default defineConfig({
       ],
       editLink: { baseUrl: 'https://github.com/crocodile-labs/openmoat.dev/edit/main/' },
       lastUpdated: true,
+      components: { ThemeProvider: './src/components/ThemeProvider.astro' },
       customCss: [
         '@fontsource/geist-sans/400.css',
         '@fontsource/geist-sans/500.css',
