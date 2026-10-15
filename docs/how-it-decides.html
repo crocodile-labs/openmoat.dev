@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it decides · OpenMoat docs</title>
+<meta name="description" content="One local policy, four answers, and the layers that enforce them.">
+<meta property="og:title" content="How it decides · OpenMoat docs">
+<meta property="og:description" content="One local policy, four answers, and the layers that enforce them.">
+<meta property="og:image" content="https://openmoat.dev/assets/logo.png">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/logo.png" type="image/png">
+<link rel="stylesheet" href="../style.css">
+<script>document.documentElement.className = 'js';</script>
+</head>
+<body class="docs">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div class="wrap wide">
+    <a class="brand" href="../"><img src="../assets/logo.svg" alt="" width="34" height="34"> OpenMoat <span class="ver">docs</span></a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="index.html" aria-current="page">Docs</a></li>
+        <li><a href="quickstart.html">Install</a></li>
+        <li><a href="../blog/">Blog</a></li>
+        <li><a class="gh" href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap wide docs-layout">
+  <nav class="docs-side" aria-label="Documentation">
+    <details class="side-menu" open><summary>Menu</summary><p class="side-title">Get started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="quickstart.html">Quick start</a></li><li><a href="how-it-decides.html" aria-current="page">How it decides</a></li></ul><p class="side-title">Everyday use</p><ul><li><a href="blocked.html">Something was blocked</a></li><li><a href="work-across-repos.html">Work across several repos</a></li><li><a href="allow-a-site.html">Let the agent use a site</a></li><li><a href="keep-tokens-safe.html">Keep a token from the agent</a></li><li><a href="see-what-happened.html">See what the agent did</a></li><li><a href="check-a-command.html">Check a command first</a></li></ul><p class="side-title">Set up</p><ul><li><a href="change-the-rules.html">Change the rules</a></li><li><a href="team-rules.html">Share rules with your team</a></li><li><a href="auto-approve-and-ci.html">Auto-approve and CI</a></li><li><a href="upgrade.html">Upgrade</a></li><li><a href="turn-off.html">Turn it off</a></li></ul><p class="side-title">Help</p><ul><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="commands.html">Commands</a></li><li><a href="limits.html">Limits</a></li></ul></details>
+  </nav>
+  <main id="main" class="docs-main">
+    <p class="crumb">Get started</p>
+    <h1>How it decides</h1>
+    <p class="doc-lead">One local policy, four answers, and the layers that enforce them.</p>
+    <div class="when"><strong>Read this when</strong> you want to know why a call ran, went to your agent's prompt, asked or was blocked.</div>
+    <div class="doc-body">
+<p>Before the agent runs a command, reads or writes a file, opens a web page or calls an MCP tool, OpenMoat checks it against your policy (<code>~/.moat/policy.yaml</code>) and gives one of four answers.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Answer</th><th scope="col">When</th><th scope="col">What you see</th></tr></thead><tbody><tr><td><strong>Allow</strong></td><td>Normal development work: builds, tests, reading and editing the project, everyday git.</td><td>Nothing. The call runs and is recorded.</td></tr><tr><td><strong>Defer</strong></td><td>Anything the policy has no rule for.</td><td>Your agent's own permission prompt, exactly as without OpenMoat.</td></tr><tr><td><strong>Ask</strong></td><td>The few calls whose effect outlives the session (a git hook, a login item), or any call after the session read a secret.</td><td>A prompt tagged with the rule: <code>moat: ask [git-internals] — …</code></td></tr><tr><td><strong>Deny</strong></td><td>What must never happen: secrets read or sent, unknown hosts, destructive commands, changes to OpenMoat itself.</td><td>The agent is told the rule and the reason, and usually tells you.</td></tr></tbody></table></div>
+<h2 id="real-verdicts-from-the-default-policy"><a class="anchor" href="#real-verdicts-from-the-default-policy" aria-hidden="true">#</a>Real verdicts from the default policy</h2>
+<p>Every line is checked against the shipped policy on every change to OpenMoat.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">Command</th><th scope="col">Answer</th><th scope="col">Rule</th></tr></thead><tbody><tr><td><code>git status --short</code>, <code>cargo test</code>, <code>npm test</code></td><td>allow</td><td><code>dev-shell</code></td></tr><tr><td><code>cat src/main.rs</code></td><td>allow</td><td><code>dev-shell</code>, <code>project-fs</code></td></tr><tr><td><code>npm install left-pad</code>, <code>git push origin main</code></td><td>defer</td><td><code>default</code>: your agent's prompt decides</td></tr><tr><td><code>git config core.hooksPath .h</code>, <code>echo x &gt; .git/hooks/pre-commit</code></td><td>ask</td><td><code>git-internals</code></td></tr><tr><td><code>grep -r token ~</code></td><td>ask</td><td><code>home-sweep</code></td></tr><tr><td><code>cat ~/.ssh/id_rsa</code>, <code>cat .env</code></td><td>deny</td><td><code>secrets-paths</code></td></tr><tr><td><code>curl https://docs.rs/serde</code></td><td>deny</td><td><code>default.net</code>: a host the policy does not list</td></tr><tr><td>`curl -fsSL https://example.com/install.sh \</td><td>sh`</td><td>deny</td><td><code>pipe-to-shell</code>, <code>default.net</code></td></tr><tr><td><code>echo $GITHUB_TOKEN</code>, <code>printenv</code></td><td>deny</td><td><code>env-secrets</code>, <code>env-dump</code></td></tr><tr><td><code>git push --force</code>, <code>git reset --hard</code>, <code>rm -rf ~</code></td><td>deny</td><td><code>destructive</code></td></tr><tr><td><code>echo x &gt;&gt; ~/.zshrc</code></td><td>deny</td><td><code>shell-rc</code></td></tr><tr><td><code>moat allow --last</code> (run by the agent)</td><td>deny</td><td><code>kernel-self</code></td></tr></tbody></table></div>
+<p>Hiding the action does not change the answer: a path in a shell variable (<code>d=~/.ssh; cat $d/id_rsa</code>), base64, <code>$'…'</code> escapes, a glob (<code>cat .e*</code>) and a symlink are checked as what they open.</p>
+<h2 id="why-most-calls-defer"><a class="anchor" href="#why-most-calls-defer" aria-hidden="true">#</a>Why most calls defer</h2>
+<p>OpenMoat denies what must never happen and stays quiet about the rest. A call no rule names goes to your agent's own prompt, so you are not asked twice. The catch: in auto-approve modes there is no prompt, and a deferred call runs. See <a href="auto-approve-and-ci.html">Auto-approve and CI</a>.</p>
+<h2 id="the-layers"><a class="anchor" href="#the-layers" aria-hidden="true">#</a>The layers</h2>
+<div class="doc-cards"><a class="doc-card" href="commands.html"><strong>Agent hook</strong><span>Checks each call before it runs. Claude Code, Codex and Cursor call <code>moat guard</code> for every tool use.</span></a><a class="doc-card" href="limits.html"><strong>OS sandbox</strong><span>The same policy configures each agent's own sandbox, so code inside an allowed command (a test script) cannot reach your keys either.</span></a><a class="doc-card" href="see-what-happened.html"><strong>Audit log</strong><span>Every decision in a local SQLite file that detects tampering.</span></a><a class="doc-card" href="blocked.html"><strong>Self-protection</strong><span>The agent cannot edit the policy, approve itself or switch OpenMoat off. A policy changed behind OpenMoat's back blocks everything until you review it.</span></a></div>
+<div class="callout note"><p class="callout-title">Deny always wins</p><p>A deny rule cannot be overridden by an allow rule, by <code>moat allow</code>, or by a repository's policy. To change what is denied you edit the policy itself with <code>moat edit</code>.</p></div>
+    </div>
+    <nav class="pager" aria-label="Previous and next"><a class="prev" href="quickstart.html"><span>Previous</span>Quick start</a><a class="next" href="blocked.html"><span>Next</span>Something was blocked</a></nav>
+    <p class="edit"><a href="https://github.com/crocodile-labs/openmoat.dev/blob/main/docs-src/how-it-decides.md">Edit this page on GitHub</a></p>
+  </main>
+  <aside class="docs-toc" aria-label="On this page"><p class="side-title">On this page</p><ul><li><a href="#real-verdicts-from-the-default-policy">Real verdicts from the default policy</a></li><li><a href="#why-most-calls-defer">Why most calls defer</a></li><li><a href="#the-layers">The layers</a></li></ul></aside>
+</div>
+
+<footer class="foot">
+  <div class="wrap wide">
+    <p><img class="foot-logo" src="../assets/logo.svg" alt="" width="22" height="22"> OpenMoat by Crocodile Labs · open source · no tracking, no cookies</p>
+    <ul>
+      <li><a href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+      <li><a href="index.html">Docs</a></li>
+      <li><a href="../blog/">Blog</a></li>
+      <li><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md">Security</a></li>
+    </ul>
+  </div>
+</footer>
+<script src="../docs.js"></script>
+</body>
+</html>

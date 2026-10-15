@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quick start · OpenMoat docs</title>
+<meta name="description" content="Install OpenMoat, protect your agents, and check that it works.">
+<meta property="og:title" content="Quick start · OpenMoat docs">
+<meta property="og:description" content="Install OpenMoat, protect your agents, and check that it works.">
+<meta property="og:image" content="https://openmoat.dev/assets/logo.png">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/logo.png" type="image/png">
+<link rel="stylesheet" href="../style.css">
+<script>document.documentElement.className = 'js';</script>
+</head>
+<body class="docs">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div class="wrap wide">
+    <a class="brand" href="../"><img src="../assets/logo.svg" alt="" width="34" height="34"> OpenMoat <span class="ver">docs</span></a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="index.html" aria-current="page">Docs</a></li>
+        <li><a href="quickstart.html">Install</a></li>
+        <li><a href="../blog/">Blog</a></li>
+        <li><a class="gh" href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap wide docs-layout">
+  <nav class="docs-side" aria-label="Documentation">
+    <details class="side-menu" open><summary>Menu</summary><p class="side-title">Get started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="quickstart.html" aria-current="page">Quick start</a></li><li><a href="how-it-decides.html">How it decides</a></li></ul><p class="side-title">Everyday use</p><ul><li><a href="blocked.html">Something was blocked</a></li><li><a href="work-across-repos.html">Work across several repos</a></li><li><a href="allow-a-site.html">Let the agent use a site</a></li><li><a href="keep-tokens-safe.html">Keep a token from the agent</a></li><li><a href="see-what-happened.html">See what the agent did</a></li><li><a href="check-a-command.html">Check a command first</a></li></ul><p class="side-title">Set up</p><ul><li><a href="change-the-rules.html">Change the rules</a></li><li><a href="team-rules.html">Share rules with your team</a></li><li><a href="auto-approve-and-ci.html">Auto-approve and CI</a></li><li><a href="upgrade.html">Upgrade</a></li><li><a href="turn-off.html">Turn it off</a></li></ul><p class="side-title">Help</p><ul><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="commands.html">Commands</a></li><li><a href="limits.html">Limits</a></li></ul></details>
+  </nav>
+  <main id="main" class="docs-main">
+    <p class="crumb">Get started</p>
+    <h1>Quick start</h1>
+    <p class="doc-lead">Install OpenMoat, protect your agents, and check that it works.</p>
+    <div class="when"><strong>Read this when</strong> you are setting OpenMoat up for the first time on a machine.</div>
+    <div class="doc-body">
+<ol class="step-list"><li><h3>Install moat</h3><div class="doc-tabs"><div class="tabs" role="tablist"><button type="button" role="tab" id="t1-0" aria-controls="p1-0" aria-selected="true">Homebrew</button><button type="button" role="tab" id="t1-1" aria-controls="p1-1" aria-selected="false" tabindex="-1">Installer</button><button type="button" role="tab" id="t1-2" aria-controls="p1-2" aria-selected="false" tabindex="-1">Windows</button><button type="button" role="tab" id="t1-3" aria-controls="p1-3" aria-selected="false" tabindex="-1">Cargo</button></div><div class="doc-tabpanel" role="tabpanel" id="p1-0" aria-labelledby="t1-0"><p>macOS and Linux.</p>
+<div class="code"><div class="code-head"><span>bash</span><button type="button" class="copy">Copy</button></div><pre><code>brew install crocodile-labs/tap/moat</code></pre></div></div><div class="doc-tabpanel" role="tabpanel" id="p1-1" aria-labelledby="t1-1"><p>macOS and Linux; puts <code>moat</code> in <code>~/.cargo/bin</code>.</p>
+<div class="code"><div class="code-head"><span>bash</span><button type="button" class="copy">Copy</button></div><pre><code>curl --proto '=https' --tlsv1.2 -LsSf https://github.com/crocodile-labs/openmoat/releases/latest/download/openmoat-installer.sh | sh</code></pre></div></div><div class="doc-tabpanel" role="tabpanel" id="p1-2" aria-labelledby="t1-2"><p>PowerShell.</p>
+<div class="code"><div class="code-head"><span>powershell</span><button type="button" class="copy">Copy</button></div><pre><code>powershell -ExecutionPolicy Bypass -c "irm https://github.com/crocodile-labs/openmoat/releases/latest/download/openmoat-installer.ps1 | iex"</code></pre></div></div><div class="doc-tabpanel" role="tabpanel" id="p1-3" aria-labelledby="t1-3"><p>From crates.io, with Rust 1.95.</p>
+<div class="code"><div class="code-head"><span>bash</span><button type="button" class="copy">Copy</button></div><pre><code>cargo install openmoat --locked</code></pre></div></div></div></li><li><h3>Set it up for your agents</h3><div class="code"><div class="code-head"><span>bash</span><button type="button" class="copy">Copy</button></div><pre><code>moat init</code></pre></div>
+<p><code>moat init</code> writes the default policy to <code>~/.moat</code>, then lists the agents it finds and asks once for each:</p>
+<pre class="terminal">Found these agents:
+  Claude Code  /Users/you/.claude (changes settings.json)
+  Codex        /Users/you/.codex (changes hooks.json, config.toml)
+Protect Claude Code (/Users/you/.claude)? [Y/n]
+Protect Codex (/Users/you/.codex)? [Y/n]</pre>
+<p>It backs up every file before it changes it. <code>moat uninstall</code> puts them all back.</p></li><li><h3>Start your agent in a new session</h3><p>Hooks are read when a session starts, so open a new one. Then work as usual: most calls run exactly as before.</p></li><li><h3>Check that it works</h3><div class="code"><div class="code-head"><span>bash</span><button type="button" class="copy">Copy</button></div><pre><code>moat status                            <span class="c"># each agent: hook + OS sandbox, hook only, or not protected</span>
+moat policy check "cat ~/.ssh/id_rsa"  <span class="c"># the verdict for a command, without running it</span></code></pre></div>
+<pre class="terminal"><span class="t-deny">⛔ deny</span>
+   rules : secrets-paths
+   reason: secret material: read /Users/you/.ssh/id_rsa
+   also  : shell "cat ~/.ssh/id_rsa"</pre></li></ol>
+<h2 id="what-next"><a class="anchor" href="#what-next" aria-hidden="true">#</a>What next</h2>
+<div class="doc-cards"><a class="doc-card" href="how-it-decides.html"><strong>How it decides</strong><span>Why some calls run, some go to your agent's prompt and a few are blocked.</span></a><a class="doc-card" href="blocked.html"><strong>Something was blocked</strong><span>What to do when a block gets in your way.</span></a><a class="doc-card" href="work-across-repos.html"><strong>Work across several repos</strong><span>The first thing most developers need.</span></a></div>
+<div class="callout tip"><p class="callout-title">Run <code>moat</code> anytime</p><p><code>moat</code> alone shows which agents are protected, today's decisions, and anything that needs you, such as a pending ask.</p></div>
+    </div>
+    <nav class="pager" aria-label="Previous and next"><a class="prev" href="index.html"><span>Previous</span>OpenMoat documentation</a><a class="next" href="how-it-decides.html"><span>Next</span>How it decides</a></nav>
+    <p class="edit"><a href="https://github.com/crocodile-labs/openmoat.dev/blob/main/docs-src/quickstart.md">Edit this page on GitHub</a></p>
+  </main>
+  <aside class="docs-toc" aria-label="On this page"><p class="side-title">On this page</p><ul><li><a href="#what-next">What next</a></li></ul></aside>
+</div>
+
+<footer class="foot">
+  <div class="wrap wide">
+    <p><img class="foot-logo" src="../assets/logo.svg" alt="" width="22" height="22"> OpenMoat by Crocodile Labs · open source · no tracking, no cookies</p>
+    <ul>
+      <li><a href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+      <li><a href="index.html">Docs</a></li>
+      <li><a href="../blog/">Blog</a></li>
+      <li><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md">Security</a></li>
+    </ul>
+  </div>
+</footer>
+<script src="../docs.js"></script>
+</body>
+</html>

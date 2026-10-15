@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Share rules with your team · OpenMoat docs</title>
+<meta name="description" content="Commit rules to a repository so everyone who works there, with any agent, gets them.">
+<meta property="og:title" content="Share rules with your team · OpenMoat docs">
+<meta property="og:description" content="Commit rules to a repository so everyone who works there, with any agent, gets them.">
+<meta property="og:image" content="https://openmoat.dev/assets/logo.png">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/logo.png" type="image/png">
+<link rel="stylesheet" href="../style.css">
+<script>document.documentElement.className = 'js';</script>
+</head>
+<body class="docs">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div class="wrap wide">
+    <a class="brand" href="../"><img src="../assets/logo.svg" alt="" width="34" height="34"> OpenMoat <span class="ver">docs</span></a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="index.html" aria-current="page">Docs</a></li>
+        <li><a href="quickstart.html">Install</a></li>
+        <li><a href="../blog/">Blog</a></li>
+        <li><a class="gh" href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap wide docs-layout">
+  <nav class="docs-side" aria-label="Documentation">
+    <details class="side-menu" open><summary>Menu</summary><p class="side-title">Get started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="quickstart.html">Quick start</a></li><li><a href="how-it-decides.html">How it decides</a></li></ul><p class="side-title">Everyday use</p><ul><li><a href="blocked.html">Something was blocked</a></li><li><a href="work-across-repos.html">Work across several repos</a></li><li><a href="allow-a-site.html">Let the agent use a site</a></li><li><a href="keep-tokens-safe.html">Keep a token from the agent</a></li><li><a href="see-what-happened.html">See what the agent did</a></li><li><a href="check-a-command.html">Check a command first</a></li></ul><p class="side-title">Set up</p><ul><li><a href="change-the-rules.html">Change the rules</a></li><li><a href="team-rules.html" aria-current="page">Share rules with your team</a></li><li><a href="auto-approve-and-ci.html">Auto-approve and CI</a></li><li><a href="upgrade.html">Upgrade</a></li><li><a href="turn-off.html">Turn it off</a></li></ul><p class="side-title">Help</p><ul><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="commands.html">Commands</a></li><li><a href="limits.html">Limits</a></li></ul></details>
+  </nav>
+  <main id="main" class="docs-main">
+    <p class="crumb">Set up</p>
+    <h1>Share rules with your team</h1>
+    <p class="doc-lead">Commit rules to a repository so everyone who works there, with any agent, gets them.</p>
+    <div class="when"><strong>Read this when</strong> your team wants the same guard rails in a repository, or a repository needs an allow everyone shares.</div>
+    <div class="doc-body">
+<ol class="step-list"><li><h3>Add a policy to the repository</h3><p>Create <code>.moat/policy.yaml</code> at the root of the repository and commit it:</p>
+<div class="code"><div class="code-head"><span>yaml</span><button type="button" class="copy">Copy</button></div><pre><code>version: 1
+deny:
+  - id: no-prod-config
+    reason: production settings stay with the release pipeline
+    fs.write: ["${project}/deploy/prod/**"]
+ask:
+  - id: migrations
+    reason: database migrations change shared data
+    shell: ["npm run migrate*"]</code></pre></div></li><li><h3>Everyone gets the deny and ask rules at once</h3><p>They apply to everyone who works in the repository, whatever agent they use, and show up as <code>repo:&lt;id&gt;</code>, such as <code>repo:no-prod-config</code>.</p></li><li><h3>Each person trusts the allow rules</h3><p>A repository is untrusted input, so by itself it can only make your policy stricter. Its <code>allow</code> rules apply after you review and trust that exact file:</p>
+<div class="code"><div class="code-head"><span>bash</span><button type="button" class="copy">Copy</button></div><pre><code>moat trust             <span class="c"># in the repository; prints the allow rules it lets in</span>
+moat trust --revoke</code></pre></div></li></ol>
+<div class="callout note"><p class="callout-title">Note</p><p>Any later change to the file drops it back to deny and ask only, until you trust it again. A file that does not parse denies every call in the project until it is fixed. Repository rules apply in the hook, not in the agents' OS sandboxes.</p></div>
+    </div>
+    <nav class="pager" aria-label="Previous and next"><a class="prev" href="change-the-rules.html"><span>Previous</span>Change the rules</a><a class="next" href="auto-approve-and-ci.html"><span>Next</span>Auto-approve and CI</a></nav>
+    <p class="edit"><a href="https://github.com/crocodile-labs/openmoat.dev/blob/main/docs-src/team-rules.md">Edit this page on GitHub</a></p>
+  </main>
+  <aside class="docs-toc" aria-label="On this page"></aside>
+</div>
+
+<footer class="foot">
+  <div class="wrap wide">
+    <p><img class="foot-logo" src="../assets/logo.svg" alt="" width="22" height="22"> OpenMoat by Crocodile Labs · open source · no tracking, no cookies</p>
+    <ul>
+      <li><a href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+      <li><a href="index.html">Docs</a></li>
+      <li><a href="../blog/">Blog</a></li>
+      <li><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md">Security</a></li>
+    </ul>
+  </div>
+</footer>
+<script src="../docs.js"></script>
+</body>
+</html>
