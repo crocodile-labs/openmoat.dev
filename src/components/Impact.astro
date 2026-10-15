@@ -1,0 +1,42 @@
+---
+// What an allow changes: what it opens, what stays protected, what to think about.
+// Items are short sentences; `code` in backticks is shown as code.
+interface Props {
+  opens?: string[];
+  keeps?: string[];
+  think?: string[];
+}
+const { opens = [], keeps = [], think = [] } = Astro.props;
+const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const render = (s: string) => escape(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+const columns = [
+  { key: 'opens', title: 'What this opens', items: opens },
+  { key: 'keeps', title: 'What stays protected', items: keeps },
+  { key: 'think', title: 'Think about', items: think },
+].filter((c) => c.items.length);
+---
+<div class="impact not-content">
+  {columns.map((c) => (
+    <div class={`impact-col ${c.key}`}>
+      <p class="impact-title">{c.title}</p>
+      <ul>{c.items.map((item) => <li set:html={render(item)} />)}</ul>
+    </div>
+  ))}
+</div>
+
+<style>
+  .impact { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-block: 1.5rem; }
+  .impact-col { border: 1px solid var(--sl-color-gray-5); border-radius: 0.5rem; padding: 0.9rem 1rem; font-size: var(--sl-text-sm); }
+  .impact-title { margin: 0 0 0.5rem; font-family: var(--sl-font-mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+  .impact-col ul { margin: 0; padding-left: 1.1rem; }
+  .impact-col li + li { margin-top: 0.4rem; }
+  .opens { background: color-mix(in srgb, #7fd88f 8%, transparent); }
+  .opens .impact-title { color: #4caf68; }
+  .keeps { background: color-mix(in srgb, #8ab4f8 8%, transparent); }
+  .keeps .impact-title { color: #6b93d6; }
+  .think { background: color-mix(in srgb, #f2c14e 10%, transparent); }
+  .think .impact-title { color: #c2932a; }
+  :global([data-theme='dark']) .opens .impact-title { color: #7fd88f; }
+  :global([data-theme='dark']) .keeps .impact-title { color: #8ab4f8; }
+  :global([data-theme='dark']) .think .impact-title { color: #f2c14e; }
+</style>

@@ -1,0 +1,31 @@
+/* Starlight theme for the OpenMoat docs: the home page's look (near black, Geist,
+   crocodile green), with a light theme for those who choose it. */
+:root {
+  --sl-font: 'Geist Sans', system-ui, sans-serif;
+  --sl-font-mono: 'Geist Mono', ui-monospace, monospace;
+}
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #12301b;
+  --sl-color-accent: #4caf68;
+  --sl-color-accent-high: #a7ebb3;
+  --sl-color-white: #ededed;
+  --sl-color-gray-1: #e0e0e0;
+  --sl-color-gray-2: #bdbdbd;
+  --sl-color-gray-3: #8a8a8a;
+  --sl-color-gray-4: #555555;
+  --sl-color-gray-5: #262626;
+  --sl-color-gray-6: #141414;
+  --sl-color-black: #0a0a0a;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #dcf2e1;
+  --sl-color-accent: #1f7a3c;
+  --sl-color-accent-high: #0f3d1e;
+}
+/* the sidebar's group labels read like the home page's section labels */
+.sidebar-content .group-label .large {
+  font-family: var(--sl-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

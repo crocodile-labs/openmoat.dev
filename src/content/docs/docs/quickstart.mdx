@@ -1,0 +1,110 @@
+---
+title: "Quick start"
+description: "Install OpenMoat, protect your agents, and check that it works."
+sidebar:
+  label: "Quick start"
+  order: 1
+---
+
+import { Aside, CardGrid, LinkCard, Steps, TabItem, Tabs } from '@astrojs/starlight/components';
+
+<Aside type="tip" title="Read this when">
+
+You are setting OpenMoat up for the first time on a machine.
+
+</Aside>
+
+<Steps>
+
+1. **Install moat**
+
+   <Tabs>
+   <TabItem label="Homebrew">
+
+   macOS and Linux.
+
+   ```bash
+   brew install crocodile-labs/tap/moat
+   ```
+
+   </TabItem>
+   <TabItem label="Installer">
+
+   macOS and Linux; puts `moat` in `~/.cargo/bin`.
+
+   ```bash
+   curl --proto '=https' --tlsv1.2 -LsSf https://github.com/crocodile-labs/openmoat/releases/latest/download/openmoat-installer.sh | sh
+   ```
+
+   </TabItem>
+   <TabItem label="Windows">
+
+   PowerShell.
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -c "irm https://github.com/crocodile-labs/openmoat/releases/latest/download/openmoat-installer.ps1 | iex"
+   ```
+
+   </TabItem>
+   <TabItem label="Cargo">
+
+   From crates.io, with Rust 1.95.
+
+   ```bash
+   cargo install openmoat --locked
+   ```
+
+   </TabItem>
+   </Tabs>
+
+2. **Set it up for your agents**
+
+   ```bash
+   moat init
+   ```
+
+   `moat init` writes the default policy to `~/.moat`, then lists the agents it finds and asks once for each:
+
+   ```text
+   Found these agents:
+     Claude Code  /Users/you/.claude (changes settings.json)
+     Codex        /Users/you/.codex (changes hooks.json, config.toml)
+   Protect Claude Code (/Users/you/.claude)? [Y/n]
+   Protect Codex (/Users/you/.codex)? [Y/n]
+   ```
+
+   It backs up every file before it changes it. `moat uninstall` puts them all back.
+
+3. **Start your agent in a new session**
+
+   Hooks are read when a session starts, so open a new one. Then work as usual: most calls run exactly as before.
+
+4. **Check that it works**
+
+   ```bash
+   moat status                            # each agent: hook + OS sandbox, hook only, or not protected
+   moat policy check "cat ~/.ssh/id_rsa"  # the verdict for a command, without running it
+   ```
+
+   ```text
+   ⛔ deny
+      rules : secrets-paths
+      reason: secret material: read /Users/you/.ssh/id_rsa
+      also  : shell "cat ~/.ssh/id_rsa"
+   ```
+
+</Steps>
+
+## What next
+
+<CardGrid>
+  <LinkCard title="How it decides" href="/docs/how-it-decides/" description="Why some calls run, some go to your agent's prompt and a few are blocked." />
+  <LinkCard title="Something was blocked" href="/docs/blocked/" description="What to do when a block gets in your way." />
+  <LinkCard title="Work across several repos" href="/docs/work-across-repos/" description="The first thing most developers need." />
+</CardGrid>
+
+<Aside type="tip" title="Run moat anytime">
+
+`moat` alone shows which agents are protected, today's decisions, and anything that needs you, such as a pending ask.
+
+</Aside>

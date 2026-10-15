@@ -1,0 +1,72 @@
+---
+title: "Every allow, and what it opens"
+description: "Each way to let the agent do more, side by side: what it covers, how long it lasts, what stays protected and what to think about."
+sidebar:
+  label: "Every allow and its impact"
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import Impact from '../../../components/Impact.astro';
+
+<Aside type="tip" title="Read this when">
+
+You are about to allow something and want to know exactly what changes.
+
+</Aside>
+
+Two facts hold for every allow below:
+
+- **Deny rules always win.** No allow opens your keys, `.env` files, cloud credentials, destructive commands or OpenMoat's own files.
+- **Allowed means no prompt at all.** OpenMoat tells the agent the call is allowed, so the agent does not ask you either.
+
+## At a glance
+
+| Command | Covers | Lasts | Undo |
+|---|---|---|---|
+| Your agent's own "allow" answer | one deferred call, as your agent decides | as your agent decides | in your agent |
+| `moat allow --last` | the exact command or files of the last OpenMoat ask | that agent session, 24 h | expires |
+| `moat allow --last --always` | that command, also with extra arguments; or exactly those files | until removed | `moat allow --remove <id>` |
+| `moat allow "<command>" --always` | that command, also with extra arguments | until removed | `moat allow --remove <id>` |
+| `moat allow --dir <folder>` | read and write in the folder and below | until removed | `moat allow --remove <id>` |
+| `moat allow --site <host>` | network access to exactly that host | until removed | `moat allow --remove <id>` |
+| `moat secret add <id>` | a token used for one host, without the agent holding it | until removed | `moat edit` |
+| `moat trust` | the allow rules in a repository's `.moat/policy.yaml` | until the file changes | `moat trust --revoke` |
+| `moat edit` | any rule you write | until you change it | `moat edit` again |
+
+Every rule `moat allow` adds is in `~/.moat/policy.d/approved.yaml`, with its id and the date.
+
+## `moat allow --last`
+
+<Impact opens={["The one call OpenMoat just asked about, in that agent session"]} keeps={["A new session asks again; other commands and files are not covered"]} think={["Low risk: you saw the exact call"]} />
+
+## `moat allow --last --always` and `moat allow "<command>" --always`
+
+<Impact opens={["A command rule matches the command **and the same command with more arguments**: `npm run build` also allows `npm run build -- --anything`", "A file rule matches exactly the files of that ask, nothing below them"]} keeps={["Hosts the command connects to are not covered: `curl https://example.com` is still denied for that host", "Deny rules on what the command reads or writes still win"]} think={["Allow the shortest command that is safe with anything after it. Never allow a bare interpreter (`python`, `node`, `bash`)"]} />
+
+## `moat allow --dir <folder>`
+
+<Impact opens={["Every file in the folder and below: read, create, edit and delete", "Programs the agent runs can use it too: the sandboxes are updated at once"]} keeps={["`.env` files, keys and agent settings in it stay denied", "Writes into `.git` there, CI workflows and commit-hook files are left out of it", "Home, a folder above it and `/` are refused"]} think={["The agent can edit build files there (`package.json` scripts, a `Makefile`) that you run later. Allow folders you work in, not a parent of repositories you have not checked"]} />
+
+## `moat allow --site <host>`
+
+<Impact opens={["Web fetch tools reach the host without a prompt", "Shell commands to it go to your agent's prompt instead of being denied"]} keeps={["Every other host, subdomains included, stays denied"]} think={["The host can receive whatever the agent sends it. Never allow paste sites, webhook catchers or file-sharing hosts"]} />
+
+## `moat secret add <id>`
+
+<Impact opens={["Programs the agent runs can use the token, for that one host"]} keeps={["The agent holds a placeholder, never the value", "Its source is denied too: the command adds `secret-<id>` when no rule covers it ([Keep a token from the agent](keep-tokens-safe.html))"]} think={["Give the token the smallest scope that works"]} />
+
+## `moat trust`
+
+<Impact opens={["The repository's allow rules apply, for you, in that checkout"]} keeps={["Your deny rules still win; the repository's deny and ask rules always apply, trusted or not", "Any change to the file (a pull, a branch switch) drops its allow rules until you trust it again"]} think={["Read the rules it prints before you trust: they can widen your asks and defaults"]} />
+
+## What allows can never open
+
+- Reading or writing `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.kube`, `~/.config/gh`, `~/.config/gcloud`, `~/.azure`, `~/.docker/config.json`, `~/.netrc`, `~/.npmrc`, `~/.pypirc`, cargo credentials, shell history, keychains, `.env` files.
+- Printing secret environment variables or the whole environment.
+- `curl … | sh` and decoded payloads piped to a shell.
+- Force pushes, hard resets, deleting your home folder.
+- Editing your shell startup files.
+- Changing, approving for itself or uninstalling OpenMoat.
+
+To change one of those you edit the deny rules themselves with `moat edit`, and OpenMoat shows you the diff first.

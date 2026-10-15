@@ -1,0 +1,63 @@
+---
+title: "Commands"
+description: "Every moat command on one page."
+sidebar:
+  label: "Commands"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="tip" title="Read this when">
+
+You know what you want and need the exact command.
+
+</Aside>
+
+Run these in your own terminal. The ones that change what agents may do need a terminal, and the default policy denies them to agents.
+
+## Everyday
+
+| Command | What it does |
+|---|---|
+| `moat` | Which agents are protected, today's decisions, and anything that needs you |
+| `moat allow --last` | Allow the last ask for the rest of that agent session (24 h) |
+| `moat allow --last --always` | Allow it for good: a rule for exactly that command or those files |
+| `moat allow --dir <folder>` | Read and write a folder outside the project |
+| `moat allow --site <host>` | Network access to one host |
+| `moat allow --remove <id>` | Take back a rule `moat allow` added |
+| `moat secret add gh` | Keep the GitHub token from the agent |
+| `moat policy check "<command>"` | The verdict for a command, without running it |
+
+## See what happened
+
+| Command | What it does |
+|---|---|
+| `moat show [id] [--since today]` | Recent events, or one in full |
+| `moat replay --since today` | Each agent session as a timeline |
+| `moat report --since 7d` | Totals, hosts, top rules, asks per hour |
+| `moat audit export` · `moat audit verify <file>` | Export events with their chain hashes · check an export |
+
+## Set up and maintain
+
+| Command | What it does |
+|---|---|
+| `moat init` | Install the policy, lock and log; asks before hooking each agent |
+| `moat status` · `moat doctor` | Each agent's protection level · what drifted, and re-pin with `--accept` |
+| `moat edit` | Edit the policy; checked and diffed before it applies |
+| `moat policy lint` | Check a policy |
+| `moat policy upgrade` | Take what a new release's default adds, keeping your edits |
+| `moat sandbox show` · `moat sandbox sync` | The sandbox settings the policy compiles to · write them for your agents |
+| `moat trust [--revoke]` | Let a repository's `.moat/policy.yaml` allow |
+| `moat uninstall [--hosts …] [--purge]` | Remove OpenMoat and restore every settings file |
+
+## Advanced
+
+| Command | What it does |
+|---|---|
+| `moat run [--isolate] -- <agent>` | Run a whole agent in a sandbox generated from the policy |
+| `moat proxy` · `moat proxy install` | The egress proxy, on its own or as a user service |
+| `moat bench` | Score OpenMoat, or any hook, against the bundled attack scenarios |
+| `moat guard --host <id>` | The hook entry point: agents call it, you do not |
+
+Every option: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#commands).

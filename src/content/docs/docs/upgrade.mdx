@@ -1,0 +1,59 @@
+---
+title: "Upgrade"
+description: "Get a new release, then take what its default policy adds, without losing your own changes."
+sidebar:
+  label: "Upgrade"
+  order: 3
+---
+
+import { Aside, Steps, TabItem, Tabs } from '@astrojs/starlight/components';
+
+<Aside type="tip" title="Read this when">
+
+A new OpenMoat release is out, or `moat` says "policy update available".
+
+</Aside>
+
+<Steps>
+
+1. **Upgrade the binary**
+
+   <Tabs>
+   <TabItem label="Homebrew">
+
+   ```bash
+   brew update && brew upgrade moat
+   ```
+
+   </TabItem>
+   <TabItem label="Installer">
+
+   Run the installer of the new release again, as in the [Quick start](/docs/quickstart/).
+
+   </TabItem>
+   <TabItem label="Cargo">
+
+   ```bash
+   cargo install openmoat --locked --force
+   ```
+
+   </TabItem>
+   </Tabs>
+
+   Hooks keep working after an upgrade in the same place. `moat doctor` confirms it.
+
+2. **Take the new default rules, if you want them**
+
+   Your policy is kept as it is, so a rule the new default gained is offered, not forced. `moat` says "policy update available: N changes" and offers to show them.
+
+   ```bash
+   moat policy upgrade --dry-run   # what the new default adds, as a diff; changes nothing
+   moat policy upgrade             # shows the diff, asks, keeps a backup and re-pins
+   moat policy upgrade --undo      # put the previous policy back
+   ```
+
+   Lines you changed are never touched.
+
+</Steps>
+
+Every release and what changed in it: [Releases](https://github.com/crocodile-labs/openmoat/releases).

@@ -1,0 +1,46 @@
+---
+title: "Use GitHub from the agent"
+description: "git, gh and the GitHub API from an agent: what runs, what asks and what is denied."
+sidebar:
+  label: "GitHub and gh"
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="tip" title="Read this when">
+
+The agent commits, pushes, opens pull requests or reads issues.
+
+</Aside>
+
+| The agent runs | Answer |
+|---|---|
+| `git status`, `git diff`, `git add`, `git commit`, `git log`, `git fetch`, `git pull`, `git rebase` | allow |
+| `gh pr view 12`, other read-only `gh` commands | allow |
+| `git push origin main`, `gh pr create --fill`, `gh api …` | defer: your agent's prompt |
+| `git config core.hooksPath .h`, a write into `.git/hooks` | ask: `git-internals` |
+| A write to `.github/workflows/ci.yml`, `.husky/pre-commit` | ask: `runs-later`, CI or a commit runs it later |
+| `git push --force`, `git push origin :main`, `git reset --hard`, `git clean -fdx`, `git branch -D x` | deny: `destructive` |
+| `gh auth token`, `gh auth status -t`, `cat ~/.config/gh/hosts.yml`, `git credential fill` | deny: they print your token |
+
+## Let gh work without handing over the token
+
+`gh` reads its token from `~/.config/gh` or from `GH_TOKEN` / `GITHUB_TOKEN`. The agent cannot read the first, so inside the agent `gh` is not logged in. Broker the token instead:
+
+```bash
+moat secret add gh                       # once
+export GITHUB_TOKEN="$(gh auth token)"   # in your terminal, before starting the agent
+```
+
+`gh` in the agent then works against `api.github.com` with a placeholder. The full story: [Keep a token from the agent](/docs/keep-tokens-safe/).
+
+## Pushing
+
+A push goes to your agent's prompt, so you see every one. A force push, a push that deletes a remote branch and history-rewriting resets are denied: undoing them is often impossible. If you want to force-push, do it yourself.
+
+<Aside type="tip" title="Fewer prompts for pull requests">
+
+To let the agent open pull requests without asking, allow the command in OpenMoat (`moat allow "gh pr create" --always`) or use your agent's own "always allow". Read-only `gh` commands are already allowed.
+
+</Aside>
