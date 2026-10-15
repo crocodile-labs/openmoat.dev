@@ -2,7 +2,10 @@
 // Starlight's ThemeProvider, with dark as the default like the home page: the
 // theme a visitor picks is kept; without one the docs open dark, not the system's.
 import { Icon } from '@astrojs/starlight/components';
+import GitHubLinks from './GitHubLinks.astro';
 ---
+
+<GitHubLinks />
 
 {/* Inlined to avoid a flash of the wrong theme. */}
 <script is:inline>

@@ -1,0 +1,11 @@
+---
+// Links to GitHub open in a new tab, so the reader keeps their place on the site.
+---
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('a[href^="https://github.com/"]').forEach((a) => {
+      a.target = '_blank';
+      a.rel = 'noopener';
+    });
+  });
+</script>
