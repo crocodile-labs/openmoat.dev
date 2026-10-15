@@ -13,3 +13,16 @@ update the page to match. `assets/demo.gif` is a copy of `docs/assets/demo.gif`.
 
 Preview locally: `python3 -m http.server` in this directory, then open
 http://localhost:8000/.
+
+## Docs
+
+`/docs` is built from `docs-src/*.md` (front matter, Markdown, and the components
+`:::steps`, `:::tabs`, `:::note`/`:::tip`/`:::warning`, `:::cards`, `:::terminal`):
+
+```bash
+python3 -I tools/build_docs.py          # writes docs/*.html
+python3 -I tools/build_docs.py --check  # fails when docs/ is out of date
+```
+
+The sidebar order is `NAV` in `tools/build_docs.py`. Every command and output on a page
+must match the current release; check it in the OpenMoat code or with `moat policy check`.
