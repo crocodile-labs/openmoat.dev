@@ -3,11 +3,12 @@ import { getCollection, render } from 'astro:content';
 import Page from '../../layouts/Page.astro';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog');
-  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+  // Oldest first, so each post links to the one before it and the one after it.
+  const posts = (await getCollection('blog')).sort((a, b) => a.data.date.getTime() - b.data.date.getTime());
+  return posts.map((post, i) => ({ params: { slug: post.id }, props: { post, prev: posts[i - 1], next: posts[i + 1] } }));
 }
 
-const { post } = Astro.props;
+const { post, prev, next } = Astro.props;
 const { Content } = await render(post);
 const d = post.data;
 const long = d.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
@@ -34,6 +35,13 @@ const text = encodeURIComponent(d.title);
       <div class="body">
         {d.notice && <p class="notice">{d.notice} <a href="/">What OpenMoat does today →</a></p>}
         <div class="prose"><Content /></div>
+
+        {(prev || next) && (
+          <nav class="pager" aria-label="More posts">
+            {prev ? <a class="prev" href={`/blog/${prev.id}/`}><span>← Previous post</span>{prev.data.title}</a> : <span></span>}
+            {next && <a class="next" href={`/blog/${next.id}/`}><span>Next post →</span>{next.data.title}</a>}
+          </nav>
+        )}
 
         <div class="cta">
           <a class="button primary" href="https://github.com/crocodile-labs/openmoat">Star on GitHub</a>
@@ -82,6 +90,11 @@ const text = encodeURIComponent(d.title);
   .prose :global(th), .prose :global(td) { padding: 10px 14px; border: 1px solid var(--line-2); text-align: left; vertical-align: top; }
   .prose :global(th) { background: var(--panel); color: var(--fg); font-weight: 600; }
   .prose :global(em) { color: var(--muted); }
+  .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 48px; }
+  .pager a { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); color: var(--fg); text-decoration: none; font-weight: 600; line-height: 1.35; }
+  .pager a:hover { border-color: var(--accent-line); }
+  .pager span { font-family: 'Geist Mono', monospace; font-size: 12px; font-weight: 400; color: var(--muted-2); }
+  .pager .next { text-align: right; grid-column: 2; }
   .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 48px; }
   .button { font-family: 'Geist Mono', monospace; font-size: 14px; text-decoration: none; padding: 12px 18px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--fg); }
   .button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }

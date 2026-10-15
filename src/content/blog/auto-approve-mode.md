@@ -2,12 +2,16 @@
 title: What still stops a bad command when your agent runs without prompts
 description: Auto-approve modes remove the one moment you could say no. Here is what OpenMoat still blocks there, and what it does not.
 summary: "--dangerously-skip-permissions, Run Everything, CI and background agents: what still stops a bad command when nobody answers a prompt."
-date: 2026-10-15
+date: 2026-10-15T09:00:00Z
 author: Dhanasekaran Kathiresan
 authorUrl: https://github.com/iamdotk
 avatar: /assets/dhanasekaran.jpg
 tag: guide
 minutes: 6
+tags: ["Guide", "Auto-approve", "CI"]
+cover: "claude --dangerously-skip-permissions"
+coverResult: "deny and ask still stop a call"
+coverTone: ok
 ---
 
 Approving every command gets old fast. So many people run their coding agent with prompts switched off: `claude --dangerously-skip-permissions`, Cursor's Run Everything mode, an agent in CI, or a background agent that works while you sleep.

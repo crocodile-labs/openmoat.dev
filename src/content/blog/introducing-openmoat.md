@@ -2,12 +2,16 @@
 title: Introducing OpenMoat
 description: OpenMoat checks each action an AI coding agent takes on your computer and stops the dangerous ones before they run.
 summary: What OpenMoat is, the problem it solves, how it decides, what it protects, where it stops, and how to try it in two commands.
-date: 2026-10-15
+date: 2026-10-15T08:00:00Z
 author: Dhanasekaran Kathiresan
 authorUrl: https://github.com/iamdotk
 avatar: /assets/dhanasekaran.jpg
 tag: announcement
 minutes: 6
+tags: ["Announcement", "Overview"]
+cover: "moat policy check \"cat ~/.ssh/id_rsa\""
+coverResult: "⛔ deny  secrets-paths"
+coverTone: deny
 ---
 
 AI coding agents run commands on your computer with your permissions. Claude Code, Codex and Cursor read and write files, call tools and open web pages for you. They also spend the day reading text that strangers wrote: READMEs, issues, web pages, package code.
