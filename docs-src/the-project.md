@@ -31,6 +31,7 @@ A project that is your home folder, or a folder above it, would let the agent ed
 + Builds, tests and everyday git commands there (`dev-shell`)
 = `.env`, `.envrc` and keys in the project stay denied
 = Writes into `.git` (hooks, config) ask first: git runs them later, outside any sandbox
+= Writes to CI workflows, `.husky/`, `.pre-commit-config.yaml` and `.vscode/tasks.json` ask first (`runs-later`): CI or a commit runs them later
 = `.moat`, `.claude` and other agent settings stay denied
 ! A folder next to the project is outside it: see [Work across several repos](work-across-repos.html)
 :::

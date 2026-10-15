@@ -21,6 +21,7 @@ OpenMoat does not replace your agent's prompt or sandbox; it fills the gaps betw
 - **On Linux**, `moat run` does not protect files inside the project (`.env`, `.envrc`, `.moat`, `.git` hooks); `moat run --isolate` does.
 - **On native Windows** only the hook applies the policy; use WSL2 for the OS sandbox.
 - **A missing hook binary:** if `moat` is missing or killed, Claude Code and Codex run the call unchecked. `moat status` reports it.
-- **Folders allowed with `moat allow --dir`** do not ask before a write into `.git` there ([Work across several repos](work-across-repos.html)).
+- **Files you run later.** An agent may edit `package.json` scripts, a `Makefile` or other build files without a question; they run when you next build. CI workflows and commit-hook files ask first (`runs-later`), but only for the agent's own writes: a script the agent runs in its sandbox may still write them.
+- **Folders allowed with `moat allow` before 0.5.2** do not leave out `.git` and the files run later: add them again ([Work across several repos](work-across-repos.html)).
 
 The full list, with the reasons: [THREAT_MODEL.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md). What each layer stops is tested on every change: [EVIDENCE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/EVIDENCE.md).

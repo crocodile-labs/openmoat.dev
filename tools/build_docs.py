@@ -358,6 +358,8 @@ TEMPLATE = '''<!doctype html>
 
 
 def main():
+    # paths are relative to the site's root, wherever the script is run from
+    os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     order = [p for _, pages in NAV for p in pages]
     metas = {p: read(p) for p in order}
     for p in os.listdir(SRC):

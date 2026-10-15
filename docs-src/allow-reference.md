@@ -48,11 +48,11 @@ Every rule `moat allow` adds is in `~/.moat/policy.d/approved.yaml`, with its id
 
 :::impact
 + Every file in the folder and below: read, create, edit and delete
-+ After `moat sandbox sync`, programs the agent runs can use it too
++ Programs the agent runs can use it too: the sandboxes are updated at once
 = `.env` files, keys and agent settings in it stay denied
+= Writes into `.git` there, CI workflows and commit-hook files are left out of it
 = Home, a folder above it and `/` are refused
-! Writes into `.git` there are allowed without the `git-internals` ask
-! The agent can edit build files there (`package.json` scripts, a `Makefile`, CI config) that you run later. Allow folders you work in, not a parent of repositories you have not checked
+! The agent can edit build files there (`package.json` scripts, a `Makefile`) that you run later. Allow folders you work in, not a parent of repositories you have not checked
 :::
 
 ## `moat allow --site <host>`
@@ -69,7 +69,7 @@ Every rule `moat allow` adds is in `~/.moat/policy.d/approved.yaml`, with its id
 :::impact
 + Programs the agent runs can use the token, for that one host
 = The agent holds a placeholder, never the value
-! The source must be denied too, or the agent can read it: see [Keep a token from the agent](keep-tokens-safe.html)
+= Its source is denied too: the command adds `secret-<id>` when no rule covers it ([Keep a token from the agent](keep-tokens-safe.html))
 ! Give the token the smallest scope that works
 :::
 

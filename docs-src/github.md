@@ -11,6 +11,7 @@ when: the agent commits, pushes, opens pull requests or reads issues.
 | `gh pr view 12`, other read-only `gh` commands | allow |
 | `git push origin main`, `gh pr create --fill`, `gh api …` | defer: your agent's prompt |
 | `git config core.hooksPath .h`, a write into `.git/hooks` | ask: `git-internals` |
+| A write to `.github/workflows/ci.yml`, `.husky/pre-commit` | ask: `runs-later`, CI or a commit runs it later |
 | `git push --force`, `git push origin :main`, `git reset --hard`, `git clean -fdx`, `git branch -D x` | deny: `destructive` |
 | `gh auth token`, `gh auth status -t`, `cat ~/.config/gh/hosts.yml`, `git credential fill` | deny: they print your token |
 

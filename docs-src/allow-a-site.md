@@ -28,11 +28,11 @@ moat allow --site docs.rs
 ✔ lock re-pinned (6 files)
 :::
 
-### Update the sandbox if moat asks you to
+It also updates your agents' OS sandboxes, so sandboxed commands can reach the host too.
 
-Run `moat status`. If an agent's sandbox **differs from the policy**, run `moat sandbox sync` and start a new agent session, so sandboxed commands can reach the host too.
+### Start a new agent session, or ask the agent to try again
 
-### Ask the agent to try again
+Fetch tools see the change at once; sandboxed shell commands after a new session.
 :::
 
 ## What changes
@@ -45,7 +45,7 @@ Run `moat status`. If an agent's sandbox **differs from the policy**, run `moat 
 
 :::impact
 + Requests to exactly `docs.rs`, from fetch tools and from shell commands
-+ Sandboxed commands may connect to it (after `moat sandbox sync`)
++ Sandboxed commands may connect to it
 = Every other host stays denied, subdomains included
 = Secrets are still denied, so the agent cannot read a key to send there
 ! The host can receive whatever the agent sends it. Never allow paste sites, webhook catchers or file-sharing hosts

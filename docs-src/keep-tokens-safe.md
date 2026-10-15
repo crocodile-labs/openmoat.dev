@@ -54,24 +54,27 @@ The value goes in the `Authorization` header unless you pass `--header <name>`.
 
 ### Make sure the agent cannot read the source
 
-`moat secret add` does not add a deny rule for where the value comes from. When nothing denies it, it warns: `no deny env.read rule covers …, so the agent can read it`. Check which case you are in:
+A brokered value the agent can read anyway protects nothing, so `moat secret add` checks where the value comes from. When no rule denies it yet, it adds one, `secret-<id>`, in the same diff you approve:
 
-| Source | Already denied? | If not |
+| Source | Already denied? | What `moat secret add` does |
 |---|---|---|
-| `--env NAME` ending in `_KEY`, `_TOKEN`, `_SECRET`, `_PASSWORD`, or starting with `AWS_` | yes, `env-secrets` | nothing to do |
-| `--env NAME` with another name (`DATABASE_URL`, `STRIPE_LIVE`) | **no** | add an `env.read` deny with `moat edit` |
-| `--file PATH` under `~/.ssh`, `~/.aws`, `~/.config/gh` and the other secret folders | yes, `secrets-paths` | nothing to do |
-| `--file PATH` anywhere else (`~/.config/example/token`) | **no** | add an `fs.read` deny with `moat edit` |
+| `--env NAME` ending in `_KEY`, `_TOKEN`, `_SECRET`, `_PASSWORD`, or starting with `AWS_` | yes, `env-secrets` | nothing more |
+| `--env NAME` with another name (`DATABASE_URL`, `STRIPE_LIVE`) | no | adds `secret-<id>` with an `env.read` deny of it |
+| `--file PATH` under `~/.ssh`, `~/.aws`, `~/.config/gh` and the other secret folders | yes, `secrets-paths` | nothing more |
+| `--file PATH` anywhere else (`~/.config/example/token`) | no | adds `secret-<id>` with an `fs.read` deny of it |
 
-For example, with `moat edit`:
+The diff shows the rule, and the line `The deny rule secret-<id> keeps the agent from reading the value at its source.`
+
+:::note Secrets added with OpenMoat 0.5.1 or earlier
+They only warned. Run `moat policy lint`: a warning `no deny … rule covers …, so the agent can read it` means you should add the deny with `moat edit`:
 
 ```yaml
 deny:
   - id: example-token
     reason: brokered secret source
     fs.read: ["~/.config/example/token"]
-    env.read: ["DATABASE_URL"]
 ```
+:::
 
 :::warning Prefer --env on macOS with Claude Code
 Claude Code's broker reads `env` and `file` sources. On macOS it denies a `file` source to sandboxed commands instead of masking it, so the tool that reads that file cannot authenticate. Use `--env` there.
@@ -89,5 +92,5 @@ Claude Code's broker reads `env` and `file` sources. On macOS it denies a `file`
 = The agent itself never holds the value, and cannot print or read it
 = A request carrying the placeholder or the value to any other host is refused
 ! The API host can still be told to do anything the token allows: give the token the smallest scope that works
-! Check the source is denied (table above), or the agent can read the value anyway
+= Its source is denied too: `moat secret add` adds the rule when none covers it
 :::

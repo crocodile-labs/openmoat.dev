@@ -24,6 +24,7 @@ Every line is checked against the shipped policy on every change to OpenMoat.
 | `cat src/main.rs` | allow | `dev-shell`, `project-fs` |
 | `npm install left-pad`, `git push origin main` | defer | `default`: your agent's prompt decides |
 | `git config core.hooksPath .h`, `echo x > .git/hooks/pre-commit` | ask | `git-internals` |
+| A write to `.github/workflows/ci.yml` or `.husky/pre-commit` | ask | `runs-later` |
 | `grep -r token ~` | ask | `home-sweep` |
 | `cat ~/.ssh/id_rsa`, `cat .env` | deny | `secrets-paths` |
 | `curl https://docs.rs/serde` | deny | `default.net`: a host the policy does not list |
