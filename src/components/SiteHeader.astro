@@ -1,0 +1,45 @@
+---
+// The header of the home page and the blog: logo, sections, docs, blog, GitHub, theme.
+// The page's own section is highlighted: Blog under /blog/, Product elsewhere.
+const onBlog = Astro.url.pathname.startsWith('/blog');
+const color = (active: boolean) => `color: var(${active ? '--accent' : '--muted'}); text-decoration: none`;
+---
+  <header style="border-bottom: 1px solid var(--line); background: var(--bg)">
+    <nav aria-label="Main" style="max-width: 1240px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+      <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; font-size: 17px">
+        <img src="/assets/logo.svg" alt="" style="width: 28px; height: 28px">OpenMoat
+      </a>
+      <div style="display: flex; gap: 26px; align-items: center; flex-wrap: wrap; font-family: 'Geist Mono', monospace; font-size: 13px">
+        <a href="/" style={color(!onBlog)} aria-current={onBlog ? undefined : 'page'}>Product</a>
+        <a href="/#install" style="color: var(--muted); text-decoration: none">Install</a>
+        <a href="/#architecture" style="color: var(--muted); text-decoration: none">Architecture</a>
+        <a href="/#stops" style="color: var(--muted); text-decoration: none">What it stops</a>
+        <a href="/#sandbox" style="color: var(--muted); text-decoration: none">Sandbox</a>
+        <a href="/#features" style="color: var(--muted); text-decoration: none">Features</a>
+        <a href="/#supported" style="color: var(--muted); text-decoration: none">Supported</a>
+        <a href="/docs/" style="color: var(--muted); text-decoration: none">Docs</a>
+        <a href="/blog/" style={color(onBlog)} aria-current={onBlog ? 'page' : undefined}>Blog</a>
+        <a href="https://github.com/crocodile-labs/openmoat" style="color: var(--muted); text-decoration: none">GitHub</a>
+        <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch to light theme" title="Switch theme">
+          <svg class="icon-sun" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+          <svg class="icon-moon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"></path></svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+<script>
+  // theme: dark by default, the choice shared with the docs
+  const toggle = document.getElementById('theme-toggle');
+  const label = () => {
+    const light = document.documentElement.dataset.theme === 'light';
+    toggle?.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+  };
+  label();
+  toggle?.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('starlight-theme', next); } catch {}
+    label();
+  });
+</script>

@@ -1,0 +1,49 @@
+---
+import { getCollection } from 'astro:content';
+import Page from '../../layouts/Page.astro';
+
+const posts = (await getCollection('blog')).sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const day = (d: Date) => d.toISOString().slice(0, 10);
+---
+<Page title="Blog · OpenMoat" description="News and notes from the people building OpenMoat.">
+  <main class="wrap">
+    <section class="intro">
+      <p class="label">BLOG</p>
+      <h1>News and notes from the people building OpenMoat.</h1>
+      <p class="lead">Releases, what we learned, and what comes next. <a href="/blog/rss.xml">RSS</a></p>
+    </section>
+    <ul class="posts">
+      {posts.map((post) => (
+        <li>
+          <a class="post" href={`/blog/${post.id}/`}>
+            <span class="meta"><time datetime={day(post.data.date)}>{day(post.data.date)}</time> · {post.data.tag} · {post.data.minutes} min read</span>
+            <span class="title">{post.data.title}</span>
+            <span class="summary">{post.data.summary}</span>
+            <span class="more">Read the post →</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </main>
+</Page>
+
+<style>
+  .wrap { max-width: 1240px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 60vh; }
+  .intro { padding: 72px 48px 48px; background-image: radial-gradient(var(--dots) 1px, transparent 1px); background-size: 14px 14px; border-bottom: 1px solid var(--line); }
+  .label { margin: 0 0 12px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.14em; color: var(--accent); font-weight: 600; }
+  h1 { margin: 0; font-size: 48px; line-height: 1.1; font-weight: 600; letter-spacing: -0.03em; max-width: 760px; }
+  .lead { margin: 16px 0 0; color: var(--muted); font-size: 18px; }
+  .lead a { color: var(--accent); }
+  .posts { list-style: none; margin: 0; padding: 48px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .post { display: flex; flex-direction: column; gap: 10px; height: 100%; box-sizing: border-box; padding: 28px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--panel); text-decoration: none; color: var(--fg); }
+  .post:hover { border-color: var(--accent-line); }
+  .meta { font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted-2); letter-spacing: 0.04em; }
+  .title { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+  .summary { color: var(--muted); }
+  .more { margin-top: auto; padding-top: 8px; font-family: 'Geist Mono', monospace; font-size: 13px; color: var(--accent); }
+  @media (max-width: 760px) {
+    .intro, .posts { padding-left: 20px; padding-right: 20px; }
+    .posts { grid-template-columns: 1fr; }
+    h1 { font-size: 34px; }
+  }
+</style>

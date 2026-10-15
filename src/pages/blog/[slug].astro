@@ -1,0 +1,91 @@
+---
+import { getCollection, render } from 'astro:content';
+import Page from '../../layouts/Page.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const d = post.data;
+const long = d.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+const url = encodeURIComponent(`https://openmoat.dev/blog/${post.id}/`);
+const text = encodeURIComponent(d.title);
+---
+<Page title={`${d.title} · OpenMoat blog`} description={d.description} type="article" published={d.date}>
+  <main class="wrap">
+    <article>
+      <header class="head">
+        <p class="back"><a href="/blog/">← All posts</a></p>
+        <p class="label">{d.tag.toUpperCase()}</p>
+        <h1>{d.title}</h1>
+        <p class="lead">{d.description}</p>
+        <p class="byline">
+          {d.avatar && <img src={d.avatar} alt="" width="44" height="44" />}
+          <span>
+            <strong>{d.authorUrl ? <a href={d.authorUrl}>{d.author}</a> : d.author}</strong><br />
+            <span class="meta"><time datetime={d.date.toISOString().slice(0, 10)}>{long}</time> · {d.minutes} min read</span>
+          </span>
+        </p>
+      </header>
+
+      <div class="body">
+        {d.notice && <p class="notice">{d.notice} <a href="/">What OpenMoat does today →</a></p>}
+        <div class="prose"><Content /></div>
+
+        <div class="cta">
+          <a class="button primary" href="https://github.com/crocodile-labs/openmoat">Star on GitHub</a>
+          <a class="button" href="https://www.reddit.com/r/openmoat/">Join r/openmoat</a>
+          <a class="button" href="https://github.com/crocodile-labs/openmoat/security/advisories/new">Report a bypass</a>
+        </div>
+        <p class="share">Share:
+          <a href={`https://x.com/intent/post?text=${text}&url=${url}`}>X</a> ·
+          <a href={`https://news.ycombinator.com/submitlink?u=${url}&t=${text}`}>Hacker News</a> ·
+          <a href={`https://www.reddit.com/submit?url=${url}&title=${text}`}>Reddit</a>
+        </p>
+      </div>
+    </article>
+  </main>
+</Page>
+
+<style>
+  .wrap { max-width: 1240px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+  .head { padding: 56px 48px 40px; border-bottom: 1px solid var(--line); background-image: radial-gradient(var(--dots) 1px, transparent 1px); background-size: 14px 14px; }
+  .head > * { max-width: 760px; margin-left: auto; margin-right: auto; }
+  .back { margin: 0 auto 28px; font-size: 14px; }
+  .back a { color: var(--muted); text-decoration: none; }
+  .back a:hover { color: var(--fg); }
+  .label { margin: 0 auto 12px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.14em; color: var(--accent); font-weight: 600; }
+  h1 { margin: 0 auto; font-size: 48px; line-height: 1.1; font-weight: 600; letter-spacing: -0.03em; }
+  .lead { margin: 14px auto 0; color: var(--muted); font-size: 20px; }
+  .byline { display: flex; align-items: center; gap: 12px; margin: 28px auto 0; font-size: 15px; }
+  .byline img { border-radius: 50%; }
+  .byline a { color: var(--fg); text-decoration: none; }
+  .meta { font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted-2); }
+  .body { padding: 40px 48px 72px; }
+  .body > * { max-width: 760px; margin-left: auto; margin-right: auto; }
+  .notice { margin-top: 0; margin-bottom: 32px; padding: 14px 18px; border: 1px solid var(--line-2); border-left: 3px solid var(--ask); border-radius: 8px; background: var(--panel); color: var(--fg-2); font-size: 15px; }
+  .notice a { color: var(--accent); }
+  .prose { font-size: 18px; line-height: 1.75; color: var(--fg-2); }
+  .prose :global(h2) { margin: 44px 0 12px; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: var(--fg); }
+  .prose :global(p), .prose :global(ul) { margin: 0 0 18px; }
+  .prose :global(ul) { padding-left: 22px; }
+  .prose :global(li + li) { margin-top: 6px; }
+  .prose :global(a) { color: var(--accent); }
+  .prose :global(strong) { color: var(--fg); }
+  .prose :global(code) { font-family: 'Geist Mono', monospace; font-size: 0.88em; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 5px; padding: 1px 6px; }
+  .prose :global(pre) { margin: 0 0 22px; padding: 18px 20px; overflow-x: auto; border: 1px solid var(--line-2); border-radius: 8px; background: var(--term) !important; font-size: 14px; line-height: 1.6; }
+  .prose :global(pre code) { background: none; border: 0; padding: 0; font-size: inherit; }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 48px; }
+  .button { font-family: 'Geist Mono', monospace; font-size: 14px; text-decoration: none; padding: 12px 18px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--fg); }
+  .button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+  .share { margin-top: 24px; font-size: 14px; color: var(--muted); }
+  .share a { color: var(--muted); }
+  @media (max-width: 760px) {
+    .head, .body { padding-left: 20px; padding-right: 20px; }
+    h1 { font-size: 34px; }
+    .prose { font-size: 17px; }
+  }
+</style>

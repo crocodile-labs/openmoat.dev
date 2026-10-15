@@ -1,0 +1,48 @@
+---
+// A page with the home page's header, footer and theme: the blog uses it.
+import '@fontsource/geist-sans/400.css';
+import '@fontsource/geist-sans/500.css';
+import '@fontsource/geist-sans/600.css';
+import '@fontsource/geist-mono/400.css';
+import '@fontsource/geist-mono/600.css';
+import '../styles/site.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import ThemeInit from '../components/ThemeInit.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  type?: 'website' | 'article';
+  published?: Date;
+}
+const { title, description, type = 'website', published } = Astro.props;
+const url = new URL(Astro.url.pathname, Astro.site).toString();
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content={description}>
+<link rel="canonical" href={url}>
+<meta property="og:type" content={type}>
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:url" content={url}>
+<meta property="og:image" content="https://openmoat.dev/assets/logo.png">
+{published && <meta property="article:published_time" content={published.toISOString().slice(0, 10)}>}
+<meta name="color-scheme" content="dark light">
+<ThemeInit />
+<link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="OpenMoat blog" href="/blog/rss.xml">
+</head>
+<body>
+<div style="min-height: 100vh; background: var(--bg)">
+  <SiteHeader />
+  <slot />
+  <SiteFooter />
+</div>
+</body>
+</html>

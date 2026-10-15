@@ -1,0 +1,7 @@
+---
+// Sets the stored theme (dark by default) before the page paints; the docs use the same key.
+---
+<script is:inline>
+  document.documentElement.dataset.theme =
+    (typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme')) === 'light' ? 'light' : 'dark';
+</script>

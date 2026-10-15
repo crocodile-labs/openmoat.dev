@@ -6,6 +6,10 @@ import '@fontsource/geist-sans/500.css';
 import '@fontsource/geist-sans/600.css';
 import '@fontsource/geist-mono/400.css';
 import '@fontsource/geist-mono/600.css';
+import '../styles/site.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import ThemeInit from '../components/ThemeInit.astro';
 const title = 'OpenMoat: security for AI coding agents';
 const description = 'OpenMoat checks every command, file access, web request and MCP call your coding agent makes, and blocks the dangerous ones before they run. For Claude Code, Codex and Cursor. Open source, runs on your machine.';
 ---
@@ -22,39 +26,14 @@ const description = 'OpenMoat checks every command, file access, web request and
 <meta property="og:url" content="https://openmoat.dev/">
 <meta property="og:image" content="https://openmoat.dev/assets/logo.png">
 <meta name="color-scheme" content="dark light">
-<script is:inline>
-  document.documentElement.dataset.theme =
-    (typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme')) === 'light' ? 'light' : 'dark';
-</script>
+<ThemeInit />
 <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
 <link rel="alternate" type="application/rss+xml" title="OpenMoat blog" href="/blog/rss.xml">
 </head>
 <body>
-<div style="min-height: 100vh; background: var(--bg); color: var(--fg); font-family: 'Geist', system-ui, sans-serif; font-size: 16px; line-height: 1.6">
+<div style="min-height: 100vh; background: var(--bg); color: var(--fg); font-family: 'Geist Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.6">
 
-  <header style="border-bottom: 1px solid var(--line); background: var(--bg)">
-    <nav aria-label="Main" style="max-width: 1240px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
-      <a href="#top" style="display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; font-size: 17px">
-        <img src="/assets/logo.svg" alt="" style="width: 28px; height: 28px">OpenMoat
-      </a>
-      <div style="display: flex; gap: 26px; align-items: center; flex-wrap: wrap; font-family: 'Geist Mono', monospace; font-size: 13px">
-        <a href="#top" style="color: var(--accent); text-decoration: none">Product</a>
-        <a href="#install" style="color: var(--muted); text-decoration: none">Install</a>
-        <a href="#architecture" style="color: var(--muted); text-decoration: none">Architecture</a>
-        <a href="#stops" style="color: var(--muted); text-decoration: none">What it stops</a>
-        <a href="#sandbox" style="color: var(--muted); text-decoration: none">Sandbox</a>
-        <a href="#features" style="color: var(--muted); text-decoration: none">Features</a>
-        <a href="#supported" style="color: var(--muted); text-decoration: none">Supported</a>
-        <a href="/docs/" style="color: var(--muted); text-decoration: none">Docs</a>
-        <a href="/blog/" style="color: var(--muted); text-decoration: none">Blog</a>
-        <a href="https://github.com/crocodile-labs/openmoat" style="color: var(--muted); text-decoration: none">GitHub</a>
-        <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch to light theme" title="Switch theme">
-          <svg class="icon-sun" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
-          <svg class="icon-moon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"></path></svg>
-        </button>
-      </div>
-    </nav>
-  </header>
+  <SiteHeader />
 
   <main id="top" style="max-width: 1240px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line)">
 
@@ -377,40 +356,9 @@ const description = 'OpenMoat checks every command, file access, web request and
     </section>
   </main>
 
-  <footer style="border-top: 1px solid var(--line); background: var(--bg-footer)">
-    <div style="max-width: 1240px; margin: 0 auto; padding: 56px 24px 32px; display: flex; flex-wrap: wrap; gap: 48px">
-      <div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 14px">
-        <span style="display: flex; gap: 10px; align-items: center; font-weight: 600; font-size: 18px"><img src="/assets/logo.svg" alt="" style="width: 32px; height: 32px">OpenMoat</span>
-        <p style="margin: 0; color: var(--muted); font-size: 14px; max-width: 300px">Security for AI coding agents. Open source, runs on your machine.</p>
-        <code style="align-self: flex-start; font-family: 'Geist Mono', monospace; font-size: 13px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; padding: 8px 12px"><span style="color: var(--accent)">$</span> brew install crocodile-labs/tap/moat</code>
-      </div>
-      <div style="flex: 3 1 600px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; font-size: 14px">
-        <div style="display: flex; flex-direction: column; gap: 10px"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--muted-2)">PRODUCT</span><a href="#install" style="color: var(--muted); text-decoration: none">Install</a><a href="#stops" style="color: var(--muted); text-decoration: none">What it stops</a><a href="#architecture" style="color: var(--muted); text-decoration: none">Architecture</a><a href="#sandbox" style="color: var(--muted); text-decoration: none">Sandbox</a><a href="#supported" style="color: var(--muted); text-decoration: none">Supported agents</a></div>
-        <div style="display: flex; flex-direction: column; gap: 10px"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--muted-2)">DOCS</span><a href="/docs/quickstart/" style="color: var(--muted); text-decoration: none">Quick start</a><a href="/docs/blocked/" style="color: var(--muted); text-decoration: none">Something was blocked</a><a href="/docs/work-across-repos/" style="color: var(--muted); text-decoration: none">Work across repos</a><a href="/docs/allow-reference/" style="color: var(--muted); text-decoration: none">Every allow and its impact</a><a href="/docs/limits/" style="color: var(--muted); text-decoration: none">Limits</a></div>
-        <div style="display: flex; flex-direction: column; gap: 10px"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--muted-2)">PROJECT</span><a href="https://github.com/crocodile-labs/openmoat" style="color: var(--muted); text-decoration: none">GitHub</a><a href="https://github.com/crocodile-labs/openmoat/releases" style="color: var(--muted); text-decoration: none">Releases</a><a href="https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md" style="color: var(--muted); text-decoration: none">Changelog</a><a href="/blog/" style="color: var(--muted); text-decoration: none">Blog</a><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md" style="color: var(--muted); text-decoration: none">Report a bypass</a></div>
-        <div style="display: flex; flex-direction: column; gap: 10px"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--muted-2)">COMMUNITY</span><a href="https://www.reddit.com/r/openmoat/" style="color: var(--muted); text-decoration: none">r/openmoat</a><a href="https://github.com/crocodile-labs/openmoat/issues" style="color: var(--muted); text-decoration: none">Issues</a><a href="https://github.com/crocodile-labs/openmoat/blob/main/CONTRIBUTING.md" style="color: var(--muted); text-decoration: none">Contributing</a></div>
-      </div>
-    </div>
-    <div style="max-width: 1240px; margin: 0 auto; padding: 20px 24px 32px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted-2)">
-      <span>© 2026 Crocodile Labs · MIT or Apache-2.0</span>
-      <span>No tracking, no cookies · v0.5.2</span>
-    </div>
-  </footer>
+  <SiteFooter />
 </div>
 <script>
-  // theme: dark by default, the choice shared with the docs
-  const toggle = document.getElementById('theme-toggle');
-  const label = () => {
-    const light = document.documentElement.dataset.theme === 'light';
-    toggle?.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
-  };
-  label();
-  toggle?.addEventListener('click', () => {
-    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-    document.documentElement.dataset.theme = next;
-    try { localStorage.setItem('starlight-theme', next); } catch {}
-    label();
-  });
   // install tabs: show the command of the chosen method
   const cmd = document.getElementById('install-cmd');
   const tabs = Array.from(document.querySelectorAll('button[data-cmd]'));
@@ -421,45 +369,6 @@ const description = 'OpenMoat checks every command, file access, web request and
     });
   }
 </script>
-<style is:global>
-  :root {
-    color-scheme: dark;
-    --bg: #0a0a0a; --bg-footer: #070707; --term: #050505;
-    --panel: #111111; --panel-2: #1a1a1a;
-    --line: #1c1c1c; --line-2: #262626;
-    --accent-line: #2f4a35; --accent-panel: #0f1a12; --dots: #1f2a22;
-    --fg: #ededed; --fg-strong: #ffffff; --fg-2: #d4d4d4;
-    --muted: #a3a3a3; --muted-2: #8a8a8a; --faint: #4a4a4a;
-    --accent: #7fd88f; --on-accent: #0a0a0a;
-    --ask: #f2c14e; --deny: #ff8a7a; --defer: #8ab4f8;
-  }
-  :root[data-theme='light'] {
-    color-scheme: light;
-    --bg: #fafaf9; --bg-footer: #f3f3f1; --term: #f4f4f2;
-    --panel: #ffffff; --panel-2: #efefec;
-    --line: #e7e6e3; --line-2: #dad8d3;
-    --accent-line: #b9dcc3; --accent-panel: #eef7f0; --dots: #dcdcd7;
-    --fg: #171717; --fg-strong: #000000; --fg-2: #262626;
-    --muted: #525252; --muted-2: #6b6b6b; --faint: #a3a3a3;
-    --accent: #1f7a3c; --on-accent: #ffffff;
-    --ask: #9a6400; --deny: #b42318; --defer: #2457c5;
-  }
-  body { margin: 0; background: var(--bg); }
-  .theme-toggle { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--line-2); border-radius: 8px; background: transparent; color: var(--fg); cursor: pointer; }
-  .theme-toggle:hover { border-color: var(--muted-2); }
-  .icon-moon { display: none; }
-  :root[data-theme='light'] .icon-sun { display: none; }
-  :root[data-theme='light'] .icon-moon { display: block; }
-  a { color: var(--fg); }
-  a:hover { color: var(--fg-strong); }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .tab { font-family: 'Geist Mono', monospace; font-size: 13px; padding: 8px 14px; border-radius: 6px; border: 0; cursor: pointer; min-height: 36px; background: transparent; color: var(--muted-2); }
-  .tab[aria-selected='true'] { background: var(--panel-2); color: var(--fg); }
-  @media (max-width: 760px) {
-    [style*="repeat(4, minmax(0, 1fr))"], [style*="repeat(5, minmax(0, 1fr))"], [style*="repeat(3, minmax(0, 1fr))"] { grid-template-columns: 1fr !important; }
-    main section { padding-left: 20px !important; padding-right: 20px !important; }
-    h1 { font-size: 40px !important; }
-  }
-</style>
+
 </body>
 </html>
