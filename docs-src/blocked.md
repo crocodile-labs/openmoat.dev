@@ -41,7 +41,7 @@ A session grant lasts 24 hours and covers only that session and that exact comma
 moat allow --last --always   # a permanent rule in ~/.moat/policy.d/approved.yaml
 ```
 
-It prints what the rule will match before writing it, and the command that undoes it.
+It prints what the rule will match before writing it, and the command that undoes it. A command rule also matches the same command with more arguments: [what each allow opens](allow-reference.html).
 :::
 
 :::note Codex and Cursor file tools

@@ -52,14 +52,38 @@ This writes the new folder into the agent's OS sandbox, so shell commands (`npm 
 The agent's sandbox settings are read when a session starts.
 :::
 
-## What stays protected
+## What changes
 
-- **Secrets in the folder stay denied.** `.env`, `.envrc`, keys and tokens there are still blocked: deny rules win over `allow --dir`.
-- **OpenMoat's own files stay denied**, as do `~/.ssh`, `~/.aws` and the other secret locations.
-- **It refuses folders that are too wide.** Your home directory, any folder above it and a filesystem root are refused: name the folder you work in.
+| The agent does, in `~/work/shared-lib` | Before | After |
+|---|---|---|
+| Reads or edits a file (`cat`, file tools) | your agent's prompt | allowed, no prompt |
+| `echo x > notes.md` | your agent's prompt | allowed |
+| `cat .env`, `cat config/.env.local` | denied | still denied |
+| A write into `.git/hooks` | your agent's prompt | **allowed**, see below |
+| `npm test` there | allowed command; the sandbox may block its writes | allowed, after `moat sandbox sync` |
+
+:::impact
++ Every file in the folder and below: read, create, edit and delete
++ After `moat sandbox sync`, programs the agent runs can use it too
+= `.env` files, keys and agent settings in it stay denied: deny rules win
+= Home, a folder above it and `/` are refused: name the folder you work in
+! The agent can edit build files there (`package.json` scripts, a `Makefile`, CI config) that you run later
+! Writes into `.git` there do not ask first (see below)
+:::
 
 :::warning Git internals in an allowed folder
 Inside the project, a write into `.git` (a hook, the config) asks you first, because git runs those later, outside any sandbox. Inside a folder you allowed with `--dir`, that write is currently allowed without the ask. Allow the folders you work in, not a parent that holds repositories you have not checked. A fix that keeps the ask is planned.
+:::
+
+:::tip Only reading?
+If the agent only needs to read the other repository, a read-only rule is safer. Add it with `moat edit` ([Change the rules](change-the-rules.html)):
+
+```yaml
+allow:
+  - id: shared-lib-read
+    reason: reference code the agent may read
+    fs.read: ["~/work/shared-lib/**"]
+```
 :::
 
 ## Undo it

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>.env files and environment variables · OpenMoat docs</title>
+<meta name="description" content="Which secrets in files and variables the agent can never read, which it can, and how to protect your own.">
+<meta property="og:title" content=".env files and environment variables · OpenMoat docs">
+<meta property="og:description" content="Which secrets in files and variables the agent can never read, which it can, and how to protect your own.">
+<meta property="og:image" content="https://openmoat.dev/assets/logo.png">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/logo.png" type="image/png">
+<link rel="stylesheet" href="../style.css">
+<script>document.documentElement.className = 'js';</script>
+</head>
+<body class="docs">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div class="wrap wide">
+    <a class="brand" href="../"><img src="../assets/logo.svg" alt="" width="34" height="34"> OpenMoat <span class="ver">docs</span></a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="index.html" aria-current="page">Docs</a></li>
+        <li><a href="quickstart.html">Install</a></li>
+        <li><a href="../blog/">Blog</a></li>
+        <li><a class="gh" href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap wide docs-layout">
+  <nav class="docs-side" aria-label="Documentation">
+    <details class="side-menu" open><summary>Menu</summary><p class="side-title">Get started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="quickstart.html">Quick start</a></li><li><a href="how-it-decides.html">How it decides</a></li><li><a href="the-project.html">The project folder</a></li></ul><p class="side-title">Everyday use</p><ul><li><a href="blocked.html">Something was blocked</a></li><li><a href="work-across-repos.html">Work across several repos</a></li><li><a href="allow-a-site.html">Let the agent use a site</a></li><li><a href="local-services.html">Local services</a></li><li><a href="env-files.html" aria-current="page">.env and variables</a></li><li><a href="keep-tokens-safe.html">Keep a token from the agent</a></li><li><a href="github.html">GitHub and gh</a></li><li><a href="cloud-clis.html">Cloud CLIs and SSH</a></li><li><a href="packages.html">Install and publish</a></li><li><a href="see-what-happened.html">See what the agent did</a></li><li><a href="check-a-command.html">Check a command first</a></li></ul><p class="side-title">Set up</p><ul><li><a href="change-the-rules.html">Change the rules</a></li><li><a href="team-rules.html">Share rules with your team</a></li><li><a href="auto-approve-and-ci.html">Auto-approve and CI</a></li><li><a href="upgrade.html">Upgrade</a></li><li><a href="turn-off.html">Turn it off</a></li></ul><p class="side-title">Reference</p><ul><li><a href="allow-reference.html">Every allow and its impact</a></li><li><a href="commands.html">Commands</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="limits.html">Limits</a></li></ul></details>
+  </nav>
+  <main id="main" class="docs-main">
+    <p class="crumb">Everyday use</p>
+    <h1>.env files and environment variables</h1>
+    <p class="doc-lead">Which secrets in files and variables the agent can never read, which it can, and how to protect your own.</p>
+    <div class="when"><strong>Read this when</strong> your project uses .env files, or secrets live in environment variables.</div>
+    <div class="doc-body">
+<h2 id="what-is-denied"><a class="anchor" href="#what-is-denied" aria-hidden="true">#</a>What is denied</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">The agent tries</th><th scope="col">Answer</th></tr></thead><tbody><tr><td><code>cat .env</code>, <code>source .env</code>, <code>cat .env.test</code>, <code>cat config/.env.local</code></td><td>deny: <code>secrets-paths</code> (any <code>.env</code> or <code>.env.*</code>, at any depth)</td></tr><tr><td><code>cat .envrc</code></td><td>deny</td></tr><tr><td><code>cat .env.example</code>, <code>.env.sample</code>, <code>.env.template</code></td><td>allow: committed templates carry no values</td></tr><tr><td><code>echo $OPENAI_API_KEY</code>, <code>$GITHUB_TOKEN</code>, <code>$AWS_SECRET_ACCESS_KEY</code></td><td>deny: <code>env-secrets</code></td></tr><tr><td><code>printenv</code>, <code>env</code>, <code>export -p</code>, <code>cat /proc/self/environ</code></td><td>deny: <code>env-dump</code></td></tr><tr><td><code>echo $DATABASE_URL</code></td><td><strong>defer</strong>: the name does not look like a secret</td></tr></tbody></table></div>
+<p>Variable names that are denied: anything ending in <code>_KEY</code>, <code>_TOKEN</code>, <code>_SECRET</code> or <code>_PASSWORD</code>, anything starting with <code>AWS_</code>, and <code>GITHUB_TOKEN</code>, <code>NPM_TOKEN</code>.</p>
+<h2 id="protect-a-variable-with-another-name"><a class="anchor" href="#protect-a-variable-with-another-name" aria-hidden="true">#</a>Protect a variable with another name</h2>
+<p><code>DATABASE_URL</code>, <code>REDIS_URL</code> or <code>SENTRY_DSN</code> often hold a password, but their names do not say so. Deny them yourself with <code>moat edit</code>:</p>
+<div class="code"><div class="code-head"><span>yaml</span><button type="button" class="copy">Copy</button></div><pre><code>deny:
+  - id: my-secret-vars
+    reason: these hold credentials
+    env.read: ["DATABASE_URL", "REDIS_URL", "SENTRY_DSN"]</code></pre></div>
+<h2 id="what-this-means-for-your-tests"><a class="anchor" href="#what-this-means-for-your-tests" aria-hidden="true">#</a>What this means for your tests</h2>
+<div class="callout warning"><p class="callout-title">Programs the agent starts cannot read .env either</p><p>The agent's OS sandbox is built from the same policy, so <code>npm test</code> or <code>pytest</code> started by the agent cannot open <code>.env</code> or <code>.env.test</code>. A test setup that loads them gets no values, or fails.</p></div>
+<p>Ways to handle it:</p>
+<ul><li>Keep values tests need that are not secret in a file that is not named <code>.env*</code>, such as <code>config/test.json</code>.</li><li>Run tests that need real secrets yourself, outside the agent.</li><li>Give the agent a token through the broker instead: <a href="keep-tokens-safe.html">Keep a token from the agent</a>.</li></ul>
+<h2 id="variables-you-export"><a class="anchor" href="#variables-you-export" aria-hidden="true">#</a>Variables you export</h2>
+<p>A variable set in the shell you start the agent from is still passed to the programs it runs. The agent cannot print a denied name, but a program it runs (a CLI, a test) can use the value and send it to an allowed host. Do not export production secrets in the shell you run an agent from, or broker them.</p>
+    </div>
+    <nav class="pager" aria-label="Previous and next"><a class="prev" href="local-services.html"><span>Previous</span>Dev servers, databases and Docker</a><a class="next" href="keep-tokens-safe.html"><span>Next</span>Keep a token from the agent</a></nav>
+    <p class="edit"><a href="https://github.com/crocodile-labs/openmoat.dev/blob/main/docs-src/env-files.md">Edit this page on GitHub</a></p>
+  </main>
+  <aside class="docs-toc" aria-label="On this page"><p class="side-title">On this page</p><ul><li><a href="#what-is-denied">What is denied</a></li><li><a href="#protect-a-variable-with-another-name">Protect a variable with another name</a></li><li><a href="#what-this-means-for-your-tests">What this means for your tests</a></li><li><a href="#variables-you-export">Variables you export</a></li></ul></aside>
+</div>
+
+<footer class="foot">
+  <div class="wrap wide">
+    <p><img class="foot-logo" src="../assets/logo.svg" alt="" width="22" height="22"> OpenMoat by Crocodile Labs · open source · no tracking, no cookies</p>
+    <ul>
+      <li><a href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+      <li><a href="index.html">Docs</a></li>
+      <li><a href="../blog/">Blog</a></li>
+      <li><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md">Security</a></li>
+    </ul>
+  </div>
+</footer>
+<script src="../docs.js"></script>
+</body>
+</html>

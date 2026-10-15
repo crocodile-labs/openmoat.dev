@@ -35,6 +35,10 @@ Every line is checked against the shipped policy on every change to OpenMoat.
 
 Hiding the action does not change the answer: a path in a shell variable (`d=~/.ssh; cat $d/id_rsa`), base64, `$'…'` escapes, a glob (`cat .e*`) and a symlink are checked as what they open.
 
+## Allowed means no prompt
+
+When OpenMoat allows a call it tells the agent so, and the agent runs it without its own prompt. That is why every `moat allow` matters: see [Every allow, and what it opens](allow-reference.html).
+
 ## Why most calls defer
 
 OpenMoat denies what must never happen and stays quiet about the rest. A call no rule names goes to your agent's own prompt, so you are not asked twice. The catch: in auto-approve modes there is no prompt, and a deferred call runs. See [Auto-approve and CI](auto-approve-and-ci.html).

@@ -2,10 +2,10 @@
 title: Let the agent use a site
 nav: Let the agent use a site
 summary: Give the agent network access to one host the policy does not list, such as a docs site or an API.
-when: a command like curl or a package tool is denied with `default.net`.
+when: a shell command like curl is denied with `default.net`.
 ---
 
-Outbound network access is denied by default: an unknown host is where a prompt injection would send your data. The default policy lists the hosts development needs (GitHub, npm, crates.io, PyPI, the Go proxy). Anything else is denied for shell commands:
+Outbound network access from shell commands is denied by default: an unknown host is where a prompt injection would send your data. The default policy lists the hosts development needs (GitHub, npm, crates.io, PyPI, the Go proxy). Anything else is denied:
 
 :::terminal
 moat: deny [default.net] — no rule matched net docs.rs
@@ -30,18 +30,32 @@ moat allow --site docs.rs
 
 ### Update the sandbox if moat asks you to
 
-Run `moat status`. If an agent's sandbox **differs from the policy**, run `moat sandbox sync` and start a new agent session, so sandboxed shell commands can reach the host too.
+Run `moat status`. If an agent's sandbox **differs from the policy**, run `moat sandbox sync` and start a new agent session, so sandboxed commands can reach the host too.
 
 ### Ask the agent to try again
+:::
 
-The agent can now reach `docs.rs`, with shell commands and web fetches.
+## What changes
+
+| The agent uses | Before | After |
+|---|---|---|
+| A web fetch tool (Claude Code `WebFetch`) on `docs.rs` | your agent's prompt | **allowed**, no prompt |
+| `curl https://docs.rs/serde` | denied | your agent's prompt, like any command the policy does not list |
+| `curl https://www.docs.rs/` | denied | still denied: another host |
+
+:::impact
++ Requests to exactly `docs.rs`, from fetch tools and from shell commands
++ Sandboxed commands may connect to it (after `moat sandbox sync`)
+= Every other host stays denied, subdomains included
+= Secrets are still denied, so the agent cannot read a key to send there
+! The host can receive whatever the agent sends it. Never allow paste sites, webhook catchers or file-sharing hosts
+! OpenMoat checks the host, not the data inside HTTPS
 :::
 
 ## Good to know
 
-- **One exact host.** `docs.rs` does not cover `www.docs.rs` or `api.docs.rs`; allow each one. Wildcards, URLs and ports are refused here: write those with `moat edit` ([Change the rules](change-the-rules.html)).
-- **Web fetch tools are not denied.** A Claude Code `WebFetch` of an unlisted site goes to Claude Code's own prompt instead, because a fetch tool cannot send a request body. `curl` can, so it is denied.
-- **Allowed hosts can still receive data.** OpenMoat checks the host, not what is sent to it. Allow hosts you trust.
+- **One exact host.** Wildcards, URLs and ports are refused here; write those with `moat edit` ([Change the rules](change-the-rules.html)).
+- **Already allowed:** `github.com`, `api.github.com`, `registry.npmjs.org`, `crates.io`, `static.crates.io`, `index.crates.io`, `proxy.golang.org`, `pypi.org`, `files.pythonhosted.org`.
 
 ## Undo it
 

@@ -12,6 +12,7 @@ headings, paragraphs, `-` and `1.` lists, tables, fenced code, `inline code`,
     :::cards            a grid of `- [Title](href) description` items
     :::tabs             `@tab Name` starts each tab
     :::terminal         output as the agent or the terminal shows it
+    :::impact           what an allow changes: `+ opens`, `= stays protected`, `! think about`
 """
 import html
 import os
@@ -23,11 +24,12 @@ OUT = 'docs'
 REPO = 'https://github.com/crocodile-labs/openmoat.dev/blob/main/docs-src/'
 
 NAV = [
-    ('Get started', ['index', 'quickstart', 'how-it-decides']),
-    ('Everyday use', ['blocked', 'work-across-repos', 'allow-a-site', 'keep-tokens-safe',
+    ('Get started', ['index', 'quickstart', 'how-it-decides', 'the-project']),
+    ('Everyday use', ['blocked', 'work-across-repos', 'allow-a-site', 'local-services',
+                      'env-files', 'keep-tokens-safe', 'github', 'cloud-clis', 'packages',
                       'see-what-happened', 'check-a-command']),
     ('Set up', ['change-the-rules', 'team-rules', 'auto-approve-and-ci', 'upgrade', 'turn-off']),
-    ('Help', ['troubleshooting', 'commands', 'limits']),
+    ('Reference', ['allow-reference', 'commands', 'troubleshooting', 'limits']),
 ]
 
 
@@ -127,6 +129,17 @@ def component(page, name, arg, body):
             name, inline(title), blocks(page, body))
     if name == 'terminal':
         return terminal(body)
+    if name == 'impact':
+        groups = {'+': [], '=': [], '!': []}
+        for line in body:
+            if line[:2] in ('+ ', '= ', '! '):
+                groups[line[0]].append(line[2:])
+        cols = [('+', 'opens', 'What this opens'), ('=', 'keeps', 'What stays protected'),
+                ('!', 'think', 'Think about')]
+        return '<div class="impact">%s</div>' % ''.join(
+            '<div class="impact-col %s"><p class="impact-title">%s</p><ul>%s</ul></div>' % (
+                cls, title, ''.join('<li>%s</li>' % inline(t) for t in groups[key]))
+            for key, cls, title in cols if groups[key])
     if name == 'steps':
         items, cur = [], None
         for line in body:

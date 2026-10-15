@@ -1,0 +1,46 @@
+---
+title: .env files and environment variables
+nav: .env and variables
+summary: Which secrets in files and variables the agent can never read, which it can, and how to protect your own.
+when: your project uses .env files, or secrets live in environment variables.
+---
+
+## What is denied
+
+| The agent tries | Answer |
+|---|---|
+| `cat .env`, `source .env`, `cat .env.test`, `cat config/.env.local` | deny: `secrets-paths` (any `.env` or `.env.*`, at any depth) |
+| `cat .envrc` | deny |
+| `cat .env.example`, `.env.sample`, `.env.template` | allow: committed templates carry no values |
+| `echo $OPENAI_API_KEY`, `$GITHUB_TOKEN`, `$AWS_SECRET_ACCESS_KEY` | deny: `env-secrets` |
+| `printenv`, `env`, `export -p`, `cat /proc/self/environ` | deny: `env-dump` |
+| `echo $DATABASE_URL` | **defer**: the name does not look like a secret |
+
+Variable names that are denied: anything ending in `_KEY`, `_TOKEN`, `_SECRET` or `_PASSWORD`, anything starting with `AWS_`, and `GITHUB_TOKEN`, `NPM_TOKEN`.
+
+## Protect a variable with another name
+
+`DATABASE_URL`, `REDIS_URL` or `SENTRY_DSN` often hold a password, but their names do not say so. Deny them yourself with `moat edit`:
+
+```yaml
+deny:
+  - id: my-secret-vars
+    reason: these hold credentials
+    env.read: ["DATABASE_URL", "REDIS_URL", "SENTRY_DSN"]
+```
+
+## What this means for your tests
+
+:::warning Programs the agent starts cannot read .env either
+The agent's OS sandbox is built from the same policy, so `npm test` or `pytest` started by the agent cannot open `.env` or `.env.test`. A test setup that loads them gets no values, or fails.
+:::
+
+Ways to handle it:
+
+- Keep values tests need that are not secret in a file that is not named `.env*`, such as `config/test.json`.
+- Run tests that need real secrets yourself, outside the agent.
+- Give the agent a token through the broker instead: [Keep a token from the agent](keep-tokens-safe.html).
+
+## Variables you export
+
+A variable set in the shell you start the agent from is still passed to the programs it runs. The agent cannot print a denied name, but a program it runs (a CLI, a test) can use the value and send it to an allowed host. Do not export production secrets in the shell you run an agent from, or broker them.

@@ -322,3 +322,14 @@ td .pill { margin-top: 2px; }
   .side-menu > summary { display: list-item; cursor: pointer; font-weight: 600; }
   .side-menu[open] > summary { margin-bottom: 8px; }
 }
+.impact { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.impact-col { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 15px; }
+.impact-col ul { padding-left: 18px !important; margin: 8px 0 0; }
+.impact-col li + li { margin-top: 6px; }
+.impact-title { font-weight: 700; font-size: 14px; }
+.impact-col.opens { background: var(--allow-bg); }
+.impact-col.opens .impact-title { color: var(--allow); }
+.impact-col.keeps { background: var(--defer-bg); }
+.impact-col.keeps .impact-title { color: var(--defer); }
+.impact-col.think { background: var(--ask-bg); }
+.impact-col.think .impact-title { color: var(--ask); }

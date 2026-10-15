@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The project folder · OpenMoat docs</title>
+<meta name="description" content="Most of what the agent may do freely is tied to one folder, the project. Here is how OpenMoat finds it.">
+<meta property="og:title" content="The project folder · OpenMoat docs">
+<meta property="og:description" content="Most of what the agent may do freely is tied to one folder, the project. Here is how OpenMoat finds it.">
+<meta property="og:image" content="https://openmoat.dev/assets/logo.png">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/logo.png" type="image/png">
+<link rel="stylesheet" href="../style.css">
+<script>document.documentElement.className = 'js';</script>
+</head>
+<body class="docs">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div class="wrap wide">
+    <a class="brand" href="../"><img src="../assets/logo.svg" alt="" width="34" height="34"> OpenMoat <span class="ver">docs</span></a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="index.html" aria-current="page">Docs</a></li>
+        <li><a href="quickstart.html">Install</a></li>
+        <li><a href="../blog/">Blog</a></li>
+        <li><a class="gh" href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap wide docs-layout">
+  <nav class="docs-side" aria-label="Documentation">
+    <details class="side-menu" open><summary>Menu</summary><p class="side-title">Get started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="quickstart.html">Quick start</a></li><li><a href="how-it-decides.html">How it decides</a></li><li><a href="the-project.html" aria-current="page">The project folder</a></li></ul><p class="side-title">Everyday use</p><ul><li><a href="blocked.html">Something was blocked</a></li><li><a href="work-across-repos.html">Work across several repos</a></li><li><a href="allow-a-site.html">Let the agent use a site</a></li><li><a href="local-services.html">Local services</a></li><li><a href="env-files.html">.env and variables</a></li><li><a href="keep-tokens-safe.html">Keep a token from the agent</a></li><li><a href="github.html">GitHub and gh</a></li><li><a href="cloud-clis.html">Cloud CLIs and SSH</a></li><li><a href="packages.html">Install and publish</a></li><li><a href="see-what-happened.html">See what the agent did</a></li><li><a href="check-a-command.html">Check a command first</a></li></ul><p class="side-title">Set up</p><ul><li><a href="change-the-rules.html">Change the rules</a></li><li><a href="team-rules.html">Share rules with your team</a></li><li><a href="auto-approve-and-ci.html">Auto-approve and CI</a></li><li><a href="upgrade.html">Upgrade</a></li><li><a href="turn-off.html">Turn it off</a></li></ul><p class="side-title">Reference</p><ul><li><a href="allow-reference.html">Every allow and its impact</a></li><li><a href="commands.html">Commands</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="limits.html">Limits</a></li></ul></details>
+  </nav>
+  <main id="main" class="docs-main">
+    <p class="crumb">Get started</p>
+    <h1>The project folder</h1>
+    <p class="doc-lead">Most of what the agent may do freely is tied to one folder, the project. Here is how OpenMoat finds it.</p>
+    <div class="when"><strong>Read this when</strong> you wonder why a file is allowed in one place and goes to a prompt in another, or you work in a monorepo, a worktree or a submodule.</div>
+    <div class="doc-body">
+<p>The default policy lets the agent read and edit everything inside the <strong>project</strong> (rule <code>project-fs</code>). Outside it, file access goes to your agent's own prompt, and secrets stay denied everywhere.</p>
+<h2 id="how-the-project-is-found"><a class="anchor" href="#how-the-project-is-found" aria-hidden="true">#</a>How the project is found</h2>
+<p>OpenMoat starts at the folder the agent session runs in and walks up to the nearest folder that holds <code>.git</code>, the root of the git repository.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">You start the agent in</th><th scope="col">The project is</th></tr></thead><tbody><tr><td><code>~/work/app</code> (a git repository)</td><td><code>~/work/app</code></td></tr><tr><td><code>~/work/app/packages/api</code> (inside that repository)</td><td><code>~/work/app</code>, the whole repository</td></tr><tr><td><code>~/scratch/notes</code> (no git anywhere above it)</td><td><code>~/scratch/notes</code>, that folder only</td></tr><tr><td>A git worktree (<code>.git</code> is a file there)</td><td>The worktree's folder</td></tr><tr><td>A submodule of <code>~/work/app</code></td><td>The submodule only, because it has its own <code>.git</code></td></tr><tr><td>Your home folder, or a dotfiles repository in it</td><td><strong>No project</strong>: nothing is allowed as project files</td></tr></tbody></table></div>
+<div class="callout warning"><p class="callout-title">Home is never a project</p><p>A project that is your home folder, or a folder above it, would let the agent edit <code>~/.gitconfig</code> or your login items freely. OpenMoat refuses such a root: start the agent in a project folder.</p></div>
+<h2 id="what-the-project-gives-the-agent"><a class="anchor" href="#what-the-project-gives-the-agent" aria-hidden="true">#</a>What the project gives the agent</h2>
+<div class="impact"><div class="impact-col opens"><p class="impact-title">What this opens</p><ul><li>Read and edit every file in the project</li><li>Builds, tests and everyday git commands there (<code>dev-shell</code>)</li></ul></div><div class="impact-col keeps"><p class="impact-title">What stays protected</p><ul><li><code>.env</code>, <code>.envrc</code> and keys in the project stay denied</li><li>Writes into <code>.git</code> (hooks, config) ask first: git runs them later, outside any sandbox</li><li><code>.moat</code>, <code>.claude</code> and other agent settings stay denied</li></ul></div><div class="impact-col think"><p class="impact-title">Think about</p><ul><li>A folder next to the project is outside it: see <a href="work-across-repos.html">Work across several repos</a></li></ul></div></div>
+<h2 id="monorepos"><a class="anchor" href="#monorepos" aria-hidden="true">#</a>Monorepos</h2>
+<p>Start the agent anywhere in the repository: the project is the whole repository, so the agent can work across packages without any setting. To keep it to one package, start it in a copy or worktree of just that package, or add a rule of your own with <code>moat edit</code>.</p>
+    </div>
+    <nav class="pager" aria-label="Previous and next"><a class="prev" href="how-it-decides.html"><span>Previous</span>How it decides</a><a class="next" href="blocked.html"><span>Next</span>Something was blocked</a></nav>
+    <p class="edit"><a href="https://github.com/crocodile-labs/openmoat.dev/blob/main/docs-src/the-project.md">Edit this page on GitHub</a></p>
+  </main>
+  <aside class="docs-toc" aria-label="On this page"><p class="side-title">On this page</p><ul><li><a href="#how-the-project-is-found">How the project is found</a></li><li><a href="#what-the-project-gives-the-agent">What the project gives the agent</a></li><li><a href="#monorepos">Monorepos</a></li></ul></aside>
+</div>
+
+<footer class="foot">
+  <div class="wrap wide">
+    <p><img class="foot-logo" src="../assets/logo.svg" alt="" width="22" height="22"> OpenMoat by Crocodile Labs · open source · no tracking, no cookies</p>
+    <ul>
+      <li><a href="https://github.com/crocodile-labs/openmoat">GitHub</a></li>
+      <li><a href="index.html">Docs</a></li>
+      <li><a href="../blog/">Blog</a></li>
+      <li><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md">Security</a></li>
+    </ul>
+  </div>
+</footer>
+<script src="../docs.js"></script>
+</body>
+</html>

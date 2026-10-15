@@ -28,6 +28,21 @@ Each guide starts from a situation you will meet, shows what you see, and gives 
 - [Change the rules](change-the-rules.html) Edit the policy safely: checked, diffed, and undoable.
 :::
 
+## Common setups
+
+:::cards
+- [The project folder](the-project.html) What the agent may do freely, and how monorepos, worktrees and submodules count.
+- [.env and variables](env-files.html) Which secrets in files and variables are denied, and how to add your own.
+- [GitHub and gh](github.html) Commits, pushes, pull requests and the gh token.
+- [Local services](local-services.html) Dev servers, databases and Docker.
+- [Cloud CLIs and SSH](cloud-clis.html) Why aws, kubectl and ssh cannot use your credentials from the agent.
+- [Install and publish](packages.html) Installs, install scripts and publishing.
+:::
+
+:::tip Before you allow anything
+[Every allow, and what it opens](allow-reference.html) puts each `moat allow` side by side: what it covers, how long it lasts and what stays protected.
+:::
+
 ## What it is not
 
 :::note
