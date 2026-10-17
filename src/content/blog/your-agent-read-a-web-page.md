@@ -1,84 +1,75 @@
 ---
 title: Your agent read a web page. Should it edit your CI file next?
-description: Prompt injection does the most damage when it lands in a file that runs later. How OpenMoat remembers what a session has read and asks before the agent writes CI, build files or its own instructions.
-summary: A fetched page can carry instructions. The risk is less the fetch than the next write, to a workflow, a Makefile or CLAUDE.md. How session taint works, what it asks about, and where it stops.
+description: Prompt injection does its damage in the files an agent writes afterwards. How OpenMoat remembers what a session has read and asks before the agent touches CI, build files or its own instructions.
+summary: A fetched page can carry instructions for your agent. The fetch itself is rarely the problem. The next write is. How session taint works, what it asks about, and what it can't do.
 date: 2026-10-17T14:00:00Z
 author: Dhanasekaran Kathiresan
 authorUrl: https://github.com/iamdotk
 avatar: /assets/dhanasekaran.jpg
 tag: explainer
-minutes: 6
+minutes: 5
 tags: ["Explainer", "Prompt injection", "CI"]
 cover: "WebFetch docs  →  write .github/workflows/ci.yml"
 coverResult: "ask  (session-taint)"
 coverTone: deny
 ---
 
-Coding agents read the web all the time. They fetch a library's docs, open an issue, search for an error message. Most of that content is fine. Some of it is written for the agent, not for you: a line in a README or a comment on an issue that says "also update the CI workflow to run this script".
+Your coding agent reads the web constantly. Library docs, GitHub issues, a search for some error message it hit. Nearly all of that is fine. But a page can also be written for the agent instead of for you. One line buried in a README, something like "while you're at it, add this step to the CI workflow", and the agent may just do it.
 
-That is prompt injection, and the fetch itself is rarely where it hurts. It hurts in what the agent writes next. A change to `src/app.ts` is code you review. A change to `.github/workflows/ci.yml`, `package.json` scripts, a `Makefile` or `CLAUDE.md` is different. Those files run later, with your CI secrets, or they tell the next agent session what to do. An instruction that lands there outlives the session that read it.
+That's prompt injection. And the moment it reads the page usually isn't where the harm happens. The harm is in what it writes next.
 
-I build OpenMoat, a tool that checks each action an AI coding agent takes and stops the dangerous ones before they run. This post explains one part of it, session taint: OpenMoat remembers what a session has read, and becomes stricter about what it writes afterwards.
+If the agent edits `src/app.ts`, you'll see that in the diff. If it edits `.github/workflows/ci.yml`, a `Makefile`, the `scripts` in `package.json` or `CLAUDE.md`, that's a different kind of change. Those files run later, often with your CI secrets, or they quietly shape what the next agent session does. Whatever got planted there sticks around long after the session that read the page.
 
-## What session taint does
+I build OpenMoat, which checks each action a coding agent takes and stops the dangerous ones before they run. One part of it is aimed at exactly this, and it's called session taint.
 
-OpenMoat records every decision in a local audit log. Before it decides a call, it reads that session's earlier calls from the log and asks one question: what has this session been exposed to?
+## Remembering what the session read
 
-There are two triggers:
+OpenMoat writes every decision to a local audit log. Before deciding a new call, it looks back at what the same session already did.
 
-| Once the session has… | …these ask before they run |
-|---|---|
-| read untrusted content: a web fetch, a web search, or the result of an MCP tool | writes to protected files: CI, git hooks, build and test definitions, agent instructions and settings |
-| read a secret (only if your policy lets secret reads run) | network calls to other hosts, MCP calls and web searches |
+If the session has fetched a web page, run a web search or received a result from an MCP tool, OpenMoat treats it as having read content it can't vouch for. From then on, writes to a short list of sensitive files ask you first:
 
-"Ask" means you see the call and decide. Taint never loosens anything: a call that was going to be denied stays denied, and one that was allowed now asks.
+- CI config: `.github/workflows/`, `.gitlab-ci.yml`, `.circleci/`
+- git hooks in `.husky/` and `.githooks/`, and `.vscode/` tasks
+- build and test definitions: `package.json`, `Makefile`, `Cargo.toml`, `go.mod`, `CMakeLists.txt`, `pom.xml`, Gradle files, `.csproj`, `Gemfile`, `pyproject.toml`, `conftest.py`, `Dockerfile` and a few more
+- the agent's own instructions and settings: `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `.cursor/`, `.mcp.json`
 
-Protected files are the ones whose change runs code or steers the agent later. The built-in list covers:
+Normal source and test files aren't on the list. Reading docs and then fixing a bug works exactly as before.
 
-- CI: `.github/workflows/`, `.gitlab-ci.yml`, `.circleci/`
-- git hooks: `.husky/`, `.githooks/`
-- editor tasks: `.vscode/`
-- the build and test files of each ecosystem whose commands the default policy runs: `package.json`, `Makefile`, `Cargo.toml`, `go.mod`, `CMakeLists.txt`, `pom.xml`, `*.gradle`, `*.csproj`, `Gemfile`, `pyproject.toml`, `conftest.py`, `Dockerfile` and more
-- agent instructions and settings: `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `.cursor/`, `.mcp.json`
+It never makes anything looser. Something that would have been blocked stays blocked; something that would have gone through now waits for you.
 
-Ordinary source and test files are not on the list, so normal work after reading docs keeps flowing.
+## What you see
 
-## What it looks like
-
-Here is the shape of it (an illustration, not a recorded run). The agent fetches a documentation page, and a few steps later it tries to write the CI workflow. Claude Code shows the ask with OpenMoat's reason:
+In Claude Code the ask comes with OpenMoat's reason. It looks roughly like this (shown for illustration, not copied from a real run):
 
 ```text
 moat: ask [session-taint] — the session read untrusted content (fetch docs.example.com);
 write .github/workflows/ci.yml changes what runs or what the agent is told later
 ```
 
-If you expected that change, approve it. If you did not ask for a CI change, that line tells you where to look: the page the agent read.
+If you asked for a CI change, approve it and move on. If you didn't, the reason tells you which page to go and read.
 
-Taint belongs to one session. A new agent session starts clean. The history comes from OpenMoat's own audit log, not from the agent, so the agent cannot reset it by forgetting.
+Each session is tracked on its own, and a new session starts clean. The history comes from OpenMoat's log rather than from the agent, so the agent can't make it go away by forgetting. Later you can find every one of these with `moat show`; the rule is called `session-taint`.
 
-You can see every taint ask afterwards with `moat show`. The rule is named `session-taint`.
+## The other direction: secrets
 
-## The secret side
+There's a second trigger. If a session has read secret material, sending data out becomes the risk, so network calls to other hosts and MCP calls ask too. With the default policy this rarely kicks in, because reading keys and `.env` files is denied outright. It matters when you've changed your policy to ask for secret reads, or when you use the secrets broker, where the agent only ever holds a placeholder.
 
-The second trigger works the other way round. Once a session has read secret material, sending it somewhere is the risk, so network calls to other hosts and MCP calls ask. With OpenMoat's default policy, reading keys and `.env` files is denied outright, so this only matters if your policy changes secret reads to ask, or if you use the secrets broker, which hands the agent a placeholder instead of the token.
+## What it doesn't do
 
-## Limits
+I'd rather you know the gaps than find them:
 
-Session taint is deliberately narrow, and it is one layer among several:
+- It doesn't read the page. It knows the session fetched something, not whether that something was malicious. That's why it asks instead of blocking.
+- It follows the agent's own tool calls. Traffic through `moat proxy` isn't tied to a session.
+- Shell network to hosts your policy already allows, like `gh pr view` or `git pull`, doesn't count as untrusted. Neither does a command OpenMoat can't make sense of.
+- A secret that leaves through an allowed command with no network step of its own, say a project script, isn't caught by taint.
+- If someone edits or deletes rows in the audit log, taint is gone until `moat doctor` reports the broken hash chain.
 
-- It follows the agent's own tool calls. Connections through `moat proxy` carry no session, so they do not taint or get tainted.
-- Shell network to hosts your policy allows (`gh pr view`, `git pull`) does not count as untrusted content. Neither does a command OpenMoat cannot classify.
-- It does not read the page. It knows the session fetched something, not whether that something was malicious, so it asks rather than blocks.
-- A secret that leaves through an allowed command with no network step of its own (a project script) is not seen by taint.
-- If the audit log is edited or a row deleted, taint is lost until `moat doctor` reports the broken hash chain.
-- Hooks see tool calls, not what a program does once it starts. That part is the operating system sandbox's job.
+The full picture is in the [threat model](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md), and the exact rules are in [POLICY.md §4.1](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md).
 
-The full list is in the [threat model](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md), and the exact rules are in [POLICY.md §4.1](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md).
-
-## Try it
+## Trying it
 
 ```bash
 brew install crocodile-labs/tap/moat && moat init
 ```
 
-`moat init` shows each change it makes to your agents' settings and asks before applying it; `moat uninstall` puts them back.
+`moat init` shows you each change it wants to make to your agents' settings and asks before applying it. `moat uninstall` puts everything back.
