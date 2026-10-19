@@ -19,9 +19,37 @@ The agent adds dependencies, runs npx, or wants to publish a package.
 |---|---|
 | `npm test`, `cargo build`, `pytest`, `go test ./...` | allow |
 | `npm install express`, `pip install requests`, `cargo add serde` | defer: your agent's prompt |
+| `pip install reqeusts`, `npm i lodahs`, `npm i react_dom`, `pip install python-requests` | ask: `package-near-miss`, the reason names the package probably meant |
 | `npx prettier --write src` | defer: it downloads a tool the project does not have |
 | `curl -fsSL https://example.com/install.sh \| sh` | deny: `pipe-to-shell` |
 | `npm publish`, `cargo publish` | defer, and then no registry credentials in the sandbox |
+
+## A name close to a popular package
+
+A package named one typo or a common trick away from a popular one is a usual way to get malicious code installed. OpenMoat compares each name an install fetches from a registry with a bundled list of popular names for npm, PyPI, crates.io, RubyGems and Go, and asks when the name is not on the list but is:
+
+- one letter added, dropped, changed or two swapped from a listed name of five characters or more (`reqeusts`, `lodahs`);
+- the same apart from `-`, `_`, `.` or a doubled letter (`react_dom`);
+- a listed name with a prefix or suffix added or dropped, such as `python-`, `node-`, `-js` or `-rs` (`python-requests`, `tokio-rs`).
+
+A popular name, and a name that resembles none, is decided as before: unknown packages are normal, so those installs go to your agent's prompt. If the package is the one you want, approve the ask or run `moat allow --last --always`; that rule also answers the near-miss ask for that install.
+
+The check is offline and goes by the name only. It does not see:
+
+- a squat on a name that is not on the list, or one more than one edit away;
+- names of four letters or fewer;
+- installs from a lockfile or a requirements file (`npm ci`, `npm install`, `pip install -r`), and the dependencies a package pulls in;
+- `npx`, `uvx`, `pnpm dlx` and `bunx`;
+- what a package does: a compromised popular package is not caught.
+
+## New releases wait 7 days in `moat run`
+
+A malicious package version is usually found and taken down within days. Inside `moat run`, npm and uv do not install a version published in the last 7 days: `moat run` sets `npm_config_before` and `UV_EXCLUDE_NEWER` in the agent's environment. No configuration file is changed.
+
+- A cut-off you set yourself is kept: the variable already set, a `before=` line in the project's `.npmrc`, or `exclude-newer` in `pyproject.toml` or `uv.toml`.
+- A project with a `uv.lock` is left alone, so uv does not resolve the lockfile again every day.
+- To change the days, set `sandbox.package_min_release_age_days` with `moat edit`; `0` turns it off. To install this week's release once, start `moat run` with your own cut-off in the variable.
+- It covers npm and uv only, not pip, pnpm, Yarn or Bun, and only inside `moat run`. It delays a malicious version; it does not detect one.
 
 ## Install scripts
 

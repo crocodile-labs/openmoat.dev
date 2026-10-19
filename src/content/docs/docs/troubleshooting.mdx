@@ -29,6 +29,24 @@ A change to one of Claude Code's own settings, such as a permission list or mode
 
 </Aside>
 
+A [policy pack](/docs/team-rules/#signed-policy-packs) you installed is pinned the same way, and so are the keys you trusted: a change to a file in `~/.moat/policy.d/packs/` or to `~/.moat/allowed_signers` blocks every call too. `moat doctor` names the file.
+
+## `moat policy install` refuses a pack
+
+The signature did not verify, or it was made by a key you have not trusted. Check that `<pack>.yaml.sig` belongs to that exact file and was made with `-n openmoat-policy`, then trust the signer's key with `moat policy trust-key <key.pub> --name <who>`. The commands need the system `ssh-keygen` from OpenSSH 8.1 or later. See [Signed policy packs](/docs/team-rules/#signed-policy-packs).
+
+## A repository's allow rules stopped applying after `moat trust`
+
+Your policy has `require_signed_repo_policy: true`, so only a signature by a trusted key lets a repository policy allow. `moat status` in the project says `not signed by a trusted key: tightening only`. Ask the maintainer to sign `.moat/policy.yaml`, or remove the setting with `moat edit`.
+
+## `moat audit verify --against` fails
+
+An event that an anchor recorded is no longer in the log, or has another hash: the log was cut short or rewritten after you anchored it. The message names the first such anchor. Look at the events around it with `moat show`, and keep the database file as it is while you find out what changed it.
+
+## An older `moat` cannot open the audit log
+
+The audit database now records file provenance (schema version 4), and builds before that change cannot open it. Upgrade every `moat` on the machine to the same release.
+
 ## An MCP server's tools are denied with `mcp-server-changed`
 
 Its definition changed, or it was added, since you last accepted the agents' MCP servers. Run `moat mcp accept <server>`: it shows the change and asks. See [MCP servers](/docs/mcp-servers/).

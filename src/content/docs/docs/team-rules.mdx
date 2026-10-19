@@ -1,6 +1,6 @@
 ---
 title: "Share rules with your team"
-description: "Commit rules to a repository so everyone who works there, with any agent, gets them."
+description: "Commit rules to a repository so everyone who works there, with any agent, gets them, or install a signed policy pack for every project."
 sidebar:
   label: "Share rules with your team"
   order: 1
@@ -10,7 +10,7 @@ import { Aside, Steps } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
-Your team wants the same guard rails in a repository, or a repository needs an allow everyone shares.
+Your team wants the same guard rails in a repository or in every project, or a repository needs an allow everyone shares.
 
 </Aside>
 
@@ -50,5 +50,60 @@ Your team wants the same guard rails in a repository, or a repository needs an a
 <Aside type="note">
 
 Any later change to the file drops it back to deny and ask only, until you trust it again. A file that does not parse denies every call in the project until it is fixed. Repository rules apply in the hook, not in the agents' OS sandboxes.
+
+</Aside>
+
+## Signed policy packs
+
+A policy pack is a team's rules that each person installs once, for every project. It has the same shape as a repository policy (`version`, `deny`, `ask` and `allow`) and comes with an OpenSSH signature. OpenMoat installs a pack only when the signature verifies against a key you trusted.
+
+<Steps>
+
+1. **The maintainer signs the pack**
+
+   ```bash
+   ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n openmoat-policy team.yaml   # writes team.yaml.sig
+   ```
+
+2. **Each person trusts the maintainer's public key, once**
+
+   ```bash
+   moat policy trust-key alice.pub --name alice@example.com
+   ```
+
+   It prints the key's fingerprint and trusts the key for policy only (the `openmoat-policy` namespace), so the same key's signature on a git commit is never taken as a policy signature.
+
+3. **Install the pack**
+
+   ```bash
+   moat policy install team.yaml               # the signature defaults to team.yaml.sig
+   moat policy install team.yaml --sig other.sig --name team
+   moat policy remove team                     # take it out again
+   ```
+
+   A signature that does not verify, or one from a key you did not trust, is refused and nothing is written.
+
+</Steps>
+
+The pack's rules show up as `pack:<name>:<id>`, such as `pack:team:no-deploy`. Its deny rules join yours, its ask rules come before your allow rules, and its allow rules come after yours, so your deny rules still win. Deny and allow rules also reach the agents' sandboxes at the next `moat sandbox sync`; ask rules apply in the hook only.
+
+The installed pack is pinned by the lock: a pack changed after install blocks every call with `kernel-integrity` until you look. Verification uses the system `ssh-keygen` (OpenSSH 8.1 or later); without it the three commands refuse and nothing else changes. Agents cannot run them.
+
+### Require a signature on repository policies
+
+With this line in your own policy (`moat edit`), a signature decides whether a repository policy may allow, instead of `moat trust`:
+
+```yaml
+require_signed_repo_policy: true
+```
+
+- A repository policy signed by a key you trusted (`.moat/policy.yaml.sig` beside it) has its allow rules applied, without `moat trust`.
+- An unsigned one, one signed by another key, or one changed after signing gets deny and ask only, even after `moat trust`.
+
+Sign it the same way: `ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n openmoat-policy .moat/policy.yaml`. Without the setting, which is the default, a signature changes nothing and `moat trust` decides. `moat status`, run in the project, says which applies, for example `trusted: signed by alice@example.com`.
+
+<Aside type="caution" title="What a signature proves">
+
+That a key you trusted signed those exact bytes, not that the signer meant well. Anyone holding the signing key can sign packs you will install, so keep it as you keep any key that can change your rules.
 
 </Aside>

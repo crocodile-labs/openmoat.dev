@@ -65,8 +65,22 @@ moat audit export --since 7d > week.jsonl   # events as JSON Lines, with their c
 moat audit verify week.jsonl                # check it was not changed, without the database
 ```
 
+## Keep a record outside the log
+
+Every event is hash-chained to the one before, so a change in the middle of the log shows. But someone who can write the log file can delete its newest events and leave a shorter log that still checks out. To catch that later, record the log's head somewhere else now and then:
+
+```bash
+moat audit anchor --git ~/notes            # a commit on refs/moat/anchors in that repository
+moat audit anchor --file ~/anchors.jsonl   # or one line appended to a file you keep
+moat audit verify --against ~/notes        # later: check today's log against every anchor
+```
+
+An anchor holds the newest event's id, its hash and the time. Nothing is pushed or sent anywhere: an anchor is only as safe as where you keep it, so push the ref (`git -C ~/notes push origin refs/moat/anchors`) or copy the file to another machine.
+
+`moat audit verify --against` fails when an anchored event was deleted or rewritten, and names the first such anchor. Events after the newest anchor are not covered. `moat doctor` shows when you last anchored. The agent cannot run `moat audit anchor` (`kernel-self`).
+
 <Aside type="tip" title="Private by design">
 
-The log is a SQLite file in `~/.moat`. Credentials are redacted before anything is stored, and nothing leaves your machine unless you export it.
+The log is a SQLite file in `~/.moat`. Credentials are redacted before anything is stored, and nothing leaves your machine unless you export or anchor it somewhere that does. The agent's own reads and writes of the log file are denied (`kernel-self`).
 
 </Aside>

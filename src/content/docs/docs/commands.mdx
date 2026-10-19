@@ -37,6 +37,8 @@ Run these in your own terminal. The ones that change what agents may do need a t
 | `moat replay --since today` | Each agent session as a timeline |
 | `moat report --since 7d` | Totals, hosts, top rules, asks per hour |
 | `moat audit export` · `moat audit verify <file>` | Export events with their chain hashes · check an export |
+| `moat audit anchor --git <repo>` · `--file <path>` | Record the log's head outside it: a commit on `refs/moat/anchors` in that repository, or a line appended to that file; nothing is sent anywhere |
+| `moat audit verify --against <repo or file>` | Check the log against every anchor there; fails, naming the first anchor whose event is gone or changed ([Keep a record outside the log](/docs/see-what-happened/#keep-a-record-outside-the-log)) |
 
 ## Set up and maintain
 
@@ -49,6 +51,8 @@ Run these in your own terminal. The ones that change what agents may do need a t
 | `moat policy upgrade` | Take what a new release's default adds, keeping your edits |
 | `moat sandbox show` · `moat sandbox sync` | The sandbox settings the policy compiles to · write them for your agents |
 | `moat trust [--revoke]` | Let a repository's `.moat/policy.yaml` allow |
+| `moat policy trust-key <key.pub> --name <who>` | Trust an SSH public key to sign policy packs, and repository policies where the policy asks for signed ones |
+| `moat policy install <pack.yaml> [--sig <file>] [--name <name>]` · `moat policy remove <name>` | Install a signed policy pack once its signature verifies; its rules apply as `pack:<name>:<id>` · take it out ([Signed policy packs](/docs/team-rules/#signed-policy-packs)) |
 | `moat mcp accept [<server>]` | Review a changed or new MCP server, or tools `moat mcp proxy` holds, and accept them ([MCP servers](/docs/mcp-servers/)) |
 | `moat mcp wrap [<server>…] [--sandbox]` · `moat mcp unwrap` | Run stdio MCP servers through `moat mcp proxy`, which pins each tool's description · point them back |
 | `moat uninstall [--hosts …] [--purge]` | Remove OpenMoat and restore every settings file |
