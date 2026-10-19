@@ -38,7 +38,7 @@ export default defineConfig({
       sidebar: [
         group('Get started', ['index', 'quickstart', 'how-it-decides', 'the-project']),
         group('Everyday use', ['blocked', 'work-across-repos', 'allow-a-site', 'local-services', 'env-files',
-          'keep-tokens-safe', 'github', 'cloud-clis', 'packages', 'see-what-happened', 'check-a-command']),
+          'keep-tokens-safe', 'github', 'mcp-servers', 'cloud-clis', 'packages', 'see-what-happened', 'check-a-command']),
         group('Set up', ['change-the-rules', 'team-rules', 'auto-approve-and-ci', 'upgrade', 'turn-off']),
         group('Reference', ['allow-reference', 'commands', 'troubleshooting', 'limits']),
       ],
