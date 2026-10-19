@@ -49,7 +49,7 @@ Before a `git push` or `gh pr create` runs, OpenMoat reads the commits it would 
 |---|---|
 | A known token format (GitHub, OpenAI and Anthropic, AWS access key ids, Slack, Google API, npm, GitLab) or the value of a [brokered secret](/docs/keep-tokens-safe/) | deny: `push-secret`. The reason names the commit, the file and the kind of token, never the value |
 | A change to a CI workflow or another file that runs later, in a session that read untrusted content or a secret | ask: `push-runs-later` |
-| A push it cannot check within 2 s or 8 MiB, or in a repository it cannot tell | ask: `push-unchecked` |
+| A push it cannot check within 10 s or 8 MiB, or in a repository it cannot tell | ask: `push-unchecked` |
 | Nothing | the push is decided as before |
 
 A token added and removed again inside the push still denies: the push sends both commits. Remove it from the commits, or push from your own terminal. Codex cannot ask, so the two asks reach it as a deny, and `moat allow --last` does not answer them.
