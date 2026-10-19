@@ -56,4 +56,11 @@ A new OpenMoat release is out, or `moat` says "policy update available".
 
 </Steps>
 
+<Aside type="note" title="Upgrading to 0.5.7">
+
+- **Run `moat init` once.** Claude Code's hook shows as out of date until you do: it now also receives MCP resource reads, worktree entries and skills, and with Claude Code 2.1.295 or later it gets `"onFailure": "block"`, so a call is blocked when `moat` cannot start, crashes or times out. `moat init` also pins your agents' MCP servers ([MCP servers](/docs/mcp-servers/)).
+- **Run `moat policy upgrade`** to get `token-egress` and `placeholder-egress` ([tokens sent to the wrong host](/docs/keep-tokens-safe/#tokens-sent-to-the-wrong-host)), the new `runs-later` files, and the deny of `moat mcp accept`, `wrap` and `unwrap` to agents.
+
+</Aside>
+
 Every release and what changed in it: [Releases](https://github.com/crocodile-labs/openmoat/releases).

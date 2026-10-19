@@ -34,6 +34,15 @@ moat run --isolate -- codex          # Linux: the agent sees only the project, t
 
 `moat run` starts the agent inside an OS sandbox generated from your policy (macOS 14 or later, Linux). It covers every process the agent starts, but is coarser per command than the hook.
 
+What else `moat run` does:
+
+- **Hooks still decide each call.** The agent's hooks run inside the sandbox, which cannot open `~/.moat`. Each one sends its call to the `moat run` process outside the sandbox, with a token made for the run, and that process decides and records it. A wrong token gets no decision, and any failure denies.
+- **The run's proxy serves only that run.** The agent's `HTTP_PROXY` and `HTTPS_PROXY` carry a credential made for the run. A request without it, or with another run's, gets `407`. A client that drops the user and password from its proxy URL has no network under `moat run`.
+- **Session taint reaches the network.** Once an agent session of the run has read secret material, the run's proxy refuses a request to any host but that secret's own (`session-taint`), registries included, so a script the hook never sees cannot send it on. The default policy denies secret reads, so default setups see no change.
+- **Brokered secrets' variables are removed** before the agent starts, so the agent does not hold their values.
+
+The standalone `moat proxy` asks for no credential: any local process may use it, and session taint does not apply there. It says so when it starts.
+
 <Aside type="caution" title="Linux and project files">
 
 On Linux, plain `moat run` does not protect files inside the project (`.env`, `.git` hooks, `.moat`). Use `moat run --isolate` (bubblewrap) for that.
@@ -44,6 +53,7 @@ On Linux, plain `moat run` does not protect files inside the project (`.env`, `.
 
 - **Codex** cannot show an OpenMoat prompt: an ask becomes a deny you approve with `moat allow --last`. A deferred call follows Codex's own approval policy.
 - **Cursor** runs some commands outside the sandbox OpenMoat configures: when its Auto-review approves them, in Run Everything mode, and in the Cursor CLI without `--sandbox enabled`.
+- **Claude Code** in its `bypassPermissions` and `dontAsk` modes shows no question to a person, so an OpenMoat ask becomes a deny that says how to approve it (`moat allow --last`), as for Codex. Calls OpenMoat leaves to Claude Code are unchanged.
 - **Claude Code** applies its sandbox to `Bash`, `PowerShell` and `Monitor`; file tools, `WebFetch` and MCP servers are checked by the hook only.
 
 More in [Limits](/docs/limits/).

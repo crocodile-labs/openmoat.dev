@@ -14,7 +14,7 @@ You know what you want and need the exact command.
 
 </Aside>
 
-Run these in your own terminal. The ones that change what agents may do need a terminal, and the default policy denies them to agents.
+Run these in your own terminal. The ones that change what agents may do need a terminal, and the default policy denies them to agents. They also refuse to run when Claude Code, Codex, the Cursor CLI or `moat run` started them, even through a terminal wrapper, and read your answer from the terminal itself (on Windows only the terminal is checked).
 
 ## Everyday
 
@@ -42,13 +42,15 @@ Run these in your own terminal. The ones that change what agents may do need a t
 
 | Command | What it does |
 |---|---|
-| `moat init` | Install the policy, lock and log; asks before hooking each agent |
+| `moat init [--mcp-proxy]` | Install the policy, lock and log, and pin the agents' MCP servers; asks before hooking each agent (`--mcp-proxy` wraps every MCP server) |
 | `moat status` · `moat doctor` | Each agent's protection level · what drifted, and re-pin with `--accept` |
 | `moat edit` | Edit the policy; checked and diffed before it applies |
 | `moat policy lint` | Check a policy |
 | `moat policy upgrade` | Take what a new release's default adds, keeping your edits |
 | `moat sandbox show` · `moat sandbox sync` | The sandbox settings the policy compiles to · write them for your agents |
 | `moat trust [--revoke]` | Let a repository's `.moat/policy.yaml` allow |
+| `moat mcp accept [<server>]` | Review a changed or new MCP server, or tools `moat mcp proxy` holds, and accept them ([MCP servers](/docs/mcp-servers/)) |
+| `moat mcp wrap [<server>…] [--sandbox]` · `moat mcp unwrap` | Run stdio MCP servers through `moat mcp proxy`, which pins each tool's description · point them back |
 | `moat uninstall [--hosts …] [--purge]` | Remove OpenMoat and restore every settings file |
 
 ## Advanced

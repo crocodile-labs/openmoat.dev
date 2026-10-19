@@ -43,7 +43,22 @@ Every line is checked against the shipped policy on every change to OpenMoat.
 | `echo x >> ~/.zshrc` | deny | `shell-rc` |
 | `moat allow --last` (run by the agent) | deny | `kernel-self` |
 
-Hiding the action does not change the answer: a path in a shell variable (`d=~/.ssh; cat $d/id_rsa`), base64, `$'…'` escapes, a glob (`cat .e*`) and a symlink are checked as what they open.
+Hiding the action does not change the answer: a path in a shell variable (`d=~/.ssh; cat $d/id_rsa`), base64, `$'…'` escapes, a glob (`cat .e*`) and a symlink are checked as what they open. So are:
+
+- the files `curl` and `wget` send (`curl -F name=@file`, `curl -T`, `curl -d @file`, `wget --post-file`), as reads;
+- files rewritten in place (`perl -i`, `ruby -i`, `patch`, `dd of=`), as writes;
+- the command `env -S '…'` runs, and the command `xargs` runs with input the line shows;
+- the program git runs for the other side of a remote (`--upload-pack`, `--receive-pack`).
+
+A command line too long or too deeply nested to read in full asks instead of falling through to the default.
+
+## Other checks that deny
+
+| What the agent does | Rule |
+|---|---|
+| Sends a GitHub, OpenAI, AWS or other known token to a host that is not its service's, allowed hosts included | `token-egress` ([Keep a token from the agent](/docs/keep-tokens-safe/#tokens-sent-to-the-wrong-host)) |
+| Pushes a commit that adds a token | `push-secret` ([GitHub and gh](/docs/github/#what-a-push-would-publish)) |
+| Calls a tool of an MCP server whose definition changed or is new | `mcp-server-changed` ([MCP servers](/docs/mcp-servers/)) |
 
 ## Allowed means no prompt
 

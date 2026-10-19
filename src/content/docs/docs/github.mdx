@@ -19,6 +19,8 @@ The agent commits, pushes, opens pull requests or reads issues.
 | `git status`, `git diff`, `git add`, `git commit`, `git log`, `git fetch`, `git pull`, `git rebase` | allow |
 | `gh pr view 12`, other read-only `gh` commands | allow |
 | `git push origin main`, `gh pr create --fill`, `gh api …` | defer: your agent's prompt |
+| `git push`, `gh pr create` of a commit that adds a token | deny: `push-secret` |
+| `git push`, `gh pr create` that changes a CI workflow, after the session read untrusted content or a secret | ask: `push-runs-later` |
 | `git config core.hooksPath .h`, a write into `.git/hooks` | ask: `git-internals` |
 | A write to `.github/workflows/ci.yml`, `.husky/pre-commit` | ask: `runs-later`, CI or a commit runs it later |
 | `git push --force`, `git push origin :main`, `git reset --hard`, `git clean -fdx`, `git branch -D x` | deny: `destructive` |
@@ -38,6 +40,25 @@ export GITHUB_TOKEN="$(gh auth token)"   # in your terminal, before starting the
 ## Pushing
 
 A push goes to your agent's prompt, so you see every one. A force push, a push that deletes a remote branch and history-rewriting resets are denied: undoing them is often impossible. If you want to force-push, do it yourself.
+
+### What a push would publish
+
+Before a `git push` or `gh pr create` runs, OpenMoat reads the commits it would send: every line they add and every commit message.
+
+| It finds | Answer |
+|---|---|
+| A known token format (GitHub, OpenAI and Anthropic, AWS access key ids, Slack, Google API, npm, GitLab) or the value of a [brokered secret](/docs/keep-tokens-safe/) | deny: `push-secret`. The reason names the commit, the file and the kind of token, never the value |
+| A change to a CI workflow or another file that runs later, in a session that read untrusted content or a secret | ask: `push-runs-later` |
+| A push it cannot check within 2 s or 8 MiB, or in a repository it cannot tell | ask: `push-unchecked` |
+| Nothing | the push is decided as before |
+
+A token added and removed again inside the push still denies: the push sends both commits. Remove it from the commits, or push from your own terminal. Codex cannot ask, so the two asks reach it as a deny, and `moat allow --last` does not answer them.
+
+<Aside type="caution" title="What the push check does not see">
+
+A commit made by a later part of the same command line (`git commit -am x && git push`), and a push through a program other than `git` and `gh` (an API call, a script). It needs git 2.31 or later.
+
+</Aside>
 
 <Aside type="tip" title="Fewer prompts for pull requests">
 

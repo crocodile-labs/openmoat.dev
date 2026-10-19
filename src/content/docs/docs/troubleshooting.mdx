@@ -23,6 +23,20 @@ moat: deny [kernel-integrity] — /Users/you/.moat/policy.yaml was modified;
 
 A pinned file (the policy, a hook, an agent's settings) changed without you accepting it. Run `moat`: it shows the change and asks whether to accept it. If you did not make the change, you caught what OpenMoat exists for: look at `moat doctor` before accepting.
 
+<Aside type="note" title="Claude Code's own settings do not block">
+
+A change to one of Claude Code's own settings, such as a permission list or mode, `permissions.blockReadsOutsideWorkingDirectories` or a display setting, does not deny every call. Calls are decided by the policy as usual, the change is recorded once per session, and `moat doctor` and `moat status` report it until you run `moat doctor --accept`. A change to hooks, `env`, `apiKeyHelper`, the model, plugins, MCP servers or `sandbox`, removing a deny rule OpenMoat wrote, an unknown key, or a file that no longer parses still blocks every call. Under a lock written before 0.5.7, a change to `permissions` also blocks until you re-pin.
+
+</Aside>
+
+## An MCP server's tools are denied with `mcp-server-changed`
+
+Its definition changed, or it was added, since you last accepted the agents' MCP servers. Run `moat mcp accept <server>`: it shows the change and asks. See [MCP servers](/docs/mcp-servers/).
+
+## A call is denied with `no decision within 30 s`
+
+OpenMoat could not decide the call in 30 seconds, usually on a heavily loaded machine, and denied it rather than let it run. Ask the agent to try again. `moat doctor` names the step most such calls were stuck in.
+
 ## An agent shows "hook only" or "not protected"
 
 ```bash
@@ -32,6 +46,7 @@ moat status
 | It says | Run |
 |---|---|
 | `not protected: hook missing` | `moat init` |
+| the hook is out of date (after an upgrade) | `moat init` |
 | sandbox `differs from the policy` | `moat sandbox sync`, then start a new agent session |
 | `hook only` on native Windows | Expected: use WSL2 for the OS sandbox |
 
@@ -41,7 +56,7 @@ Hooks are read when a session starts. Start a new agent session after `moat init
 
 ## The `moat` binary is missing or broken
 
-Claude Code and Codex then run calls without the check, and Cursor blocks them. Reinstall it (`brew reinstall crocodile-labs/tap/moat`, or the installer), then run `moat status`.
+Codex, and Claude Code before 2.1.295, then run calls without the check; Cursor blocks them. With Claude Code 2.1.295 or later, `moat init` sets `"onFailure": "block"` on OpenMoat's hook, so a call is blocked when `moat` cannot start, crashes or times out. It writes the key only when the `claude` on your `PATH` reports that version, and `moat doctor` warns when Claude Code is older or not found. Reinstall `moat` (`brew reinstall crocodile-labs/tap/moat`, or the installer), then run `moat status`.
 
 ## A command you need is blocked
 

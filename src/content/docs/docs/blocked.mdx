@@ -22,6 +22,9 @@ Find the message you saw, then run the command next to it **in your own terminal
 | `moat: ask [git-internals] — …` | A call whose effect outlives the session. | Approve it in the prompt, or `moat allow --last` |
 | Your agent's own prompt, for a file outside the project | OpenMoat has no rule for it and left it to your agent. | `moat allow --dir <folder>`, see [Work across several repos](/docs/work-across-repos/) |
 | `moat: deny [secrets-paths] — secret material: read …` | A key, token or `.env`. This is the block working. | Nothing. If the agent needs a token, see [Keep a token from the agent](/docs/keep-tokens-safe/) |
+| `moat: deny [token-egress] — …` | A known token (GitHub, OpenAI, AWS, …) on its way to a host that is not its service's. | Nothing. If the agent needs the token, see [Keep a token from the agent](/docs/keep-tokens-safe/) |
+| `moat: deny [push-secret] — …` | A commit the push would publish adds a token. | Remove it from the commits, see [GitHub and gh](/docs/github/#what-a-push-would-publish) |
+| `moat: deny [mcp-server-changed] — …` | An MCP server's definition changed or is new. | `moat mcp accept <server>`, see [MCP servers](/docs/mcp-servers/) |
 | `moat: deny [kernel-integrity] — … was modified` | A pinned file (the policy, a hook) changed. Every call is blocked until you look. | `moat`, see [Troubleshooting](/docs/troubleshooting/) |
 
 ## An ask you want to approve
@@ -57,7 +60,7 @@ Find the message you saw, then run the command next to it **in your own terminal
 
 <Aside type="note" title="Codex and Cursor file tools">
 
-Codex, and Cursor for file tools, cannot show a prompt. There an ask becomes a deny whose message says to run `moat` or `moat allow --last`. Run it, then ask the agent to retry.
+Codex, and Cursor for file tools, cannot show a prompt, and neither can Claude Code in its `bypassPermissions` and `dontAsk` modes. There an ask becomes a deny whose message says to run `moat` or `moat allow --last`. Run it, then ask the agent to retry.
 
 </Aside>
 
