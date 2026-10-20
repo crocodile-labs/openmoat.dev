@@ -63,11 +63,12 @@ A new OpenMoat release is out, or `moat` says "policy update available".
 
 </Aside>
 
-<Aside type="note" title="Upgrading to 0.6.0">
+<Aside type="note" title="Upgrading to 0.7.0">
 
-- **Run `moat policy upgrade`** to get `package-near-miss` ([a name close to a popular package](/docs/packages/#a-name-close-to-a-popular-package)), the `kernel-self` denies of reads of OpenMoat's state ([OpenMoat's own files](/docs/blocked/#openmoats-own-files)) and the deny of `moat audit anchor` to agents.
-- **The audit log moves to schema version 4.** An older `moat` cannot open it afterwards, so upgrade every copy of `moat` on the machine.
-- **Nothing to do for the rest.** File taint, the 7-day release age in `moat run` and the 10 s push check apply as soon as the new binary runs. Turn off what you do not want with `taint: { provenance: false }` or `sandbox.package_min_release_age_days: 0`.
+- **Run `moat policy upgrade`** to get the new denies: more credential files (`~/.pgpass`, `~/.my.cnf`, `~/.vault-token`, `~/.authinfo` and others), more secret variables (`DATABASE_URL` and other connection strings, `*_PASSWORD`-style names), and commands that print a stored secret (`vault kv get`, `pass show`, `kubectl config view --raw`).
+- **Nothing to do for the rest.** The other checks apply as soon as the new binary runs: `tar` and `su` options that run a program, bash network redirections (`/dev/tcp/…`), MCP server pins under `CLAUDE_CONFIG_DIR`, and faster checks in long sessions.
+- **Switching models in Claude Code** no longer stops every call until `moat doctor --accept`.
+- **Reporting a bug?** `moat doctor --bundle report.json` writes one local file to attach; it keeps no commands, paths or secrets.
 
 </Aside>
 
