@@ -57,7 +57,7 @@ One thing to know before you try it: because the sandbox comes from the same pol
 
 OpenMoat denies variable names that look like secrets: anything ending in `_KEY`, `_TOKEN`, `_SECRET` or `_PASSWORD`, anything starting with `AWS_`, and a few known names like `GITHUB_TOKEN` and `NPM_TOKEN`.
 
-`DATABASE_URL` often holds a password too, but its name does not say so. `echo $DATABASE_URL` goes to your agent's prompt. Deny it yourself with `moat edit`, which shows the diff before it applies:
+`DATABASE_URL` often holds a password too, but its name does not say so. `echo $DATABASE_URL` goes to your agent's prompt. Deny it yourself with `openmoat edit`, which shows the diff before it applies:
 
 ```yaml
 deny:
@@ -73,10 +73,10 @@ Denying every read works until the agent needs to call an API. It has to open a 
 That is what the secrets broker is for. You keep the token. The agent gets a placeholder:
 
 ```bash
-moat secret add gh
+openmoat secret add gh
 ```
 
-Run this in your own terminal. The agent is denied `moat secret` commands. It brokers `GITHUB_TOKEN` for `api.github.com`, shows the change to your policy and asks before it applies. Then start the agent from a shell that has the token:
+Run this in your own terminal. The agent is denied `openmoat secret` commands. It brokers `GITHUB_TOKEN` for `api.github.com`, shows the change to your policy and asks before it applies. Then start the agent from a shell that has the token:
 
 ```bash
 export GITHUB_TOKEN="$(gh auth token)"   # in your terminal, not in the agent
@@ -92,29 +92,29 @@ Now `gh` and other tools inside the agent see a placeholder like `moat-secret:gh
 | A program it runs reads `GITHUB_TOKEN` | gets the placeholder |
 | Sends the placeholder to another host | worthless there; the value is only added for `api.github.com` |
 
-`moat secret add` also checks where the value comes from. If the agent could read the source anyway, it adds a deny rule for it, in the same diff you approve.
+`openmoat secret add` also checks where the value comes from. If the agent could read the source anyway, it adds a deny rule for it, in the same diff you approve.
 
 For another service, allow its host and name the variable:
 
 ```bash
-moat allow --site api.stripe.com
-moat secret add stripe --host api.stripe.com --env STRIPE_API_KEY
+openmoat allow --site api.stripe.com
+openmoat secret add stripe --host api.stripe.com --env STRIPE_API_KEY
 ```
 
 ## Limits
 
-- **Where the broker works.** In Claude Code, the value goes into HTTPS requests through Claude Code's own sandbox broker. Through `moat proxy` (Codex, Cursor, `moat run`) it goes only into plain-HTTP requests for now. HTTPS requests there keep the placeholder, and the server rejects them.
+- **Where the broker works.** In Claude Code, the value goes into HTTPS requests through Claude Code's own sandbox broker. Through `openmoat proxy` (Codex, Cursor, `openmoat run`) it goes only into plain-HTTP requests for now. HTTPS requests there keep the placeholder, and the server rejects them.
 - **Variables you export reach the programs the agent runs.** The agent cannot print a denied name, but a test or CLI it starts can use the value and send it to an allowed host. Do not export production secrets in the shell you start an agent from, or broker them.
 - **The API host can still be told to do anything the token allows.** Give the token the smallest scope that works.
-- **On Linux,** plain `moat run` cannot protect `.env` inside the project; `moat run --isolate` does.
-- **If the `moat` binary is missing,** Claude Code and Codex run calls unchecked. `moat status` reports it.
+- **On Linux,** plain `openmoat run` cannot protect `.env` inside the project; `openmoat run --isolate` does.
+- **If the `openmoat` binary is missing,** Claude Code and Codex run calls unchecked. `openmoat status` reports it.
 
 The full list is in the [threat model](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md).
 
 ## Try it
 
 ```bash
-brew install crocodile-labs/tap/moat && moat init
+brew install crocodile-labs/tap/openmoat && openmoat init
 ```
 
-Then check one of your own files without reading it: `moat policy check "cat .env"`. The [token guide](/docs/keep-tokens-safe/) and the [.env guide](/docs/env-files/) have every case.
+Then check one of your own files without reading it: `openmoat policy check "cat .env"`. The [token guide](/docs/keep-tokens-safe/) and the [.env guide](/docs/env-files/) have every case.

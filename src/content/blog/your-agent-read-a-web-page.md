@@ -48,7 +48,7 @@ write .github/workflows/ci.yml changes what runs or what the agent is told later
 
 If you asked for a CI change, approve it and move on. If you didn't, the reason tells you which page to go and read.
 
-Each session is tracked on its own, and a new session starts clean. The history comes from OpenMoat's log rather than from the agent, so the agent can't make it go away by forgetting. Later you can find every one of these with `moat show`; the rule is called `session-taint`.
+Each session is tracked on its own, and a new session starts clean. The history comes from OpenMoat's log rather than from the agent, so the agent can't make it go away by forgetting. Later you can find every one of these with `openmoat show`; the rule is called `session-taint`.
 
 ## The other direction: secrets
 
@@ -59,17 +59,17 @@ There's a second trigger. If a session has read secret material, sending data ou
 I'd rather you know the gaps than find them:
 
 - It doesn't read the page. It knows the session fetched something, not whether that something was malicious. That's why it asks instead of blocking.
-- It follows the agent's own tool calls. Traffic through `moat proxy` isn't tied to a session.
+- It follows the agent's own tool calls. Traffic through `openmoat proxy` isn't tied to a session.
 - Shell network to hosts your policy already allows, like `gh pr view` or `git pull`, doesn't count as untrusted. Neither does a command OpenMoat can't make sense of.
 - A secret that leaves through an allowed command with no network step of its own, say a project script, isn't caught by taint.
-- If someone edits or deletes rows in the audit log, taint is gone until `moat doctor` reports the broken hash chain.
+- If someone edits or deletes rows in the audit log, taint is gone until `openmoat doctor` reports the broken hash chain.
 
 The full picture is in the [threat model](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md), and the exact rules are in [POLICY.md §4.1](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md).
 
 ## Trying it
 
 ```bash
-brew install crocodile-labs/tap/moat && moat init
+brew install crocodile-labs/tap/openmoat && openmoat init
 ```
 
-`moat init` shows you each change it wants to make to your agents' settings and asks before applying it. `moat uninstall` puts everything back.
+`openmoat init` shows you each change it wants to make to your agents' settings and asks before applying it. `openmoat uninstall` puts everything back.

@@ -41,8 +41,8 @@ Your team wants the same guard rails in a repository or in every project, or a r
    A repository is untrusted input, so by itself it can only make your policy stricter. Its `allow` rules apply after you review and trust that exact file:
 
    ```bash
-   moat trust             # in the repository; prints the allow rules it lets in
-   moat trust --revoke
+   openmoat trust             # in the repository; prints the allow rules it lets in
+   openmoat trust --revoke
    ```
 
 </Steps>
@@ -68,7 +68,7 @@ A policy pack is a team's rules that each person installs once, for every projec
 2. **Each person trusts the maintainer's public key, once**
 
    ```bash
-   moat policy trust-key alice.pub --name alice@example.com
+   openmoat policy trust-key alice.pub --name alice@example.com
    ```
 
    It prints the key's fingerprint and trusts the key for policy only (the `openmoat-policy` namespace), so the same key's signature on a git commit is never taken as a policy signature.
@@ -76,34 +76,40 @@ A policy pack is a team's rules that each person installs once, for every projec
 3. **Install the pack**
 
    ```bash
-   moat policy install team.yaml               # the signature defaults to team.yaml.sig
-   moat policy install team.yaml --sig other.sig --name team
-   moat policy remove team                     # take it out again
+   openmoat policy install team.yaml               # the signature defaults to team.yaml.sig
+   openmoat policy install team.yaml --sig other.sig --name team
+   openmoat policy remove team                     # take it out again
    ```
 
    A signature that does not verify, or one from a key you did not trust, is refused and nothing is written.
 
 </Steps>
 
-The pack's rules show up as `pack:<name>:<id>`, such as `pack:team:no-deploy`. Its deny rules join yours, its ask rules come before your allow rules, and its allow rules come after yours, so your deny rules still win. Deny and allow rules also reach the agents' sandboxes at the next `moat sandbox sync`; ask rules apply in the hook only.
+The pack's rules show up as `pack:<name>:<id>`, such as `pack:team:no-deploy`. Its deny rules join yours, its ask rules come before your allow rules, and its allow rules come after yours, so your deny rules still win. Deny and allow rules also reach the agents' sandboxes at the next `openmoat sandbox sync`; ask rules apply in the hook only.
 
 The installed pack is pinned by the lock: a pack changed after install blocks every call with `kernel-integrity` until you look. Verification uses the system `ssh-keygen` (OpenSSH 8.1 or later); without it the three commands refuse and nothing else changes. Agents cannot run them.
 
 ### Require a signature on repository policies
 
-With this line in your own policy (`moat edit`), a signature decides whether a repository policy may allow, instead of `moat trust`:
+With this line in your own policy (`openmoat edit`), a signature decides whether a repository policy may allow, instead of `openmoat trust`:
 
 ```yaml
 require_signed_repo_policy: true
 ```
 
-- A repository policy signed by a key you trusted (`.moat/policy.yaml.sig` beside it) has its allow rules applied, without `moat trust`.
-- An unsigned one, one signed by another key, or one changed after signing gets deny and ask only, even after `moat trust`.
+- A repository policy signed by a key you trusted (`.moat/policy.yaml.sig` beside it) has its allow rules applied, without `openmoat trust`.
+- An unsigned one, one signed by another key, or one changed after signing gets deny and ask only, even after `openmoat trust`.
 
-Sign it the same way: `ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n openmoat-policy .moat/policy.yaml`. Without the setting, which is the default, a signature changes nothing and `moat trust` decides. `moat status`, run in the project, says which applies, for example `trusted: signed by alice@example.com`.
+Sign it the same way: `ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n openmoat-policy .moat/policy.yaml`. Without the setting, which is the default, a signature changes nothing and `openmoat trust` decides. `openmoat status`, run in the project, says which applies, for example `trusted: signed by alice@example.com`.
 
 <Aside type="caution" title="What a signature proves">
 
 That a key you trusted signed those exact bytes, not that the signer meant well. Anyone holding the signing key can sign packs you will install, so keep it as you keep any key that can change your rules.
 
 </Aside>
+
+## Keep Claude Code's hooks on for everyone
+
+A repository's `.claude/settings.json` can set `"disableAllHooks": true`, which turns every user-level hook off, OpenMoat's included. Claude Code loads it when a session starts, before any hook runs. OpenMoat blocks such a change made during a session (`project-settings`), and `openmoat doctor` and `openmoat status` warn when the current project has one, but neither can stop it at session start.
+
+Claude Code's [managed settings](https://code.claude.com/docs/en/managed-settings), which an administrator deploys and the user cannot edit, can: a `disableAllHooks` outside them does not turn off a hook set in them. Copy the `PreToolUse` and `ConfigChange` entries `openmoat init` wrote to `~/.claude/settings.json` into the managed settings file, and keep them in the user file too, which `openmoat doctor` checks. OpenMoat does not write or pin managed settings, so update them after an upgrade that changes the hook entries.

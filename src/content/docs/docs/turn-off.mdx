@@ -15,24 +15,24 @@ You need OpenMoat out of the way right now, or you are removing it.
 </Aside>
 
 ```bash
-moat uninstall
+openmoat uninstall
 ```
 
-It takes OpenMoat out of every agent it set up and restores each settings file from the backup `moat init` made. Restart the agents afterwards.
+It takes OpenMoat out of every agent it set up and restores each settings file from the backup `openmoat init` made. Restart the agents afterwards.
 
 | You want | Run |
 |---|---|
-| Remove it from every agent | `moat uninstall` |
-| Remove it from one agent | `moat uninstall --hosts claude-code` |
-| Also delete the policy and the audit log | `moat uninstall --purge` |
-| Set it up again later | `moat init` |
+| Remove it from every agent | `openmoat uninstall` |
+| Remove it from one agent | `openmoat uninstall --hosts claude-code` |
+| Also delete the policy and the audit log | `openmoat uninstall --purge` |
+| Set it up again later | `openmoat init` |
 
 Without `--purge`, your policy and log stay in `~/.moat`.
 
 <Aside type="note" title="Run it yourself">
 
-`moat uninstall` needs a terminal, and the default policy denies it to agents: a prompt injection cannot switch OpenMoat off.
+`openmoat uninstall` needs a terminal, and the default policy denies it to agents: a prompt injection cannot switch OpenMoat off.
 
 </Aside>
 
-To remove the binary as well: `brew uninstall moat`, or delete `~/.cargo/bin/moat` if you used the installer.
+To remove the binary as well: `brew uninstall openmoat`, or delete `~/.cargo/bin/openmoat` and `~/.cargo/bin/moat` if you used the installer or `cargo install`.

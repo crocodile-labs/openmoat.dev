@@ -9,7 +9,7 @@ avatar: /assets/dhanasekaran.jpg
 tag: announcement
 minutes: 6
 tags: ["Announcement", "Overview"]
-cover: "moat policy check \"cat ~/.ssh/id_rsa\""
+cover: "openmoat policy check \"cat ~/.ssh/id_rsa\""
 coverResult: "⛔ deny  secrets-paths"
 coverTone: deny
 ---
@@ -35,7 +35,7 @@ It is one Rust binary that runs on your machine. A check takes about 10 ms. No A
 Here is the upload from above, checked without running it:
 
 ```bash
-moat policy check "cat ~/.ssh/id_rsa"
+openmoat policy check "cat ~/.ssh/id_rsa"
 ```
 
 ```text
@@ -45,7 +45,7 @@ moat policy check "cat ~/.ssh/id_rsa"
    also  : shell "cat ~/.ssh/id_rsa"
 ```
 
-`moat policy check` only shows the verdict. It does not run the command or read the key. Inside an agent, the same rule blocks the call, and the agent is told why:
+`openmoat policy check` only shows the verdict. It does not run the command or read the key. Inside an agent, the same rule blocks the call, and the agent is told why:
 
 ```text
 moat: deny [secrets-paths] — secret material: read /Users/you/.ssh/id_rsa
@@ -77,7 +77,7 @@ These are real verdicts from the default policy:
 | `echo $GITHUB_TOKEN`, `printenv` | deny | `env-secrets`, `env-dump` |
 | `git push --force`, `git reset --hard`, `rm -rf ~` | deny | `destructive` |
 | `echo x >> ~/.zshrc` | deny | `shell-rc` |
-| `moat allow --last`, run by the agent | deny | `kernel-self` |
+| `openmoat allow --last`, run by the agent | deny | `kernel-self` |
 
 The last row matters. The agent cannot edit the rules, approve its own blocked call or uninstall OpenMoat through its tools. If the policy or the agent's settings change behind OpenMoat's back, everything is blocked until you review.
 
@@ -87,9 +87,9 @@ A hook sees the command `npm test`. It does not see what the test script does. S
 
 Three more pieces:
 
-- **A secrets broker.** `moat secret add gh` gives the agent a placeholder instead of your token. The real value is sent to one host only, and a request that would carry it anywhere else is blocked.
+- **A secrets broker.** `openmoat secret add gh` gives the agent a placeholder instead of your token. The real value is sent to one host only, and a request that would carry it anywhere else is blocked.
 - **Network rules.** Agents connect only to hosts the policy allows. Cloud metadata services are refused.
-- **A record of every decision.** `moat show` and `moat report --since today` show what the agents did. The local log detects tampering, and your team can export and verify it.
+- **A record of every decision.** `openmoat show` and `openmoat report --since today` show what the agents did. The local log detects tampering, and your team can export and verify it.
 
 ## Where it stops
 
@@ -99,7 +99,7 @@ No tool catches everything, and you should know the gaps before you rely on it:
 - **Allowed scripts run whatever they contain.** The sandbox bounds them; OpenMoat does not read them.
 - **Allowed hosts can receive data.** The proxy checks the host, not what is sent inside HTTPS.
 - **Cursor** can run some commands outside the sandbox OpenMoat configures. Native Windows has no OS sandbox; use WSL2.
-- **If the `moat` binary is missing,** Claude Code and Codex run calls unchecked. `moat status` reports it.
+- **If the `openmoat` binary is missing,** Claude Code and Codex run calls unchecked. `openmoat status` reports it.
 
 The full list, with the reasons, is in the [threat model](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md).
 
@@ -112,9 +112,9 @@ You should not have to trust a security tool blindly. Every rule OpenMoat applie
 On macOS or Linux:
 
 ```bash
-brew install crocodile-labs/tap/moat && moat init
+brew install crocodile-labs/tap/openmoat && openmoat init
 ```
 
-`moat init` lists the agents it finds and asks before it protects each one. It backs up every file it changes, and `moat uninstall` puts them back. Then start your agent in a new session and work as usual. Run `moat` anytime to see what happened. For Windows, other config directories and cargo, see the [install guide](https://github.com/crocodile-labs/openmoat/blob/main/docs/INSTALL.md). The [docs](/docs/quickstart/) walk you through the first session.
+`openmoat init` lists the agents it finds and asks before it protects each one. It backs up every file it changes, and `openmoat uninstall` puts them back. Then start your agent in a new session and work as usual. Run `moat` anytime to see what happened. For Windows, other config directories and cargo, see the [install guide](https://github.com/crocodile-labs/openmoat/blob/main/docs/INSTALL.md). The [docs](/docs/quickstart/) walk you through the first session.
 
 If OpenMoat blocks something it shouldn't, or lets something through it shouldn't, tell me on [GitHub](https://github.com/crocodile-labs/openmoat/issues) or [r/openmoat](https://www.reddit.com/r/openmoat/). Remove secrets from anything you share. That feedback decides what I fix next.

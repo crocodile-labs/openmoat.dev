@@ -17,20 +17,20 @@ The agent needs a sibling repository, a shared library, your notes or a docs fol
 
 Real work rarely stays in one repository. You start the agent in `app/`, and it needs `../shared-lib`, your notes, or the docs site next door. Outside the project OpenMoat has no rule, so every read and edit there goes to your agent's own prompt, and a shell command that writes there may fail inside the sandbox with `Operation not permitted`.
 
-`moat allow --dir` makes such a folder part of your normal working area.
+`openmoat allow --dir` makes such a folder part of your normal working area.
 
 <Steps>
 
 1. **Allow the folder, in your own terminal**
 
    ```bash
-   moat allow --dir ~/work/shared-lib
+   openmoat allow --dir ~/work/shared-lib
    ```
 
    ```text
    ✔ added to /Users/you/.moat/policy.d/approved.yaml:
        - id: approved-1
-         reason: approved with `moat allow --dir` on 2026-10-15 04:28:04 UTC
+         reason: approved with `openmoat allow --dir` on 2026-10-15 04:28:04 UTC
          fs.read:
          - /Users/you/work/shared-lib
          - /Users/you/work/shared-lib/**
@@ -39,7 +39,7 @@ Real work rarely stays in one repository. You start the agent in `app/`, and it 
          - /Users/you/work/shared-lib/**
          …
      deny rules still win: secrets and kernel files in it stay denied
-     undo: moat allow --remove approved-1
+     undo: openmoat allow --remove approved-1
    ✔ lock re-pinned (6 files)
    Updating the agents' sandbox settings:
    ✔ Claude Code      /Users/you/.claude/settings.json (sandbox updated)
@@ -69,13 +69,13 @@ Real work rarely stays in one repository. You start the agent in `app/`, and it 
 
 <Aside type="note" title="Added with OpenMoat 0.5.1 or earlier?">
 
-A rule from an earlier version does not leave out `.git` and the files run later. Remove it and add the folder again: `moat allow --remove approved-1`, then `moat allow --dir <folder>`.
+A rule from an earlier version does not leave out `.git` and the files run later. Remove it and add the folder again: `openmoat allow --remove approved-1`, then `openmoat allow --dir <folder>`.
 
 </Aside>
 
 <Aside type="tip" title="Only reading?">
 
-If the agent only needs to read the other repository, a read-only rule is safer. Add it with `moat edit` ([Change the rules](/docs/change-the-rules/)):
+If the agent only needs to read the other repository, a read-only rule is safer. Add it with `openmoat edit` ([Change the rules](/docs/change-the-rules/)):
 
 ```yaml
 allow:
@@ -89,11 +89,11 @@ allow:
 ## Undo it
 
 ```bash
-moat allow --remove approved-1
+openmoat allow --remove approved-1
 ```
 
-Every rule `moat allow` added is in `~/.moat/policy.d/approved.yaml`, with its id.
+Every rule `openmoat allow` added is in `~/.moat/policy.d/approved.yaml`, with its id.
 
 ## Several folders, or a pattern
 
-Run `moat allow --dir` once per folder. Allow the folders you work in, not a parent that holds repositories you have not checked. For a pattern (every repository under `~/work/acme/`), or a read-only rule, edit the policy instead: see [Change the rules](/docs/change-the-rules/).
+Run `openmoat allow --dir` once per folder. Allow the folders you work in, not a parent that holds repositories you have not checked. For a pattern (every repository under `~/work/acme/`), or a read-only rule, edit the policy instead: see [Change the rules](/docs/change-the-rules/).

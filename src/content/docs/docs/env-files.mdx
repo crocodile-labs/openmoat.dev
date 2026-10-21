@@ -23,19 +23,23 @@ Your project uses .env files, or secrets live in environment variables.
 | `cat .env.example`, `.env.sample`, `.env.template` | allow: committed templates carry no values |
 | `echo $OPENAI_API_KEY`, `$GITHUB_TOKEN`, `$AWS_SECRET_ACCESS_KEY` | deny: `env-secrets` |
 | `printenv`, `env`, `export -p`, `cat /proc/self/environ` | deny: `env-dump` |
-| `echo $DATABASE_URL` | **defer**: the name does not look like a secret |
+| `python -c "import os; print(os.environ['GITHUB_TOKEN'])"`, `node -e "console.log(process.env.GITHUB_TOKEN)"` | deny: `env-secrets`, a read of that variable |
+| `python -c "import os; print(os.environ)"` | deny: `env-dump`, the whole environment |
+| `echo $SENTRY_URL` | **defer**: the name does not look like a secret |
 
-Variable names that are denied: anything ending in `_KEY`, `_TOKEN`, `_SECRET` or `_PASSWORD`, anything starting with `AWS_`, and `GITHUB_TOKEN`, `NPM_TOKEN`.
+Variable names that are denied: anything ending in `_KEY`, `_TOKEN`, `_SECRET`, `_PASSWORD`, `_PASS`, `_PASSWD`, `_PWD`, `_CREDENTIALS` or `_DSN`, anything starting with `AWS_`, the connection strings `DATABASE_URL`, `*_DATABASE_URL`, `REDIS_URL`, `MONGODB_URI` and `MONGO_URL`, and `GITHUB_TOKEN`, `NPM_TOKEN`, `PGPASSWORD`. Other `*_URL` variables are not.
+
+Inline code run with `python -c`, `node -e`, `ruby -e`, `perl -e`, `php -r` and similar is read too: a variable it reads by name is checked like `echo $NAME`, and code that prints the whole environment, or reads a variable whose name is chosen at run time, is denied by `env-dump`.
 
 ## Protect a variable with another name
 
-`DATABASE_URL`, `REDIS_URL` or `SENTRY_DSN` often hold a password, but their names do not say so. Deny them yourself with `moat edit`:
+Some variables hold a password although their names do not say so, such as `SENTRY_URL` or `AMQP_URL`. Deny them yourself with `openmoat edit`:
 
 ```yaml
 deny:
   - id: my-secret-vars
     reason: these hold credentials
-    env.read: ["DATABASE_URL", "REDIS_URL", "SENTRY_DSN"]
+    env.read: ["SENTRY_URL", "AMQP_URL"]
 ```
 
 ## What this means for your tests

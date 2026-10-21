@@ -18,7 +18,7 @@ An MCP server runs outside every sandbox, with your permissions, whatever its de
 
 ## Server definitions are pinned
 
-`moat init` pins each MCP server definition the agents read:
+`openmoat init` pins each MCP server definition the agents read:
 
 | Agent | Your file | The project's file |
 |---|---|---|
@@ -26,14 +26,14 @@ An MCP server runs outside every sandbox, with your permissions, whatever its de
 | Codex | `config.toml` | `.codex/config.toml` |
 | Cursor | `mcp.json` | `.cursor/mcp.json` |
 
-When a definition changes, or a server is added since (a cloned repository's `.mcp.json` included), the tool calls of that server are denied with rule `mcp-server-changed`. The reason names what changed. Other servers and tools keep working, and `moat doctor` and `moat status` report it.
+When a definition changes, or a server is added since (a cloned repository's `.mcp.json` included), the tool calls of that server are denied with rule `mcp-server-changed`. The reason names what changed. Other servers and tools keep working, and `openmoat doctor` and `openmoat status` report it.
 
 <Steps>
 
 1. **Review the change, in your own terminal**
 
    ```bash
-   moat mcp accept <server>
+   openmoat mcp accept <server>
    ```
 
    It shows the change key by key, never the value of an `env` or header entry, and asks `[y/N]`.
@@ -48,7 +48,7 @@ A removed server holds nothing back. A settings file that no longer parses holds
 
 <Aside type="caution" title="A changed server still starts">
 
-The agent starts its MCP servers when a session begins, before any tool call. OpenMoat refuses the server's tool calls, but it cannot stop the program from starting. To contain what a server does at start, run it with `--sandbox` (below) or run the whole agent with `moat run`.
+The agent starts its MCP servers when a session begins, before any tool call. OpenMoat refuses the server's tool calls, but it cannot stop the program from starting. To contain what a server does at start, run it with `--sandbox` (below) or run the whole agent with `openmoat run`.
 
 </Aside>
 
@@ -56,51 +56,51 @@ The agent's own writes to these files ask first (`runs-later`), since the agent 
 
 ## Pin tool descriptions too
 
-Pinning a definition does not see a server that changes a tool's description later. For that, run a stdio server through `moat mcp proxy`. It is opt-in per server:
+Pinning a definition does not see a server that changes a tool's description later. For that, run a stdio server through `openmoat mcp proxy`. It is opt-in per server:
 
 ```bash
-moat mcp wrap <server>      # one server
-moat init --mcp-proxy       # every server, at setup
+openmoat mcp wrap <server>      # one server
+openmoat init --mcp-proxy       # every server, at setup
 ```
 
-`moat mcp proxy` sits between the agent and the server and:
+`openmoat mcp proxy` sits between the agent and the server and:
 
-- pins each tool's name, description and input schema the first time it sees the server;
-- leaves a changed or new tool out of the tool list, and answers a call to it with an error naming `moat mcp accept <server>`; the call never reaches the server;
+- leaves every tool of a server it has not pinned yet out of the tool list, and refuses its calls, naming `openmoat mcp accept <server>`, which shows each tool's name, description and input schema and asks;
+- leaves a changed or new tool out of the tool list, and answers a call to it with an error naming `openmoat mcp accept <server>`; the call never reaches the server;
 - records every tool call in the audit log.
 
-`moat mcp accept <server>` then shows a diff of the description and schema. `moat mcp wrap` changes only the server's command in your own file (`~/.claude.json`, Cursor's `mcp.json`, Codex's `config.toml`), keeps a backup, and never rewrites a project's file. A server with a change you have not accepted is skipped.
+`openmoat mcp accept <server>` then shows a diff of the description and schema. `openmoat mcp wrap` changes only the server's command in your own file (`~/.claude.json`, Cursor's `mcp.json`, Codex's `config.toml`), keeps a backup, and never rewrites a project's file. A server with a change you have not accepted is skipped.
 
 ### Run the server in a sandbox
 
 ```bash
-moat mcp wrap <server> --sandbox
+openmoat mcp wrap <server> --sandbox
 ```
 
-The server then runs under `moat run`: the sandbox made from your policy, with network only to the hosts the policy allows. Many servers need writes (package caches) or hosts the default policy does not list, so this is a choice per server. `--sandbox` cannot be used for an agent that itself runs under `moat run`.
+The server then runs under `openmoat run`: the sandbox made from your policy, with network only to the hosts the policy allows. Many servers need writes (package caches) or hosts the default policy does not list, so this is a choice per server. `--sandbox` cannot be used for an agent that itself runs under `openmoat run`.
 
 ### Undo it
 
 ```bash
-moat mcp unwrap <server>
+openmoat mcp unwrap <server>
 ```
 
-`moat uninstall` also puts every wrapped server back as it was.
+`openmoat uninstall` also puts every wrapped server back as it was.
 
 ## Only you accept
 
-`moat mcp accept`, `moat mcp wrap` and `moat mcp unwrap` are denied to agents (`kernel-self`), terminal wrappers included, and refuse to run when an agent started them.
+`openmoat mcp accept`, `openmoat mcp wrap` and `openmoat mcp unwrap` are denied to agents (`kernel-self`), terminal wrappers included, and refuse to run when an agent started them.
 
 ## Good to know
 
-- **First sight is trusted.** `moat mcp proxy` pins what the server lists the first time it sees it.
+- **First sight is not trusted.** `openmoat mcp proxy` holds back a new server's tools until you accept them. To pin what a server lists the first time instead, set `mcp: { trust_first_sight: true }` in the policy; `openmoat policy lint` warns about it.
 - **Not pinned:** prompts, resources, output schemas, annotations and tool results.
 - **Not covered by the proxy:** remote (HTTP) servers, Claude Code plugin servers and managed MCP settings.
 - **One name, every project.** A changed server in one project of `~/.claude.json` also holds back a server with the same name in another project, until you accept it.
 
 <Aside type="note" title="Upgrading from 0.5.6 or earlier">
 
-A lock from before 0.5.7 has no MCP pins, so nothing is held back until `moat init` or `moat mcp accept` pins the servers. `moat doctor` says so.
+A lock from before 0.5.7 has no MCP pins, so nothing is held back until `openmoat init` or `openmoat mcp accept` pins the servers. `openmoat doctor` says so.
 
 </Aside>
 

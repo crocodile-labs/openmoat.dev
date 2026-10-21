@@ -10,13 +10,13 @@ import { Aside, CardGrid, LinkCard, Steps, TabItem, Tabs } from '@astrojs/starli
 
 <Aside type="note" title="Read this when">
 
-You are setting OpenMoat up for the first time on a machine.
+You are setting OpenMoat up for the first time on a machine. Already have 0.7 or earlier (the `moat` command)? See [Upgrading from 0.7 or earlier](/docs/upgrade/#upgrading-from-07-or-earlier).
 
 </Aside>
 
 <Steps>
 
-1. **Install moat**
+1. **Install openmoat**
 
    <Tabs>
    <TabItem label="Homebrew">
@@ -24,13 +24,13 @@ You are setting OpenMoat up for the first time on a machine.
    macOS and Linux.
 
    ```bash
-   brew install crocodile-labs/tap/moat
+   brew install crocodile-labs/tap/openmoat
    ```
 
    </TabItem>
    <TabItem label="Installer">
 
-   macOS and Linux; puts `moat` in `~/.cargo/bin`.
+   macOS and Linux; puts `openmoat` in `~/.cargo/bin`.
 
    ```bash
    curl --proto '=https' --tlsv1.2 -LsSf https://github.com/crocodile-labs/openmoat/releases/latest/download/openmoat-installer.sh | sh
@@ -57,13 +57,15 @@ You are setting OpenMoat up for the first time on a machine.
    </TabItem>
    </Tabs>
 
+   Every install also puts a `moat` command beside `openmoat` that runs it, so hooks and scripts from older releases keep working. The `moat` name will be removed in a later release; use `openmoat`.
+
 2. **Set it up for your agents**
 
    ```bash
-   moat init
+   openmoat init
    ```
 
-   `moat init` writes the default policy to `~/.moat`, then lists the agents it finds and asks once for each:
+   `openmoat init` writes the default policy to `~/.moat`, then lists the agents it finds and asks once for each:
 
    ```text
    Found these agents:
@@ -73,7 +75,7 @@ You are setting OpenMoat up for the first time on a machine.
    Protect Codex (/Users/you/.codex)? [Y/n]
    ```
 
-   It backs up every file before it changes it. `moat uninstall` puts them all back.
+   It backs up every file before it changes it. `openmoat uninstall` puts them all back.
 
 3. **Start your agent in a new session**
 
@@ -82,8 +84,8 @@ You are setting OpenMoat up for the first time on a machine.
 4. **Check that it works**
 
    ```bash
-   moat status                            # each agent: hook + OS sandbox, hook only, or not protected
-   moat policy check "cat ~/.ssh/id_rsa"  # the verdict for a command, without running it
+   openmoat status                            # each agent: hook + OS sandbox, hook only, or not protected
+   openmoat policy check "cat ~/.ssh/id_rsa"  # the verdict for a command, without running it
    ```
 
    ```text
@@ -92,6 +94,8 @@ You are setting OpenMoat up for the first time on a machine.
       reason: secret material: read /Users/you/.ssh/id_rsa
       also  : shell "cat ~/.ssh/id_rsa"
    ```
+
+   `openmoat demo` shows the verdict, rule and reason for a short list of example agent calls (everyday work, a private key read, a key sent out, a misspelled package, switching OpenMoat off) with your policy. Nothing runs, and no file is changed.
 
 </Steps>
 
@@ -103,8 +107,8 @@ You are setting OpenMoat up for the first time on a machine.
   <LinkCard title="Work across several repos" href="/docs/work-across-repos/" description="The first thing most developers need." />
 </CardGrid>
 
-<Aside type="tip" title="Run moat anytime">
+<Aside type="tip" title="Run openmoat anytime">
 
-`moat` alone shows which agents are protected, today's decisions, and anything that needs you, such as a pending ask.
+`openmoat` alone shows which agents are protected, today's decisions, and anything that needs you, such as a pending ask.
 
 </Aside>

@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Every moat command on one page."
+description: "Every openmoat command on one page."
 sidebar:
   label: "Commands"
   order: 1
@@ -14,56 +14,64 @@ You know what you want and need the exact command.
 
 </Aside>
 
-Run these in your own terminal. The ones that change what agents may do need a terminal, and the default policy denies them to agents. They also refuse to run when Claude Code, Codex, the Cursor CLI or `moat run` started them, even through a terminal wrapper, and read your answer from the terminal itself (on Windows only the terminal is checked).
+Run these in your own terminal. The ones that change what agents may do need a terminal, and the default policy denies them to agents. They also refuse to run when Claude Code, Codex, the Cursor CLI or `openmoat run` started them, even through a terminal wrapper, and read your answer from the terminal itself (on Windows only the terminal is checked).
+
+<Aside type="note" title="The moat name">
+
+Releases up to 0.7.0 called the command `moat`. Every install still puts a `moat` beside `openmoat` that runs it, so hooks and scripts that call `moat` keep working for a few releases; then the `moat` name will be removed. `openmoat init` moves the hooks to the new name, and `openmoat doctor` says when a hook still uses the old one.
+
+</Aside>
 
 ## Everyday
 
 | Command | What it does |
 |---|---|
-| `moat` | Which agents are protected, today's decisions, and anything that needs you |
-| `moat allow --last` | Allow the last ask for the rest of that agent session (24 h) |
-| `moat allow --last --always` | Allow it for good: a rule for exactly that command or those files |
-| `moat allow --dir <folder>` | Read and write a folder outside the project |
-| `moat allow --site <host>` | Network access to one host |
-| `moat allow --remove <id>` | Take back a rule `moat allow` added |
-| `moat secret add gh` | Keep the GitHub token from the agent |
-| `moat policy check "<command>"` | The verdict for a command, without running it |
+| `openmoat` | Which agents are protected, today's decisions, and anything that needs you |
+| `openmoat allow --last` | Allow the last ask for the rest of that agent session (24 h) |
+| `openmoat allow --last --always` | Allow it for good: a rule for exactly that command or those files |
+| `openmoat allow --dir <folder>` | Read and write a folder outside the project |
+| `openmoat allow --site <host>` | Network access to one host |
+| `openmoat allow --remove <id>` | Take back a rule `openmoat allow` added |
+| `openmoat secret add gh` | Keep the GitHub token from the agent |
+| `openmoat policy check "<command>"` | The verdict for a command, without running it |
+| `openmoat demo` | The verdict, rule and reason for a fixed list of example agent calls, with your policy; nothing runs and nothing is changed |
 
 ## See what happened
 
 | Command | What it does |
 |---|---|
-| `moat show [id] [--since today]` | Recent events, or one in full |
-| `moat replay --since today` | Each agent session as a timeline |
-| `moat report --since 7d` | Totals, hosts, top rules, asks per hour |
-| `moat audit export` · `moat audit verify <file>` | Export events with their chain hashes · check an export |
-| `moat audit anchor --git <repo>` · `--file <path>` | Record the log's head outside it: a commit on `refs/moat/anchors` in that repository, or a line appended to that file; nothing is sent anywhere |
-| `moat audit verify --against <repo or file>` | Check the log against every anchor there; fails, naming the first anchor whose event is gone or changed ([Keep a record outside the log](/docs/see-what-happened/#keep-a-record-outside-the-log)) |
+| `openmoat show [id] [--since today]` | Recent events, or one in full |
+| `openmoat replay --since today` | Each agent session as a timeline |
+| `openmoat report --since 7d` | Totals, hosts, top rules, asks per hour |
+| `openmoat audit export` · `openmoat audit verify <file>` | Export events with their chain hashes · check an export |
+| `openmoat audit anchor --git <repo>` · `--file <path>` | Record the log's head outside it: a commit on `refs/moat/anchors` in that repository, or a line appended to that file; nothing is sent anywhere |
+| `openmoat audit verify --against <repo or file>` | Check the log against every anchor there; fails, naming the first anchor whose event is gone or changed ([Keep a record outside the log](/docs/see-what-happened/#keep-a-record-outside-the-log)) |
 
 ## Set up and maintain
 
 | Command | What it does |
 |---|---|
-| `moat init [--mcp-proxy]` | Install the policy, lock and log, and pin the agents' MCP servers; asks before hooking each agent (`--mcp-proxy` wraps every MCP server) |
-| `moat status` · `moat doctor` | Each agent's protection level · what drifted, and re-pin with `--accept` |
-| `moat edit` | Edit the policy; checked and diffed before it applies |
-| `moat policy lint` | Check a policy |
-| `moat policy upgrade` | Take what a new release's default adds, keeping your edits |
-| `moat sandbox show` · `moat sandbox sync` | The sandbox settings the policy compiles to · write them for your agents |
-| `moat trust [--revoke]` | Let a repository's `.moat/policy.yaml` allow |
-| `moat policy trust-key <key.pub> --name <who>` | Trust an SSH public key to sign policy packs, and repository policies where the policy asks for signed ones |
-| `moat policy install <pack.yaml> [--sig <file>] [--name <name>]` · `moat policy remove <name>` | Install a signed policy pack once its signature verifies; its rules apply as `pack:<name>:<id>` · take it out ([Signed policy packs](/docs/team-rules/#signed-policy-packs)) |
-| `moat mcp accept [<server>]` | Review a changed or new MCP server, or tools `moat mcp proxy` holds, and accept them ([MCP servers](/docs/mcp-servers/)) |
-| `moat mcp wrap [<server>…] [--sandbox]` · `moat mcp unwrap` | Run stdio MCP servers through `moat mcp proxy`, which pins each tool's description · point them back |
-| `moat uninstall [--hosts …] [--purge]` | Remove OpenMoat and restore every settings file |
+| `openmoat init [--mcp-proxy]` | Install the policy, lock and log, and pin the agents' MCP servers; asks before hooking each agent (`--mcp-proxy` wraps every MCP server) |
+| `openmoat status` · `openmoat doctor` | Each agent's protection level · what drifted, and re-pin with `--accept` |
+| `openmoat doctor --bundle <file>` | Write one local file to attach to a bug report: versions, hook states, doctor checks and the last decisions, without commands, paths or secrets; nothing is sent |
+| `openmoat edit` | Edit the policy; checked and diffed before it applies |
+| `openmoat policy lint` | Check a policy |
+| `openmoat policy upgrade` | Take what a new release's default adds, keeping your edits |
+| `openmoat sandbox show` · `openmoat sandbox sync` | The sandbox settings the policy compiles to · write them for your agents |
+| `openmoat trust [--revoke]` | Let a repository's `.moat/policy.yaml` allow |
+| `openmoat policy trust-key <key.pub> --name <who>` | Trust an SSH public key to sign policy packs, and repository policies where the policy asks for signed ones |
+| `openmoat policy install <pack.yaml> [--sig <file>] [--name <name>]` · `openmoat policy remove <name>` | Install a signed policy pack once its signature verifies; its rules apply as `pack:<name>:<id>` · take it out ([Signed policy packs](/docs/team-rules/#signed-policy-packs)) |
+| `openmoat mcp accept [<server>]` | Review a changed or new MCP server, or tools `openmoat mcp proxy` holds, and accept them ([MCP servers](/docs/mcp-servers/)) |
+| `openmoat mcp wrap [<server>…] [--sandbox]` · `openmoat mcp unwrap` | Run stdio MCP servers through `openmoat mcp proxy`, which pins each tool's description · point them back |
+| `openmoat uninstall [--hosts …] [--purge]` | Remove OpenMoat and restore every settings file |
 
 ## Advanced
 
 | Command | What it does |
 |---|---|
-| `moat run [--isolate] -- <agent>` | Run a whole agent in a sandbox generated from the policy |
-| `moat proxy` · `moat proxy install` | The egress proxy, on its own or as a user service |
-| `moat bench` | Score OpenMoat, or any hook, against the bundled attack scenarios |
-| `moat guard --host <id>` | The hook entry point: agents call it, you do not |
+| `openmoat run [--isolate] -- <agent>` | Run a whole agent in a sandbox generated from the policy; on Linux its network goes only through OpenMoat's proxy where bubblewrap can run |
+| `openmoat proxy` · `openmoat proxy install` | The egress proxy, on its own or as a user service |
+| `openmoat bench` | Score OpenMoat, or any hook, against the bundled attack scenarios |
+| `openmoat guard --host <id>` | The hook entry point: agents call it, you do not |
 
 Every option: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#commands).

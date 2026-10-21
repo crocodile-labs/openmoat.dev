@@ -18,7 +18,7 @@ Your coding agent asks before it runs a command: "Allow `cat $d/id_rsa`?" You se
 
 Approval prompts are a good idea. But they ask you to read a shell command and work out in a second what it will touch. Shell is very good at hiding that. A prompt injection, an instruction planted in a README, issue or web page the agent reads, can use exactly those tricks.
 
-I build OpenMoat, and this post shows the tricks and how OpenMoat checks each one. Every verdict below comes from the default policy. You can repeat any of them with `moat policy check "<command>"`. That only prints the verdict. It does not run the command or read any file.
+I build OpenMoat, and this post shows the tricks and how OpenMoat checks each one. Every verdict below comes from the default policy. You can repeat any of them with `openmoat policy check "<command>"`. That only prints the verdict. It does not run the command or read any file.
 
 ## A path in a variable
 
@@ -112,14 +112,14 @@ That gap is covered by a different layer. The same policy configures each agent'
 - A parser can miss a trick nobody has found yet. If you find one, [report it privately](https://github.com/crocodile-labs/openmoat/security/advisories/new). Valid bypasses become test cases before the fix is published.
 - Allowed scripts run whatever they contain; the sandbox bounds them, OpenMoat does not read them.
 - Allowed hosts can receive data. The proxy checks the host, not what is sent inside HTTPS.
-- If the `moat` binary is missing, Claude Code and Codex run calls unchecked. `moat status` reports it.
+- If the `openmoat` binary is missing, Claude Code and Codex run calls unchecked. `openmoat status` reports it.
 
 The full list is in the [threat model](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md).
 
 ## Try it
 
 ```bash
-brew install crocodile-labs/tap/moat && moat init
+brew install crocodile-labs/tap/openmoat && openmoat init
 ```
 
-Then try a few of these yourself with `moat policy check`. If you know a shell trick that gets past it, I want to hear about it.
+Then try a few of these yourself with `openmoat policy check`. If you know a shell trick that gets past it, I want to hear about it.

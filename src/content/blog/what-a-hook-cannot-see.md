@@ -30,7 +30,7 @@ I build OpenMoat. This post explains how it covers that gap with the operating s
 
 OpenMoat checks each tool call in the hook: commands, file reads and writes, web requests and MCP calls. That layer understands what a command means. It parses the shell, decodes base64, follows variables and symlinks.
 
-The second layer does not understand anything. It is the operating system refusing a system call. `moat init` turns on each agent's own sandbox and writes its settings from the same policy. Every process that a command starts is confined by it:
+The second layer does not understand anything. It is the operating system refusing a system call. `openmoat init` turns on each agent's own sandbox and writes its settings from the same policy. Every process that a command starts is confined by it:
 
 - no reads of secrets, and no reads outside the project and the read roots you allow;
 - no writes outside the project;
@@ -42,7 +42,7 @@ So the hook decides what the agent may do, and the sandbox bounds what the code 
 
 Claims about sandboxes are easy to make, so the results are tested. For each case, CI starts a project test script as `npm test` in a throwaway home with fake secrets, under each sandbox, and records what the operating system did. CI fails if a result changes. Part of the table:
 
-| What the script does | Claude Code, macOS | Claude Code, Linux | Codex, Linux | `moat run`, macOS |
+| What the script does | Claude Code, macOS | Claude Code, Linux | Codex, Linux | `openmoat run`, macOS |
 |---|---|---|---|---|
 | `cat "$HOME/.ssh/id_rsa"` | EPERM | ENOENT | EACCES | EPERM |
 | `cat .env` | EPERM | EACCES | EACCES | EPERM |
@@ -59,22 +59,22 @@ The full table, with every layer and every gap, is in [EVIDENCE.md](https://gith
 
 Not every agent has a sandbox, and not every sandbox covers everything. So OpenMoat has three tiers:
 
-- **Standard: the agent's own sandbox.** Claude Code, Codex and Cursor each have one. `moat init` configures it from the policy. This is the default, and `moat status` shows whether each agent has the hook and the OS sandbox, the hook only, or nothing.
-- **Lightweight: `moat run`.** It starts the whole agent inside a sandbox OpenMoat generates, on macOS 14 or later and on Linux, with network through `moat proxy`. It covers every process the agent starts, including ones no hook sees. It is coarser per command than the hook, so use it with the hook.
-- **Isolated: `moat run --isolate`, Linux.** Built with bubblewrap, the agent sees only the project, the read roots, its own executable and an empty temp directory. The rest of your home, like `~/.ssh` and other projects, does not exist in there.
+- **Standard: the agent's own sandbox.** Claude Code, Codex and Cursor each have one. `openmoat init` configures it from the policy. This is the default, and `openmoat status` shows whether each agent has the hook and the OS sandbox, the hook only, or nothing.
+- **Lightweight: `openmoat run`.** It starts the whole agent inside a sandbox OpenMoat generates, on macOS 14 or later and on Linux, with network through `openmoat proxy`. It covers every process the agent starts, including ones no hook sees. It is coarser per command than the hook, so use it with the hook.
+- **Isolated: `openmoat run --isolate`, Linux.** Built with bubblewrap, the agent sees only the project, the read roots, its own executable and an empty temp directory. The rest of your home, like `~/.ssh` and other projects, does not exist in there.
 
 ```bash
-moat run -- claude
-moat run --isolate -- codex
+openmoat run -- claude
+openmoat run --isolate -- codex
 ```
 
 ## Where it stops
 
 A sandbox is only as good as the gaps you know about. These are the ones that matter:
 
-- **Claude Code's sandbox covers only `Bash`, `PowerShell` and `Monitor`.** Its file tools, `WebFetch` and MCP servers are checked by the hook alone. Under `moat run`, the file tools are inside the sandbox too.
+- **Claude Code's sandbox covers only `Bash`, `PowerShell` and `Monitor`.** Its file tools, `WebFetch` and MCP servers are checked by the hook alone. Under `openmoat run`, the file tools are inside the sandbox too.
 - **Cursor runs some commands outside its sandbox:** when its Auto-review approves them, in Run Everything mode, and in the Cursor CLI without `--sandbox enabled`. Its sandbox also cannot deny `.env` or `.git` inside the workspace. OpenMoat writes Cursor's sandbox settings from Cursor's documentation; the generated file has not yet been run under a Cursor build in our tests.
-- **On Linux, plain `moat run` cannot protect files inside the project.** Landlock can only grant access to directories, so `.env`, `.envrc`, `.moat` and `.git` hooks inside the project stay reachable. The EVIDENCE table marks these as gaps. Use `moat run --isolate` there.
+- **On Linux, plain `openmoat run` cannot protect files inside the project.** Landlock can only grant access to directories, so `.env`, `.envrc`, `.moat` and `.git` hooks inside the project stay reachable. The EVIDENCE table marks these as gaps. Use `openmoat run --isolate` there.
 - **Allowed hosts can receive data.** The proxy checks the host, not what is sent inside HTTPS. A script that reads something it may read can still send it to `api.github.com` or a registry.
 - **Native Windows has no OS sandbox.** Use WSL2.
 
@@ -83,16 +83,16 @@ The full list is in [SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob
 ## See it on your machine
 
 ```bash
-moat status          # each agent: hook + OS sandbox, hook only, or not protected
-moat sandbox show    # the sandbox settings the policy compiles to
+openmoat status          # each agent: hook + OS sandbox, hook only, or not protected
+openmoat sandbox show    # the sandbox settings the policy compiles to
 ```
 
-When you allow a site or a directory with `moat allow`, the sandbox settings are updated with the rule. After other policy changes, `moat sandbox sync` writes them again.
+When you allow a site or a directory with `openmoat allow`, the sandbox settings are updated with the rule. After other policy changes, `openmoat sandbox sync` writes them again.
 
 ## Try it
 
 ```bash
-brew install crocodile-labs/tap/moat && moat init
+brew install crocodile-labs/tap/openmoat && openmoat init
 ```
 
-Then run `moat status` and check that your agent says "hook + OS sandbox". The [auto-approve and CI guide](/docs/auto-approve-and-ci/) covers `moat run`, and [limits](/docs/limits/) lists every gap.
+Then run `openmoat status` and check that your agent says "hook + OS sandbox". The [auto-approve and CI guide](/docs/auto-approve-and-ci/) covers `openmoat run`, and [limits](/docs/limits/) lists every gap.

@@ -17,7 +17,7 @@ You want to know what an agent ran, what was blocked, or whether OpenMoat is get
 ## Today at a glance
 
 ```bash
-moat
+openmoat
 ```
 
 ```text
@@ -31,9 +31,9 @@ It shows what needs you first. When nothing does, it says `Nothing needs you.`
 ## The latest decisions
 
 ```bash
-moat show                 # recent events
-moat show 1               # one event in full
-moat show --since today   # a time window: today, yesterday, 3h, 7d, 2026-10-15
+openmoat show                 # recent events
+openmoat show 1               # one event in full
+openmoat show --since today   # a time window: today, yesterday, 3h, 7d, 2026-10-15
 ```
 
 ```text
@@ -45,7 +45,7 @@ id     time (UTC) host         verdict rules          action
 ## One session as a timeline
 
 ```bash
-moat replay --since today
+openmoat replay --since today
 ```
 
 One tree per agent session: every call, its verdict and the rule that decided it.
@@ -53,7 +53,7 @@ One tree per agent session: every call, its verdict and the rule that decided it
 ## A report
 
 ```bash
-moat report --since 7d
+openmoat report --since 7d
 ```
 
 Totals, the hosts the agents reached, the rules that fired most, and asks per active hour. If you are asked often, this shows which rule does it, so you know what to allow.
@@ -61,8 +61,8 @@ Totals, the hosts the agents reached, the rules that fired most, and asks per ac
 ## Export and verify
 
 ```bash
-moat audit export --since 7d > week.jsonl   # events as JSON Lines, with their chain hashes
-moat audit verify week.jsonl                # check it was not changed, without the database
+openmoat audit export --since 7d > week.jsonl   # events as JSON Lines, with their chain hashes
+openmoat audit verify week.jsonl                # check it was not changed, without the database
 ```
 
 ## Keep a record outside the log
@@ -70,14 +70,14 @@ moat audit verify week.jsonl                # check it was not changed, without 
 Every event is hash-chained to the one before, so a change in the middle of the log shows. But someone who can write the log file can delete its newest events and leave a shorter log that still checks out. To catch that later, record the log's head somewhere else now and then:
 
 ```bash
-moat audit anchor --git ~/notes            # a commit on refs/moat/anchors in that repository
-moat audit anchor --file ~/anchors.jsonl   # or one line appended to a file you keep
-moat audit verify --against ~/notes        # later: check today's log against every anchor
+openmoat audit anchor --git ~/notes            # a commit on refs/moat/anchors in that repository
+openmoat audit anchor --file ~/anchors.jsonl   # or one line appended to a file you keep
+openmoat audit verify --against ~/notes        # later: check today's log against every anchor
 ```
 
 An anchor holds the newest event's id, its hash and the time. Nothing is pushed or sent anywhere: an anchor is only as safe as where you keep it, so push the ref (`git -C ~/notes push origin refs/moat/anchors`) or copy the file to another machine.
 
-`moat audit verify --against` fails when an anchored event was deleted or rewritten, and names the first such anchor. Events after the newest anchor are not covered. `moat doctor` shows when you last anchored. The agent cannot run `moat audit anchor` (`kernel-self`).
+`openmoat audit verify --against` fails when an anchored event was deleted or rewritten, and names the first such anchor. Events after the newest anchor are not covered. `openmoat doctor` shows when you last anchored. The agent cannot run `openmoat audit anchor` (`kernel-self`).
 
 <Aside type="tip" title="Private by design">
 

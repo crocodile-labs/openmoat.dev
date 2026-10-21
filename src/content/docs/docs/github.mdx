@@ -31,7 +31,7 @@ The agent commits, pushes, opens pull requests or reads issues.
 `gh` reads its token from `~/.config/gh` or from `GH_TOKEN` / `GITHUB_TOKEN`. The agent cannot read the first, so inside the agent `gh` is not logged in. Broker the token instead:
 
 ```bash
-moat secret add gh                       # once
+openmoat secret add gh                   # once
 export GITHUB_TOKEN="$(gh auth token)"   # in your terminal, before starting the agent
 ```
 
@@ -52,7 +52,7 @@ Before a `git push` or `gh pr create` runs, OpenMoat reads the commits it would 
 | A push it cannot check within 10 s or 8 MiB, or in a repository it cannot tell | ask: `push-unchecked` |
 | Nothing | the push is decided as before |
 
-A token added and removed again inside the push still denies: the push sends both commits. Remove it from the commits, or push from your own terminal. Codex cannot ask, so the two asks reach it as a deny, and `moat allow --last` does not answer them.
+A token added and removed again inside the push still denies: the push sends both commits. Remove it from the commits, or push from your own terminal. Codex cannot ask, so the two asks reach it as a deny, and `openmoat allow --last` does not answer them.
 
 <Aside type="caution" title="What the push check does not see">
 
@@ -62,6 +62,6 @@ A commit made by a later part of the same command line (`git commit -am x && git
 
 <Aside type="tip" title="Fewer prompts for pull requests">
 
-To let the agent open pull requests without asking, allow the command in OpenMoat (`moat allow "gh pr create" --always`) or use your agent's own "always allow". Read-only `gh` commands are already allowed.
+To let the agent open pull requests without asking, allow the command in OpenMoat (`openmoat allow "gh pr create" --always`) or use your agent's own "always allow". Read-only `gh` commands are already allowed.
 
 </Aside>

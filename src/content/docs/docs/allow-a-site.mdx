@@ -15,27 +15,29 @@ A shell command like curl is denied with `default.net`.
 
 </Aside>
 
-Outbound network access from shell commands is denied by default: an unknown host is where a prompt injection would send your data. The default policy lists the hosts development needs (GitHub, npm, crates.io, PyPI, the Go proxy). Anything else is denied:
+Outbound network access from shell commands that can send data is denied by default: an unknown host is where a prompt injection would send your data. The default policy lists the hosts development needs (GitHub, npm, crates.io, PyPI, the Go proxy). A command that can send anything to another host is denied:
 
 ```text
 moat: deny [default.net] — no rule matched net docs.rs
 ```
+
+A plain download is not: a `curl` or `wget` that provably sends nothing but its URL (`curl https://docs.rs/serde`, `curl -sS https://example.com/f.txt -o f.txt`) is decided like a web fetch, so it goes to your agent's own prompt. A body, form, upload, header, another method, credentials or following redirects (`curl -L`) keeps it denied.
 
 <Steps>
 
 1. **Allow the host, in your own terminal**
 
    ```bash
-   moat allow --site docs.rs
+   openmoat allow --site docs.rs
    ```
 
    ```text
    ✔ added to /Users/you/.moat/policy.d/approved.yaml:
        - id: approved-2
-         reason: approved with `moat allow --site` on 2026-10-15 09:12:04 UTC
+         reason: approved with `openmoat allow --site` on 2026-10-15 09:12:04 UTC
          net:
          - docs.rs
-     undo: moat allow --remove approved-2
+     undo: openmoat allow --remove approved-2
    ✔ lock re-pinned (6 files)
    ```
 
@@ -52,18 +54,19 @@ moat: deny [default.net] — no rule matched net docs.rs
 | The agent uses | Before | After |
 |---|---|---|
 | A web fetch tool (Claude Code `WebFetch`) on `docs.rs` | your agent's prompt | **allowed**, no prompt |
-| `curl https://docs.rs/serde` | denied | your agent's prompt, like any command the policy does not list |
-| `curl https://www.docs.rs/` | denied | still denied: another host |
+| `curl https://docs.rs/serde` (sends nothing) | your agent's prompt | not denied |
+| `curl -L https://docs.rs/` or `curl -d @notes.txt https://docs.rs/` | denied | not denied: your agent's prompt, like any command the policy does not list |
+| `curl https://www.docs.rs/` | your agent's prompt | unchanged: another host |
 
 <Impact opens={["Requests to exactly `docs.rs`, from fetch tools and from shell commands", "Sandboxed commands may connect to it"]} keeps={["Every other host stays denied, subdomains included", "Secrets are still denied, so the agent cannot read a key to send there"]} think={["The host can receive whatever the agent sends it. Never allow paste sites, webhook catchers or file-sharing hosts", "OpenMoat checks the host, not the data inside HTTPS"]} />
 
 ## Good to know
 
-- **One exact host.** Wildcards, URLs and ports are refused here; write those with `moat edit` ([Change the rules](/docs/change-the-rules/)).
+- **One exact host.** Wildcards, URLs and ports are refused here; write those with `openmoat edit` ([Change the rules](/docs/change-the-rules/)).
 - **Already allowed:** `github.com`, `api.github.com`, `registry.npmjs.org`, `crates.io`, `static.crates.io`, `index.crates.io`, `proxy.golang.org`, `pypi.org`, `files.pythonhosted.org`.
 
 ## Undo it
 
 ```bash
-moat allow --remove approved-2
+openmoat allow --remove approved-2
 ```

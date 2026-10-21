@@ -18,17 +18,19 @@ Find the message you saw, then run the command next to it **in your own terminal
 
 | You saw | It means | Run |
 |---|---|---|
-| `moat: deny [default.net] — no rule matched net docs.rs` | A host the policy does not list. | `moat allow --site docs.rs` |
-| `moat: ask [git-internals] — …` | A call whose effect outlives the session. | Approve it in the prompt, or `moat allow --last` |
-| Your agent's own prompt, for a file outside the project | OpenMoat has no rule for it and left it to your agent. | `moat allow --dir <folder>`, see [Work across several repos](/docs/work-across-repos/) |
+| `moat: deny [default.net] — no rule matched net docs.rs` | A host the policy does not list, for a command that can send data there (a body, a header, `curl -L`). | `openmoat allow --site docs.rs` |
+| `moat: ask [git-internals] — …` | A call whose effect outlives the session. | Approve it in the prompt, or `openmoat allow --last` |
+| Your agent's own prompt, for a file outside the project | OpenMoat has no rule for it and left it to your agent. | `openmoat allow --dir <folder>`, see [Work across several repos](/docs/work-across-repos/) |
 | `moat: deny [secrets-paths] — secret material: read …` | A key, token or `.env`. This is the block working. | Nothing. If the agent needs a token, see [Keep a token from the agent](/docs/keep-tokens-safe/) |
+| `moat: deny [env-secrets] — …` or `[env-dump]` for `python -c`, `node -e` and similar | Inline code read a secret variable by name, or printed the whole environment. | Nothing. See [.env and variables](/docs/env-files/) |
 | `moat: deny [token-egress] — …` | A known token (GitHub, OpenAI, AWS, …) on its way to a host that is not its service's. | Nothing. If the agent needs the token, see [Keep a token from the agent](/docs/keep-tokens-safe/) |
 | `moat: deny [push-secret] — …` | A commit the push would publish adds a token. | Remove it from the commits, see [GitHub and gh](/docs/github/#what-a-push-would-publish) |
-| `moat: deny [mcp-server-changed] — …` | An MCP server's definition changed or is new. | `moat mcp accept <server>`, see [MCP servers](/docs/mcp-servers/) |
+| `moat: deny [mcp-server-changed] — …` | An MCP server's definition changed or is new. | `openmoat mcp accept <server>`, see [MCP servers](/docs/mcp-servers/) |
 | `moat: ask [package-near-miss] — …` | The package name is one typo away from a popular package, which the reason names. | Check the name. If it is right, approve it, see [Install and publish](/docs/packages/#a-name-close-to-a-popular-package) |
-| `moat: ask [session-taint] — … which session … wrote after it read untrusted content` | The session read or ran a file another session wrote after it read a web page or an MCP result, and now writes a CI, build or agent file. | Look at the file it names, then approve, or `moat allow --last`, see [How it decides](/docs/how-it-decides/#files-a-tainted-session-wrote) |
+| `moat: ask [session-taint] — … which session … wrote after it read untrusted content` | The session read or ran a file another session wrote after it read a web page or an MCP result, and now writes a CI, build or agent file. | Look at the file it names, then approve, or `openmoat allow --last`, see [How it decides](/docs/how-it-decides/#files-a-tainted-session-wrote) |
+| `moat: deny [project-settings] — …` | A project's `.claude/settings.json` or `.claude/settings.local.json` changed during the session (a `git pull`, a checkout) and turns hooks off or sets hooks, `env` or a command. | Look at the file, see [Project settings that turn hooks off](#project-settings-that-turn-hooks-off) |
 | `moat: deny [kernel-self] — …` for `~/.moat/audit.db` or another OpenMoat file | The agent tried to read or change OpenMoat's own state. | Nothing, see [OpenMoat's own files](#openmoats-own-files) |
-| `moat: deny [kernel-integrity] — … was modified` | A pinned file (the policy, a hook) changed. Every call is blocked until you look. | `moat`, see [Troubleshooting](/docs/troubleshooting/) |
+| `moat: deny [kernel-integrity] — … was modified` | A pinned file (the policy, a hook) changed. Every call is blocked until you look. | `openmoat`, see [Troubleshooting](/docs/troubleshooting/) |
 
 ## An ask you want to approve
 
@@ -39,7 +41,7 @@ Find the message you saw, then run the command next to it **in your own terminal
    Answer the prompt, or run:
 
    ```bash
-   moat allow --last            # the last ask: allowed for the rest of that agent session
+   openmoat allow --last            # the last ask: allowed for the rest of that agent session
    ```
 
    ```text
@@ -54,7 +56,7 @@ Find the message you saw, then run the command next to it **in your own terminal
 2. **Or allow it for good**
 
    ```bash
-   moat allow --last --always   # a permanent rule in ~/.moat/policy.d/approved.yaml
+   openmoat allow --last --always   # a permanent rule in ~/.moat/policy.d/approved.yaml
    ```
 
    It prints what the rule will match before writing it, and the command that undoes it. A command rule also matches the same command with more arguments: [what each allow opens](/docs/allow-reference/).
@@ -63,31 +65,37 @@ Find the message you saw, then run the command next to it **in your own terminal
 
 <Aside type="note" title="Codex and Cursor file tools">
 
-Codex, and Cursor for file tools, cannot show a prompt, and neither can Claude Code in its `bypassPermissions` and `dontAsk` modes. There an ask becomes a deny whose message says to run `moat` or `moat allow --last`. Run it, then ask the agent to retry.
+Codex, and Cursor for file tools, cannot show a prompt, and neither can Claude Code in its `bypassPermissions` and `dontAsk` modes. There an ask becomes a deny whose message says to run `openmoat` or `openmoat allow --last`. Run it, then ask the agent to retry.
 
 </Aside>
 
 ## OpenMoat's own files
 
-The agent cannot change anything in `~/.moat`, and cannot read OpenMoat's state beside the policy: the audit log (`audit.db`), `policy.lock`, `hosts.json`, `approvals.json`, `trust.json`, `allowed_signers` and the MCP pins in `mcp/`, wherever `MOAT_HOME` puts them. `sqlite3 -readonly ~/.moat/audit.db` is denied too. The agents' sandboxes and `moat run` carry the same denies.
+The agent cannot change anything in `~/.moat`, and cannot read OpenMoat's state beside the policy: the audit log (`audit.db`), `policy.lock`, `hosts.json`, `approvals.json`, `trust.json`, `allowed_signers` and the MCP pins in `mcp/`, wherever `MOAT_HOME` puts them. `sqlite3 -readonly ~/.moat/audit.db` is denied too. The agents' sandboxes and `openmoat run` carry the same denies.
 
-`~/.moat/policy.yaml` stays readable, so the agent can explain a deny. To see the log yourself, run `moat show` or `moat replay` in your own terminal ([See what the agent did](/docs/see-what-happened/)).
+`~/.moat/policy.yaml` stays readable, so the agent can explain a deny. To see the log yourself, run `openmoat show` or `openmoat replay` in your own terminal ([See what the agent did](/docs/see-what-happened/)).
+
+## Project settings that turn hooks off
+
+A repository's `.claude/settings.json` or `.claude/settings.local.json` can set `disableAllHooks`, which turns OpenMoat's Claude Code hooks off. When such a file changes during a session, Claude Code reports the change and OpenMoat blocks it (`project-settings`) if the file sets `disableAllHooks`, its own `hooks`, `env`, a command setting such as `apiKeyHelper` or `statusLine`, a plugin or `sandbox` settings. Permission lists still load.
+
+Claude Code also loads these files when a session starts, before any hook runs, so OpenMoat cannot block them then. `openmoat doctor` and `openmoat status` warn when the current project has one. For teams, Claude Code's managed settings keep the hooks on: see [Keep Claude Code's hooks on for everyone](/docs/team-rules/#keep-claude-codes-hooks-on-for-everyone).
 
 ## A deny you think is wrong
 
 A deny rule cannot be allowed away: that is what makes it safe. If the default policy blocks something normal work needs, it is a false positive:
 
-1. Check what the policy says: `moat policy check "<the command>"`.
+1. Check what the policy says: `openmoat policy check "<the command>"`.
 2. Report it with the **False positive** template on [GitHub](https://github.com/crocodile-labs/openmoat/issues/new/choose), so the default stops doing it for everyone.
-3. If you cannot wait, change the rule yourself with `moat edit` ([Change the rules](/docs/change-the-rules/)).
+3. If you cannot wait, change the rule yourself with `openmoat edit` ([Change the rules](/docs/change-the-rules/)).
 
 ## Many prompts while you work
 
 If you keep answering your agent's prompt for the same kind of call, OpenMoat is not the one asking: those calls defer. Two commands stop them for good:
 
 ```bash
-moat allow --dir ~/work/shared     # read and write in that folder
-moat allow --site docs.rs          # network access to that host
+openmoat allow --dir ~/work/shared     # read and write in that folder
+openmoat allow --site docs.rs          # network access to that host
 ```
 
-`moat` alone shows today's decisions, so you can see which calls deferred, asked or were denied.
+`openmoat` alone shows today's decisions, so you can see which calls deferred, asked or were denied.

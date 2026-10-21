@@ -24,7 +24,7 @@ An agent that can read a token can send it anywhere a prompt injection tells it 
 1. **Add the secret, in your own terminal**
 
    ```bash
-   moat secret add gh
+   openmoat secret add gh
    ```
 
    It brokers `GITHUB_TOKEN` for `api.github.com`, shows the change to your policy, asks `Apply? [y/N]`, then updates the agent sandbox.
@@ -46,12 +46,12 @@ An agent that can read a token can send it anywhere a prompt injection tells it 
 
 ## Can the agent read the token?
 
-| The agent tries | With `moat secret add gh` |
+| The agent tries | With `openmoat secret add gh` |
 |---|---|
 | `echo $GITHUB_TOKEN`, `printenv` | denied (`env-secrets`, `env-dump`) |
 | `gh auth token`, `cat ~/.config/gh/hosts.yml` | denied (`secrets-paths`) |
 | A program it runs reads `GITHUB_TOKEN` | gets the placeholder, not the value |
-| Sends the placeholder to another host in a URL or a command's arguments | denied (`placeholder-egress`); worthless there anyway: the value is put in only for `api.github.com` (through `moat proxy`, such a request is also refused) |
+| Sends the placeholder to another host in a URL or a command's arguments | denied (`placeholder-egress`); worthless there anyway: the value is put in only for `api.github.com` (through `openmoat proxy`, such a request is also refused) |
 | Commits a token and pushes it | denied (`push-secret`, see [GitHub and gh](/docs/github/#what-a-push-would-publish)) |
 
 ## Tokens sent to the wrong host
@@ -68,13 +68,13 @@ Even without a brokered secret, `token-egress` denies a well-known token sent to
 | npm (`npm_`) | `npmjs.org`, `npmjs.com` |
 | GitLab (`glpat-`) | `gitlab.com` |
 
-Each with its subdomains. It is checked in a fetch or network tool's URL, an MCP URL argument, a web search, and the arguments of a command that connects to a host and of commands piped into it. Only these prefixed formats count, so commit SHAs, UUIDs and base64 data are never taken for a token. A self-hosted GitLab or GitHub Enterprise server is not the service's host; to send tokens there, narrow the rule with `moat edit` ([POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md)).
+Each with its subdomains. It is checked in a fetch or network tool's URL, an MCP URL argument, a web search, and the arguments of a command that connects to a host and of commands piped into it. Only these prefixed formats count, so commit SHAs, UUIDs and base64 data are never taken for a token. A self-hosted GitLab or GitHub Enterprise server is not the service's host; to send tokens there, narrow the rule with `openmoat edit` ([POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md)).
 
 It does not see a token in a file a command uploads (`curl -d @file`), a here-document, a variable whose value is not on the command line, or an encoded or split token.
 
 <Aside type="note" title="Upgrading from 0.5.6 or earlier">
 
-An existing policy gets `token-egress` and `placeholder-egress` with `moat policy upgrade` ([Upgrade](/docs/upgrade/)).
+An existing policy gets `token-egress` and `placeholder-egress` with `openmoat policy upgrade` ([Upgrade](/docs/upgrade/)).
 
 </Aside>
 
@@ -83,20 +83,20 @@ An existing policy gets `token-egress` and `placeholder-egress` with `moat polic
 Add the secret, and allow its host: a secret opens nothing by itself.
 
 ```bash
-moat allow --site api.stripe.com
-moat secret add stripe --host api.stripe.com --env STRIPE_API_KEY
+openmoat allow --site api.stripe.com
+openmoat secret add stripe --host api.stripe.com --env STRIPE_API_KEY
 ```
 
 The value goes in the `Authorization` header unless you pass `--header <name>`.
 
 ### Make sure the agent cannot read the source
 
-A brokered value the agent can read anyway protects nothing, so `moat secret add` checks where the value comes from. When no rule denies it yet, it adds one, `secret-<id>`, in the same diff you approve:
+A brokered value the agent can read anyway protects nothing, so `openmoat secret add` checks where the value comes from. When no rule denies it yet, it adds one, `secret-<id>`, in the same diff you approve:
 
-| Source | Already denied? | What `moat secret add` does |
+| Source | Already denied? | What `openmoat secret add` does |
 |---|---|---|
-| `--env NAME` ending in `_KEY`, `_TOKEN`, `_SECRET`, `_PASSWORD`, or starting with `AWS_` | yes, `env-secrets` | nothing more |
-| `--env NAME` with another name (`DATABASE_URL`, `STRIPE_LIVE`) | no | adds `secret-<id>` with an `env.read` deny of it |
+| `--env NAME` ending in `_KEY`, `_TOKEN`, `_SECRET`, `_PASSWORD`, or starting with `AWS_`, and the other names in [.env and variables](/docs/env-files/#what-is-denied) | yes, `env-secrets` | nothing more |
+| `--env NAME` with another name (`STRIPE_LIVE`) | no | adds `secret-<id>` with an `env.read` deny of it |
 | `--file PATH` under `~/.ssh`, `~/.aws`, `~/.config/gh` and the other secret folders | yes, `secrets-paths` | nothing more |
 | `--file PATH` anywhere else (`~/.config/example/token`) | no | adds `secret-<id>` with an `fs.read` deny of it |
 
@@ -104,7 +104,7 @@ The diff shows the rule, and the line `The deny rule secret-<id> keeps the agent
 
 <Aside type="note" title="Secrets added with OpenMoat 0.5.1 or earlier">
 
-They only warned. Run `moat policy lint`: a warning `no deny … rule covers …, so the agent can read it` means you should add the deny with `moat edit`:
+They only warned. Run `openmoat policy lint`: a warning `no deny … rule covers …, so the agent can read it` means you should add the deny with `openmoat edit`:
 
 ```yaml
 deny:
@@ -126,8 +126,8 @@ Claude Code's broker reads `env` and `file` sources. On macOS it denies a `file`
 | Agent | HTTPS requests | Plain HTTP |
 |---|---|---|
 | Claude Code, sandboxed shell commands | yes: Claude Code's own sandbox broker puts the value in | yes, with `plain_http: true` in the policy |
-| Codex, Cursor, `moat run` (through `moat proxy`) | not yet: the request keeps the placeholder and the server rejects it | yes, with `plain_http: true` |
+| Codex, Cursor, `openmoat run` (through `openmoat proxy`) | not yet: the request keeps the placeholder and the server rejects it | yes, with `plain_http: true` |
 
-`moat run` removes the environment variables brokered secrets are read from before it starts the agent, so neither the agent nor its commands hold the real value.
+`openmoat run` removes the environment variables brokered secrets are read from before it starts the agent, so neither the agent nor its commands hold the real value.
 
-<Impact opens={["Programs the agent runs can call the API with your token"]} keeps={["The agent itself never holds the value, and cannot print or read it", "A request carrying the placeholder or the value to any other host is refused", "Its source is denied too: `moat secret add` adds the rule when none covers it"]} think={["The API host can still be told to do anything the token allows: give the token the smallest scope that works"]} />
+<Impact opens={["Programs the agent runs can call the API with your token"]} keeps={["The agent itself never holds the value, and cannot print or read it", "A request carrying the placeholder or the value to any other host is refused", "Its source is denied too: `openmoat secret add` adds the rule when none covers it"]} think={["The API host can still be told to do anything the token allows: give the token the smallest scope that works"]} />

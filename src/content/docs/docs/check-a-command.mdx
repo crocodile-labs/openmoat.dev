@@ -15,7 +15,7 @@ You want to know whether a command will be blocked, or why it was.
 </Aside>
 
 ```bash
-moat policy check "git push origin main"
+openmoat policy check "git push origin main"
 ```
 
 ```text
@@ -24,16 +24,24 @@ moat policy check "git push origin main"
    reason: no rule matched shell "git push origin main"
 ```
 
-`moat policy check` runs nothing. It parses the command the way the hook does and prints the answer, the rules that decided it and the reason.
+`openmoat policy check` runs nothing. It parses the command the way the hook does and prints the answer, the rules that decided it and the reason.
 
 ## More examples
 
 ```bash
-moat policy check "cat ~/.ssh/id_rsa"                      # deny: secrets-paths
-moat policy check "git config core.hooksPath .h"           # ask: git-internals
-moat policy check "https://docs.rs/serde" --kind fetch     # a web fetch, not a shell command
-moat policy check "~/.aws/credentials" --kind fs-read      # a file read by a file tool
+openmoat policy check "cat ~/.ssh/id_rsa"                      # deny: secrets-paths
+openmoat policy check "git config core.hooksPath .h"           # ask: git-internals
+openmoat policy check "https://docs.rs/serde" --kind fetch     # a web fetch, not a shell command
+openmoat policy check "~/.aws/credentials" --kind fs-read      # a file read by a file tool
 ```
+
+## A few examples at once
+
+```bash
+openmoat demo
+```
+
+It decides a fixed list of example agent calls (everyday work, a private key read, a key sent out, the same read base64-encoded, a misspelled package, a plain download, switching OpenMoat off) with your installed policy, or the default one, and prints each command with its verdict, rule and reason. It uses the same engine as `openmoat policy check`; nothing runs, and no hook, setting or file is changed.
 
 ## Use it in scripts
 
