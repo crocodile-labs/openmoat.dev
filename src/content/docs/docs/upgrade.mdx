@@ -69,6 +69,15 @@ From 0.8.0 the command is `openmoat`. Every install still puts a `moat` beside i
 
 Until you do, the old hooks keep working through `moat`. `openmoat doctor` says when a hook still uses the old name. OpenMoat's state stays where it was: `~/.moat`, a project's `.moat/policy.yaml` and the `MOAT_*` variables are unchanged, and messages still start with `moat:`.
 
+<Aside type="note" title="Upgrading to 0.10.0">
+
+- **Nothing to run for a default install.** `brew upgrade` (or your install method) is enough; the policy lock keeps verifying.
+- **An OpenClaw configuration at another path** (`OPENCLAW_CONFIG_PATH`) shows drift once: run `openmoat init`.
+- **Fixes you get:** a granted file replaced by a symlink is asked about again, an open proxy tunnel closes at the next recheck after the session reads a secret, and a mail address in `git -c user.email=…` or `curl -u` is no longer read as a host.
+- The `openmoat` command, the policy format and the hooks are unchanged. Only the `openmoat-hosts` library changed its API.
+
+</Aside>
+
 <Aside type="note" title="Upgrading to 0.9.0">
 
 - **Run `openmoat init` once, then restart your agents.** An agent keeps the hook it read when it started, and an OpenMoat older than 0.9.0 denies every call over a lock 0.9.0 has written. Keep one OpenMoat installed: if you have a Homebrew install and a `cargo install`, remove one.
