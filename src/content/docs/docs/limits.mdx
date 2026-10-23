@@ -20,21 +20,34 @@ OpenMoat does not replace your agent's prompt or sandbox; it fills the gaps betw
   <LinkCard title="A deferred call runs if your agent lets it" href="/docs/auto-approve-and-ci/" description="In auto-approve modes only deny and ask stop a call." />
   <LinkCard title="Allowed scripts run what they contain" href="/docs/how-it-decides/" description="npm test is allowed; the sandbox bounds what its script can reach, OpenMoat does not read it." />
   <LinkCard title="Allowed hosts can receive data" href="/docs/allow-a-site/" description="The proxy checks the host, not what is sent inside HTTPS." />
-  <LinkCard title="Tools no hook exposes are not seen" href="/docs/auto-approve-and-ci/" description="Codex web search and hosted tools, for example." />
+  <LinkCard title="Tools no hook exposes are not seen" href="/docs/agents/" description="Codex web search and hosted tools, for example." />
+  <LinkCard title="Outside an OS sandbox, the hook decides alone" href="/docs/agents/" description="For OpenClaw, GitHub Copilot CLI, pi and Gemini CLI, an allowed call runs with your permissions." />
 </CardGrid>
+
+## Per agent
+
+- **Hook-only agents** (OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, and Claude Code and Cursor on native Windows) have no OS sandbox from OpenMoat. An allowed command runs with your permissions, so a mistake in how OpenMoat reads it is a way past it. A program that runs as you outside any sandbox can also change the policy and recompute the lock; only an OS sandbox stops that.
+- **Some agents run a call when the hook fails.** Codex, and Claude Code before 2.1.295, run a call unchecked if `openmoat` is missing or crashes. GitHub Copilot CLI and Gemini CLI run a call whose hook times out. OpenClaw and pi run calls unchecked when they do not load OpenMoat's plugin or extension.
+- **Agent settings can turn hooks off.** Codex runs a new or changed hook only once you trust it in `/hooks`. `disableAllHooks` (Claude Code, Copilot CLI), `[features] hooks = false` (Codex), `hooksConfig` (Gemini CLI) and pi's `--no-extensions` turn the hook off. `openmoat status` reports the settings it can see, not command-line flags.
+- **Gemini CLI** runs no hooks in a folder it does not trust (it asks you before every tool there instead), and an extension's hooks run beside OpenMoat's.
+- **pi** has no approval step of its own, so a call OpenMoat defers runs without a question.
+- **The Continue CLI** runs no hooks yet: OpenMoat cannot check its calls. Use `openmoat run`.
 
 ## In detail
 
 - **Cursor** runs a command outside the sandbox OpenMoat configures when its Auto-review approves it, in Run Everything mode, and in the Cursor CLI without `--sandbox enabled`; inside the workspace its sandbox cannot deny `.env` or `.git`.
 - **Claude Code's sandbox** covers `Bash`, `PowerShell` and `Monitor`. File tools, `WebFetch` and MCP servers are checked by the hook only.
 - **On Linux**, `openmoat run` does not protect files inside the project (`.env`, `.envrc`, `.moat`, `.git` hooks); `openmoat run --isolate` does. Where bubblewrap is missing or cannot create user namespaces, `openmoat run` restricts the network by port only, so a command could connect to another host on the proxy's port; it says so on every start, and `openmoat doctor` warns.
+- **On Linux without a network namespace**, `openmoat run` refuses a `--write` path outside the project, `~/.claude` included. Install bubblewrap and allow unprivileged user namespaces.
+- **Inside `openmoat run`**, commands cannot write an agent's own configuration in the project (`.claude/hooks/`, `.mcp.json`, `.github/hooks/`, `.pi/extensions/` and the like), even when you allowed the write: change those files outside `openmoat run`. Programs that open a new terminal inside (`script`, `expect`, `node-pty`) can fail, and on Linux containers and Chromium's own sandbox do not start.
 - **On macOS 12 and earlier**, `openmoat run` does not start; the hooks still apply the policy.
-- **On native Windows** only the hook applies the policy; use WSL2 for the OS sandbox.
+- **On native Windows** the hook applies the policy, and only Codex has an OS sandbox; use WSL2 for the others. `openmoat run` and `openmoat proxy install` are not available, and PowerShell commands are not parsed, so OpenMoat never allows one.
 - **Project settings loaded at session start.** A repository's `.claude/settings.json` can turn Claude Code's hooks off with `disableAllHooks`, and Claude Code loads it before any hook runs. OpenMoat blocks such a change made during a session and `openmoat doctor` warns, but only Claude Code's managed settings stop it at start ([Keep Claude Code's hooks on for everyone](/docs/team-rules/#keep-claude-codes-hooks-on-for-everyone)).
-- **A missing hook binary:** if `openmoat` is missing or killed, Codex and Claude Code before 2.1.295 run the call unchecked. `openmoat status` reports it. With Claude Code 2.1.295 or later, `openmoat init` sets the hook's `onFailure: "block"`, so the call is blocked.
+- **A missing hook binary:** if `openmoat` is missing or killed, Codex and Claude Code before 2.1.295 run the call unchecked. `openmoat status` reports it. With Claude Code 2.1.295 or later, `openmoat init` sets the hook's `onFailure: "block"`, so the call is blocked. The other hooked agents block it too.
 - **Token checks see only known formats, where the hook sees them.** `token-egress` reads URLs, web searches, MCP URL arguments and command arguments. It does not see a token in a file a command uploads, a here-document, a variable not on the command line, or an encoded or split token, and tokens without a vendor prefix pass.
 - **The push check reads what git shows at the time of the call.** A commit made later on the same command line, and a push through a program other than `git` and `gh`, are not seen.
 - **A changed MCP server still starts.** OpenMoat refuses its tool calls, but the agent starts its servers when a session begins. `openmoat mcp proxy` does not pin prompts, resources or tool results, and does not cover remote servers.
+- **Ports count in the proxy, not in the hook.** Through `openmoat proxy` and `openmoat run`, an allowed host is reached on ports 443 and 80 only unless a rule names `host:port`. The hook decides by host alone, so for a hook-only agent an allowed command connects to any port of an allowed host.
 - **A plain download from an unlisted host defers.** A `curl` or `wget` that sends nothing but its URL goes to your agent's prompt, like a web fetch. The hook cannot see a host name that resolves to an internal address, or a `~/.curlrc` or `~/.wgetrc` written earlier that turns on following redirects; under `openmoat run` and the agents' sandboxes the proxy still refuses link-local and metadata addresses.
 - **An allowed host can front for another site on the same provider.** `openmoat proxy` refuses an encrypted server name (ECH or ESNI) unless `sandbox.proxy_allow_ech: true`, but it does not see the HTTP `Host` header inside the tunnel. Browsers driven through the proxy send ECH, so they are refused too.
 - **The standalone `openmoat proxy` takes no credential.** Any local process may use it, and session taint does not apply there; `openmoat run`'s own proxy serves only its run.

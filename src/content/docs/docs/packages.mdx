@@ -53,7 +53,7 @@ A malicious package version is usually found and taken down within days. Inside 
 
 ## Install scripts
 
-An install runs code from the package (`postinstall`, `build.rs`, `setup.py`). When the agent runs the install, that code runs inside the agent's OS sandbox:
+An install runs code from the package (`postinstall`, `build.rs`, `setup.py`). When the agent runs the install, that code runs inside the agent's OS sandbox (Claude Code, Codex, Cursor, or any agent under `openmoat run`; for a hook-only agent it runs with your permissions):
 
 <Impact opens={["It can read and write the project, and reach the package registries the policy allows"]} keeps={["It cannot read your keys, `.env` files or cloud credentials", "It cannot reach hosts the policy does not list"]} think={["It can still change files in the project: review the diff after an install"]} />
 

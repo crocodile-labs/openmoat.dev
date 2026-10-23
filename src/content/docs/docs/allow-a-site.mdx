@@ -41,7 +41,7 @@ A plain download is not: a `curl` or `wget` that provably sends nothing but its 
    ✔ lock re-pinned (6 files)
    ```
 
-   It also updates your agents' OS sandboxes, so sandboxed commands can reach the host too.
+   It also updates the OS sandboxes of the agents that have one (Claude Code, Codex, Cursor), so sandboxed commands can reach the host too.
 
 2. **Start a new agent session, or ask the agent to try again**
 
@@ -63,6 +63,7 @@ A plain download is not: a `curl` or `wget` that provably sends nothing but its 
 ## Good to know
 
 - **One exact host.** Wildcards, URLs and ports are refused here; write those with `openmoat edit` ([Change the rules](/docs/change-the-rules/)).
+- **Ports 443 and 80.** Through `openmoat proxy` and `openmoat run`, the host is reached on those two ports only. For another port, add `host:port` next to the host with `openmoat edit` ([a port other than 443 or 80](/docs/troubleshooting/#a-connection-to-a-port-other-than-443-or-80-is-refused)).
 - **Already allowed:** `github.com`, `api.github.com`, `registry.npmjs.org`, `crates.io`, `static.crates.io`, `index.crates.io`, `proxy.golang.org`, `pypi.org`, `files.pythonhosted.org`.
 
 ## Undo it

@@ -1,0 +1,122 @@
+---
+title: "Supported agents"
+description: "The eight agents OpenMoat works with, how well each one is protected, where you answer its questions, and what each one does not cover."
+sidebar:
+  label: "Supported agents"
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You want to know how much OpenMoat can do for the agent you use, or `openmoat status` shows a protection level you did not expect.
+
+</Aside>
+
+Each agent calls `openmoat guard` from its own **hook** before every tool call. `openmoat init` finds the agents installed on your machine and asks before setting up each one.
+
+For an agent with an **OS sandbox**, `openmoat init` also writes the sandbox settings from the same policy, so a script inside an allowed `npm test` cannot read your keys either. For the others, the hook is the only check.
+
+## At a glance
+
+| Agent | Protection | Where you answer an ask | `openmoat init --hosts` |
+|---|---|---|---|
+| [Claude Code](#claude-code) | hook + OS sandbox (macOS, Linux, WSL2); hook only on native Windows | Claude Code's own prompt | `claude-code` |
+| [Codex](#codex) | hook + OS sandbox | the call is denied; run `openmoat allow --last` | `codex` |
+| [Cursor](#cursor) | hook + OS sandbox (macOS, Linux); hook only on Windows | Cursor's prompt for shell and MCP calls; `openmoat allow --last` for file tools | `cursor` |
+| [OpenClaw](#openclaw) | hook only | OpenClaw's own approval request | `openclaw` |
+| [GitHub Copilot CLI](#github-copilot-cli) | hook only | Copilot's own prompt | `copilot-cli` |
+| [pi](#pi) | hook only | a pi dialog | `pi` |
+| [Gemini CLI](#gemini-cli) | hook only | Gemini CLI's own confirmation | `gemini-cli` |
+| [Continue CLI](#continue-cli) | not checked yet | none: use `openmoat run` | none |
+
+`openmoat status` prints the level each agent has right now. It says **not protected** when the hook is missing or out of date, or when the agent's own settings turn hooks off; the line names the file and the setting.
+
+For any agent, `openmoat run -- <agent>` starts the whole agent inside one sandbox made from your policy, with network only through OpenMoat's proxy (macOS 13 or later, Linux). It answers nothing command by command; that is the hook's job. See [Auto-approve and CI](/docs/auto-approve-and-ci/#run-a-whole-agent-in-a-sandbox).
+
+## What each agent's hook sees
+
+Every hooked agent sends OpenMoat its shell commands, file reads and writes, and MCP tool calls. A tool OpenMoat has no mapping for is still checked for the paths, URLs and shell commands its arguments name, so an extension's tool that reads `~/.ssh/id_rsa` is denied. The differences are below.
+
+### Claude Code
+
+- **Checked:** `Bash`, `Monitor`, `PowerShell` (not parsed, so it goes to your agent's prompt), file tools (`Read`, `Edit`, `Write`, `MultiEdit`, `NotebookEdit`, `Glob`, `Grep`, `LSP`), `WebFetch`, `WebSearch`, `SendFile`, the local files `Artifact` and `ArtifactData` upload or save, and MCP tools. A second hook, `ConfigChange`, sees settings files change during a session.
+- **Sandbox:** Claude Code's sandbox covers `Bash`, `PowerShell` and `Monitor`. File tools, `WebFetch` and MCP servers run outside it and are checked by the hook only. On native Windows `openmoat init` leaves the sandbox off, because Claude Code would not start with it; run Claude Code and `openmoat` inside WSL2 for it.
+- **If the hook fails:** with Claude Code 2.1.295 or later, `openmoat init` sets `onFailure: "block"`, so the call is blocked when `openmoat` cannot start, crashes or times out. Earlier versions run the call unchecked.
+- **Turned off by:** `disableAllHooks` in a `settings.json`. A project's `.claude/settings.json` is loaded when the session starts, before any hook runs; see [Project settings that turn hooks off](/docs/blocked/#project-settings-that-turn-hooks-off).
+
+### Codex
+
+- **Checked:** shell commands, `apply_patch` (every file the patch names) and MCP tools. Codex's web search and hosted tools are not sent to hooks, so OpenMoat does not see them.
+- **Asks:** Codex hooks cannot show a question, so an ask is sent as a deny. The message says to run `openmoat` or `openmoat allow --last`; run it, then ask Codex to retry.
+- **One step in Codex:** Codex runs a new or changed hook only after you trust it in its `/hooks` view. After `openmoat init`, and after an upgrade that rewrites the hook, open `/hooks` in Codex and trust OpenMoat's. `openmoat init` and `openmoat doctor` remind you.
+- **If the hook fails:** Codex runs the call unchecked when `openmoat` is missing, crashes or times out.
+- **Turned off by:** `[features] hooks = false` in `config.toml`.
+
+### Cursor
+
+- **Checked:** shell commands, MCP calls, file reads, and the agent's file, search and web tools. The hooks are installed with `failClosed`, so a hook that fails blocks the call.
+- **Asks:** Cursor shows its own prompt only for shell and MCP calls. An ask about a file tool is sent as a deny that says to run `openmoat allow --last`.
+- **Sandbox:** `openmoat init` writes Cursor's `sandbox.json` on macOS and Linux. Cursor still runs some commands outside it: one its Auto-review approves, everything in Run Everything mode, and the Cursor CLI without `--sandbox enabled`. Inside the workspace its sandbox cannot deny `.env` or `.git`. Cursor documents no sandbox on Windows, so there it is hook only.
+
+### OpenClaw
+
+- **Checked:** every tool, through OpenMoat's plugin on OpenClaw's `before_tool_call` hook: `exec`, file tools, `apply_patch`, `web_fetch`, `web_search`, browser navigation and uploads, MCP tools, plugin changes, and cron jobs (which ask).
+- **Setup:** restart the Gateway after `openmoat init`. `openmoat init` refuses an `openclaw.json` that has comments, because writing it back would drop them: move them out first.
+- **If the hook fails:** a plugin that throws or takes over 60 seconds blocks the call. If the Gateway does not load the plugin at all, calls run unchecked.
+
+### GitHub Copilot CLI
+
+- **Checked:** every tool, through a `preToolUse` hook in a file of OpenMoat's own (`~/.copilot/hooks/openmoat.json`): `bash`, file tools, patches, searches, `web_fetch`, `web_search` and MCP tools. Input typed into a running shell (`write_bash`, `write_powershell`) asks, because a command split over two calls would pass piece by piece.
+- **Asks:** Copilot's own prompt. In autopilot mode Copilot turns an ask into a deny.
+- **If the hook fails:** Copilot blocks a call whose hook crashes, but runs one whose hook times out. `openmoat init` sets the timeout to 600 seconds, far above OpenMoat's own 30-second limit.
+- **Turned off by:** `disableAllHooks` in `~/.copilot/settings.json` or a repository's `.github/copilot/settings.json`. The agent cannot write those files, and `openmoat status` reports yours.
+
+### pi
+
+- **Checked:** every tool, through OpenMoat's extension (`~/.pi/agent/extensions/openmoat.js`) on pi's `tool_call` event, including the calls a `codemode` script makes and the tools of other extensions.
+- **Asks:** a pi dialog. In print and JSON mode, which have no screen, an ask is a deny until you run `openmoat allow --last`.
+- **Deferred calls run.** pi has no approval step of its own, so a call OpenMoat has no rule for runs without a question.
+- **Setup:** restart pi after `openmoat init`; it loads extensions when it starts.
+- **If the hook fails:** an extension that throws, or an answer that takes over 45 seconds, blocks the call. `pi --no-extensions`, or a settings entry that leaves OpenMoat's extension out, runs calls unchecked; `openmoat status` reports such an entry.
+
+### Gemini CLI
+
+- **Checked:** every tool, through a `BeforeTool` hook in `~/.gemini/settings.json`: `run_shell_command`, file tools, searches, `web_fetch`, `google_web_search` and MCP tools. A search without a directory, and every `read_many_files`, asks, because Gemini CLI then reads every workspace folder and the hook does not say which.
+- **Asks:** Gemini CLI's own confirmation, also in YOLO mode.
+- **Trusted folders only.** In a folder Gemini CLI does not trust, it runs no hooks at all, and asks you before every tool instead.
+- **If the hook fails:** Gemini CLI has no setting to block on failure. A hook that times out, is killed or exits with code 1 lets the call run. A missing `openmoat` blocks it.
+- **Setup:** `openmoat init` refuses a `settings.json` with comments: move them out first. When Gemini CLI saves a new model, theme or display setting there, calls keep being checked and `openmoat doctor` reports the change.
+
+### Continue CLI
+
+The Continue CLI (`cn`) is built to run Claude Code's hook, but the released `cn` runs no hooks yet, so OpenMoat cannot check its calls. Start it with `openmoat run -- cn` to keep it in a sandbox; `openmoat doctor` warns about this.
+
+## macOS, Linux and Windows
+
+| | Hooks | Agents' own sandboxes | `openmoat run` | `openmoat proxy install` |
+|---|---|---|---|---|
+| macOS | yes | Claude Code, Codex, Cursor | macOS 13 or later | launchd user agent |
+| Linux | yes | Claude Code, Codex, Cursor | yes, plus `--isolate` | systemd user unit |
+| Windows | yes | Codex only; use WSL2 for Claude Code | no; use WSL2 | not yet |
+
+- **macOS:** `openmoat run` uses Seatbelt and needs macOS 13 or later. On macOS 12 it refuses to start and says so; the hooks still apply the policy.
+- **Linux:** `openmoat run` uses Landlock and seccomp. Where bubblewrap can run, the agent also gets a network namespace of its own, so its traffic can only go through OpenMoat's proxy. Without it the network is limited by port only, and `openmoat run` says so on every start (`--netns=require` refuses to start instead). Plain `openmoat run` does not protect files inside the project (`.env`, `.git`, `.moat`); `openmoat run --isolate` does.
+- **Windows:** the hooks apply the policy to every call. PowerShell commands are not parsed, so OpenMoat never allows one: they go to your agent's prompt. Secrets kept in the system keychain cannot be brokered yet.
+
+## Agent settings that switch the hook off
+
+An agent's own settings can turn its hooks off, and OpenMoat cannot override them. `openmoat status` and `openmoat doctor` report the ones in your own settings as **not protected**, and warn about a project's settings that turn hooks off, add hooks or start programs:
+
+| Agent | Setting |
+|---|---|
+| Claude Code | `disableAllHooks` in `settings.json` |
+| Codex | `[features] hooks = false` in `config.toml`, or OpenMoat's hook not trusted in `/hooks` |
+| GitHub Copilot CLI | `disableAllHooks` in `settings.json` |
+| pi | an `extensions` entry that leaves OpenMoat's out, or `--no-extensions` |
+| Gemini CLI | `hooksConfig` in `settings.json`, or a folder Gemini CLI does not trust |
+
+The agent itself is denied writing these files, so only you, or a program running outside the agent, can change them.
+
+Every gap per agent, with the reasons: [THREAT_MODEL.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md#5-known-limitations). Every tool each hook sees: [INSTALL.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/INSTALL.md#set-up-with-openmoat-init).

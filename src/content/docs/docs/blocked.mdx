@@ -19,7 +19,8 @@ Find the message you saw, then run the command next to it **in your own terminal
 | You saw | It means | Run |
 |---|---|---|
 | `moat: deny [default.net] — no rule matched net docs.rs` | A host the policy does not list, for a command that can send data there (a body, a header, `curl -L`). | `openmoat allow --site docs.rs` |
-| `moat: ask [git-internals] — …` | A call whose effect outlives the session. | Approve it in the prompt, or `openmoat allow --last` |
+| `moat: ask [git-internals] — …` or `[runs-later]` | A call whose effect outlives the session: a git hook, a CI workflow, an agent's skills, hooks or MCP settings that load next session. | Approve it in the prompt, or `openmoat allow --last` |
+| `moat: ask [unchecked] — …` | OpenMoat sees the call but cannot check all of it: a search pattern that may climb out of its folder, a search of every workspace folder, text typed into a running shell. | Approve it if it is what you expect, or ask the agent to name the folder or run the command in one call |
 | Your agent's own prompt, for a file outside the project | OpenMoat has no rule for it and left it to your agent. | `openmoat allow --dir <folder>`, see [Work across several repos](/docs/work-across-repos/) |
 | `moat: deny [secrets-paths] — secret material: read …` | A key, token or `.env`. This is the block working. | Nothing. If the agent needs a token, see [Keep a token from the agent](/docs/keep-tokens-safe/) |
 | `moat: deny [env-secrets] — …` or `[env-dump]` for `python -c`, `node -e` and similar | Inline code read a secret variable by name, or printed the whole environment. | Nothing. See [.env and variables](/docs/env-files/) |
@@ -51,7 +52,7 @@ Find the message you saw, then run the command next to it **in your own terminal
    ✔ lock re-pinned (6 files)
    ```
 
-   A session grant lasts 24 hours and covers only that session and that exact command or file.
+   It first shows which agent, session and call it means, and asks `Approve it? [y/N]`. A session grant lasts 24 hours and covers only that session and that exact command or file. A command grant also holds only in the project it was asked in: the same command in another repository asks again.
 
 2. **Or allow it for good**
 
@@ -63,9 +64,11 @@ Find the message you saw, then run the command next to it **in your own terminal
 
 </Steps>
 
-<Aside type="note" title="Codex and Cursor file tools">
+To see everything you have allowed, with the command that takes each one back, run `openmoat allowed`.
 
-Codex, and Cursor for file tools, cannot show a prompt, and neither can Claude Code in its `bypassPermissions` and `dontAsk` modes. There an ask becomes a deny whose message says to run `openmoat` or `openmoat allow --last`. Run it, then ask the agent to retry.
+<Aside type="note" title="Agents that cannot show a prompt">
+
+Codex, and Cursor for file tools, cannot show a prompt, and neither can Claude Code in its `bypassPermissions` and `dontAsk` modes, GitHub Copilot CLI in autopilot or pi in print and JSON mode. There an ask becomes a deny whose message says to run `openmoat` or `openmoat allow --last`. Run it, then ask the agent to retry. See [Supported agents](/docs/agents/).
 
 </Aside>
 
@@ -77,9 +80,9 @@ The agent cannot change anything in `~/.moat`, and cannot read OpenMoat's state 
 
 ## Project settings that turn hooks off
 
-A repository's `.claude/settings.json` or `.claude/settings.local.json` can set `disableAllHooks`, which turns OpenMoat's Claude Code hooks off. When such a file changes during a session, Claude Code reports the change and OpenMoat blocks it (`project-settings`) if the file sets `disableAllHooks`, its own `hooks`, `env`, a command setting such as `apiKeyHelper` or `statusLine`, a plugin or `sandbox` settings. Permission lists still load.
+A repository's `.claude/settings.json` or `.claude/settings.local.json` can set `disableAllHooks`, which turns OpenMoat's Claude Code hooks off. When such a file changes during a session, Claude Code reports the change and OpenMoat blocks it (`project-settings`) if the file sets `disableAllHooks`, its own `hooks`, `env`, a command setting such as `apiKeyHelper` or `statusLine`, a plugin, `sandbox` settings, or settings that start the project's MCP servers (`enableAllProjectMcpServers`, `enabledMcpjsonServers`). Permission lists still load.
 
-Claude Code also loads these files when a session starts, before any hook runs, so OpenMoat cannot block them then. `openmoat doctor` and `openmoat status` warn when the current project has one. For teams, Claude Code's managed settings keep the hooks on: see [Keep Claude Code's hooks on for everyone](/docs/team-rules/#keep-claude-codes-hooks-on-for-everyone).
+Claude Code also loads these files when a session starts, before any hook runs, so OpenMoat cannot block them then. `openmoat doctor` and `openmoat status` warn when the current project has one. They warn the same way about a project's settings for other agents that turn hooks off, add hooks or extensions, or start programs: `.codex/config.toml` and `.codex/hooks.json`, `.cursor/hooks.json`, `.gemini/settings.json`, `.pi/settings.json` and `.pi/extensions/`, and a repository's `.github/copilot/settings.json` and `.github/hooks/`. For teams, Claude Code's managed settings keep the hooks on: see [Keep Claude Code's hooks on for everyone](/docs/team-rules/#keep-claude-codes-hooks-on-for-everyone).
 
 ## A deny you think is wrong
 

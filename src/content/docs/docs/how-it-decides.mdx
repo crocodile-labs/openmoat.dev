@@ -52,9 +52,13 @@ Hiding the action does not change the answer: a path in a shell variable (`d=~/.
 - the files `curl` and `wget` send (`curl -F name=@file`, `curl -T`, `curl -d @file`, `wget --post-file`), as reads;
 - files rewritten in place (`perl -i`, `ruby -i`, `patch`, `dd of=`), as writes;
 - the command `env -S '…'` runs, and the command `xargs` runs with input the line shows;
+- the commands that launchers start (`flock -c`, `nohup`, `taskset`, `strace`, `systemd-run`, `busybox` and others), and the job an `at` or `batch` reads;
+- hard links (`ln`, `cp -l`) and copies by `gcp`, `ditto`, `pax` or `cpio`, as writes of the file they create;
 - the program git runs for the other side of a remote (`--upload-pack`, `--receive-pack`).
 
-A command line too long or too deeply nested to read in full asks instead of falling through to the default.
+A command line too long or too deeply nested to read in full asks instead of falling through to the default. So does a call OpenMoat can see but not fully check (`unchecked`), such as a search pattern that may climb out of its folder, or text typed into a shell another call left running.
+
+A tool OpenMoat has no mapping for, such as one an extension adds, is still checked for every path, URL and shell command its arguments name: an extension's tool that reads `~/.ssh/id_rsa` is denied like `cat ~/.ssh/id_rsa`.
 
 ## Other checks that deny
 
@@ -103,8 +107,8 @@ OpenMoat denies what must never happen and stays quiet about the rest. A call no
 ## The layers
 
 <CardGrid>
-  <LinkCard title="Agent hook" href="/docs/commands/" description="Checks each call before it runs. Claude Code, Codex and Cursor call openmoat guard for every tool use." />
-  <LinkCard title="OS sandbox" href="/docs/limits/" description="The same policy configures each agent's own sandbox, so code inside an allowed command (a test script) cannot reach your keys either." />
+  <LinkCard title="Agent hook" href="/docs/agents/" description="Checks each call before it runs. Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi and Gemini CLI call openmoat guard for every tool use." />
+  <LinkCard title="OS sandbox" href="/docs/limits/" description="The same policy configures each agent's own sandbox (Claude Code, Codex, Cursor), so code inside an allowed command (a test script) cannot reach your keys either. openmoat run does this for any agent." />
   <LinkCard title="Audit log" href="/docs/see-what-happened/" description="Every decision in a local SQLite file that detects tampering." />
   <LinkCard title="Self-protection" href="/docs/blocked/" description="The agent cannot edit the policy, read the audit log, approve itself or switch OpenMoat off. A policy changed behind OpenMoat's back blocks everything until you review it." />
 </CardGrid>

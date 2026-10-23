@@ -8,12 +8,13 @@ sidebar:
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-OpenMoat runs on your machine, next to Claude Code, Codex or Cursor. Before the agent runs a command, reads or writes a file, opens a web page or calls an MCP tool, OpenMoat checks it against one policy that you control. Normal work goes on as before; reading your keys, sending them out, destructive commands and switching OpenMoat off are blocked.
+OpenMoat runs on your machine, next to Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi or Gemini CLI. Before the agent runs a command, reads or writes a file, opens a web page or calls an MCP tool, OpenMoat checks it against one policy that you control. Normal work goes on as before; reading your keys, sending them out, destructive commands and switching OpenMoat off are blocked.
 
 ## Start here
 
 <CardGrid>
   <LinkCard title="Quick start" href="/docs/quickstart/" description="Install, set it up for your agents and see your first block, in about a minute." />
+  <LinkCard title="Supported agents" href="/docs/agents/" description="How well each agent is protected, where you answer its questions, and what it does not cover." />
   <LinkCard title="How it decides" href="/docs/how-it-decides/" description="The four answers (allow, defer, ask, deny) and the layers behind them." />
   <LinkCard title="Something was blocked" href="/docs/blocked/" description="What each message means and the one command that fixes it." />
   <LinkCard title="Commands" href="/docs/commands/" description="Every openmoat command on one page." />
@@ -54,6 +55,6 @@ Each guide starts from a situation you will meet, shows what you see, and gives 
 
 <Aside type="note">
 
-OpenMoat is not an AI model and does not guess. Written rules decide, so the same call gets the same answer every time, in about 10 ms. Nothing leaves your machine unless you export it. It does not replace your agent's own prompt or sandbox; it fills the gaps between them. What it cannot see is listed in [Limits](/docs/limits/).
+OpenMoat is not an AI model and does not guess. Written rules decide, so the same call gets the same answer every time, in about 10–20 ms. Nothing leaves your machine unless you export it. It does not replace your agent's own prompt or sandbox; it fills the gaps between them. What it cannot see is listed in [Limits](/docs/limits/).
 
 </Aside>

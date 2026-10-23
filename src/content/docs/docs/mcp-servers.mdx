@@ -25,8 +25,14 @@ An MCP server runs outside every sandbox, with your permissions, whatever its de
 | Claude Code | `~/.claude.json` | `.mcp.json` |
 | Codex | `config.toml` | `.codex/config.toml` |
 | Cursor | `mcp.json` | `.cursor/mcp.json` |
+| OpenClaw | `mcp.servers` in `openclaw.json` | |
+| GitHub Copilot CLI | `~/.copilot/mcp-config.json` | `.mcp.json`, `.github/mcp.json` |
+| pi | `~/.pi/agent/mcp.json` | `.pi/mcp.json` |
+| Gemini CLI | `mcpServers` in `settings.json` | `.gemini/settings.json` |
 
 When a definition changes, or a server is added since (a cloned repository's `.mcp.json` included), the tool calls of that server are denied with rule `mcp-server-changed`. The reason names what changed. Other servers and tools keep working, and `openmoat doctor` and `openmoat status` report it.
+
+`openmoat init` pins what it finds the first time. Run again without a terminal (from a script), it pins nothing new: changed and new servers are listed and left for `openmoat mcp accept`.
 
 <Steps>
 
@@ -36,7 +42,7 @@ When a definition changes, or a server is added since (a cloned repository's `.m
    openmoat mcp accept <server>
    ```
 
-   It shows the change key by key, never the value of an `env` or header entry, and asks `[y/N]`.
+   It shows the change key by key, never the value of an `env` or header entry, and asks `[y/N]`. Escape sequences and invisible characters in what a server sends are shown as `?`, so a tool description cannot redraw what you are asked to accept.
 
 2. **Ask the agent to try again**
 
@@ -65,11 +71,12 @@ openmoat init --mcp-proxy       # every server, at setup
 
 `openmoat mcp proxy` sits between the agent and the server and:
 
-- leaves every tool of a server it has not pinned yet out of the tool list, and refuses its calls, naming `openmoat mcp accept <server>`, which shows each tool's name, description and input schema and asks;
+- pins each tool's name, title, description, input and output schemas and annotations (such as `readOnlyHint`, which an agent may read to run a call without asking), and every other field of the tool as it is;
+- leaves every tool of a server it has not pinned yet out of the tool list, and refuses its calls, naming `openmoat mcp accept <server>`, which shows each tool and asks;
 - leaves a changed or new tool out of the tool list, and answers a call to it with an error naming `openmoat mcp accept <server>`; the call never reaches the server;
 - records every tool call in the audit log.
 
-`openmoat mcp accept <server>` then shows a diff of the description and schema. `openmoat mcp wrap` changes only the server's command in your own file (`~/.claude.json`, Cursor's `mcp.json`, Codex's `config.toml`), keeps a backup, and never rewrites a project's file. A server with a change you have not accepted is skipped.
+`openmoat mcp accept <server>` then shows a diff of what changed. `openmoat mcp wrap` changes only the server's command in your own file (`~/.claude.json`, Cursor's `mcp.json`, Codex's `config.toml`, Copilot CLI's `mcp-config.json`), keeps a backup, and never rewrites a project's file. A server with a change you have not accepted is skipped. Add `--dry-run` to see what it would change.
 
 ### Run the server in a sandbox
 
@@ -94,7 +101,8 @@ openmoat mcp unwrap <server>
 ## Good to know
 
 - **First sight is not trusted.** `openmoat mcp proxy` holds back a new server's tools until you accept them. To pin what a server lists the first time instead, set `mcp: { trust_first_sight: true }` in the policy; `openmoat policy lint` warns about it.
-- **Not pinned:** prompts, resources, output schemas, annotations and tool results.
+- **Not pinned:** prompts, resources and tool results.
+- **Upgrading to 0.9.0** pins more fields of each tool, so every tool a wrapped server listed is held once after the upgrade, even unchanged. Run `openmoat mcp accept` once.
 - **Not covered by the proxy:** remote (HTTP) servers, Claude Code plugin servers and managed MCP settings.
 - **One name, every project.** A changed server in one project of `~/.claude.json` also holds back a server with the same name in another project, until you accept it.
 

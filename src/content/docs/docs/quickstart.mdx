@@ -65,7 +65,7 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
    openmoat init
    ```
 
-   `openmoat init` writes the default policy to `~/.moat`, then lists the agents it finds and asks once for each:
+   `openmoat init` writes the default policy to `~/.moat`, then lists the agents it finds (Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI) and asks once for each:
 
    ```text
    Found these agents:
@@ -75,11 +75,13 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
    Protect Codex (/Users/you/.codex)? [Y/n]
    ```
 
-   It backs up every file before it changes it. `openmoat uninstall` puts them all back.
+   It backs up every file before it changes it. `openmoat uninstall` puts them all back. `openmoat init --hosts claude-code,codex` skips the questions; `--dry-run` shows what would change.
 
 3. **Start your agent in a new session**
 
    Hooks are read when a session starts, so open a new one. Then work as usual: most calls run exactly as before.
+
+   Codex runs a new hook only after you trust it in its `/hooks` view. Restart OpenClaw's Gateway, and pi. What each agent's hook covers: [Supported agents](/docs/agents/).
 
 4. **Check that it works**
 
@@ -103,6 +105,7 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
 
 <CardGrid>
   <LinkCard title="How it decides" href="/docs/how-it-decides/" description="Why some calls run, some go to your agent's prompt and a few are blocked." />
+  <LinkCard title="Supported agents" href="/docs/agents/" description="What OpenMoat covers in the agent you use." />
   <LinkCard title="Something was blocked" href="/docs/blocked/" description="What to do when a block gets in your way." />
   <LinkCard title="Work across several repos" href="/docs/work-across-repos/" description="The first thing most developers need." />
 </CardGrid>

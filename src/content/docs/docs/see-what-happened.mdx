@@ -65,6 +65,12 @@ openmoat audit export --since 7d > week.jsonl   # events as JSON Lines, with the
 openmoat audit verify week.jsonl                # check it was not changed, without the database
 ```
 
+For a team, collect each person's export and run one report over all of them. Every file must verify first, and an event found in several files counts once:
+
+```bash
+openmoat audit report alice.jsonl bob.jsonl     # per agent, per rule, top asks and denies
+```
+
 ## Keep a record outside the log
 
 Every event is hash-chained to the one before, so a change in the middle of the log shows. But someone who can write the log file can delete its newest events and leave a shorter log that still checks out. To catch that later, record the log's head somewhere else now and then:

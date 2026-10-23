@@ -48,6 +48,8 @@ deny:
 
 The agent's OS sandbox is built from the same policy, so `npm test` or `pytest` started by the agent cannot open `.env` or `.env.test`. A test setup that loads them gets no values, or fails.
 
+This holds for agents with an OS sandbox (Claude Code and Codex on macOS and Linux, or any agent under `openmoat run`; on Linux `openmoat run --isolate`). Cursor's sandbox cannot deny `.env` inside the workspace, and a hook-only agent's tests can read them. See [Limits](/docs/limits/).
+
 </Aside>
 
 Ways to handle it:

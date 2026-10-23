@@ -25,7 +25,7 @@ Two facts hold for every allow below:
 | Command | Covers | Lasts | Undo |
 |---|---|---|---|
 | Your agent's own "allow" answer | one deferred call, as your agent decides | as your agent decides | in your agent |
-| `openmoat allow --last` | the exact command or files of the last OpenMoat ask | that agent session, 24 h | expires |
+| `openmoat allow --last` | the exact command or files of the last OpenMoat ask; a command only in the project it was asked in | that agent session, 24 h | expires |
 | `openmoat allow --last --always` | that command, also with extra arguments; or exactly those files | until removed | `openmoat allow --remove <id>` |
 | `openmoat allow "<command>" --always` | that command, also with extra arguments | until removed | `openmoat allow --remove <id>` |
 | `openmoat allow --dir <folder>` | read and write in the folder and below | until removed | `openmoat allow --remove <id>` |
@@ -34,11 +34,11 @@ Two facts hold for every allow below:
 | `openmoat trust` | the allow rules in a repository's `.moat/policy.yaml` | until the file changes | `openmoat trust --revoke` |
 | `openmoat edit` | any rule you write | until you change it | `openmoat edit` again |
 
-Every rule `openmoat allow` adds is in `~/.moat/policy.d/approved.yaml`, with its id and the date.
+Every rule `openmoat allow` adds is in `~/.moat/policy.d/approved.yaml`, with its id and the date. `openmoat allowed` lists all of them, the session grants still in force and the repositories you trusted, each with the command that takes it back.
 
 ## `openmoat allow --last`
 
-<Impact opens={["The one call OpenMoat just asked about, in that agent session"]} keeps={["A new session asks again; other commands and files are not covered"]} think={["Low risk: you saw the exact call"]} />
+<Impact opens={["The one call OpenMoat just asked about, in that agent session"]} keeps={["A new session asks again; other commands and files are not covered", "The same command in another repository asks again"]} think={["Low risk: you saw the exact call"]} />
 
 ## `openmoat allow --last --always` and `openmoat allow "<command>" --always`
 
@@ -54,7 +54,7 @@ Every rule `openmoat allow` adds is in `~/.moat/policy.d/approved.yaml`, with it
 
 ## `openmoat secret add <id>`
 
-<Impact opens={["Programs the agent runs can use the token, for that one host"]} keeps={["The agent holds a placeholder, never the value", "Its source is denied too: the command adds `secret-<id>` when no rule covers it ([Keep a token from the agent](keep-tokens-safe.html))"]} think={["Give the token the smallest scope that works"]} />
+<Impact opens={["Programs the agent runs can use the token, for that one host"]} keeps={["The agent holds a placeholder, never the value", "Its source is denied too: the command adds `secret-<id>` when no rule covers it ([Keep a token from the agent](/docs/keep-tokens-safe/))"]} think={["Give the token the smallest scope that works"]} />
 
 ## `openmoat trust`
 

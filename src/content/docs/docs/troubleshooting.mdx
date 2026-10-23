@@ -37,11 +37,11 @@ After an upgrade from 0.7 or earlier, `openmoat doctor` says a hook still uses t
 
 ## `openmoat policy install` refuses a pack
 
-The signature did not verify, or it was made by a key you have not trusted. Check that `<pack>.yaml.sig` belongs to that exact file and was made with `-n openmoat-policy`, then trust the signer's key with `openmoat policy trust-key <key.pub> --name <who>`. The commands need the system `ssh-keygen` from OpenSSH 8.1 or later. See [Signed policy packs](/docs/team-rules/#signed-policy-packs).
+The signature did not verify, or it was made by a key you have not trusted. Check that `<pack>.yaml.sig` belongs to that exact file and was made with `-n openmoat-pack` (signatures made with `-n openmoat-policy` before 0.9.0 no longer verify), then trust the signer's key with `openmoat policy trust-key <key.pub> --name <who>`. A key trusted before 0.9.0 needs `trust-key` again. The commands need the system `ssh-keygen` from OpenSSH 8.1 or later. See [Signed policy packs](/docs/team-rules/#signed-policy-packs).
 
 ## A repository's allow rules stopped applying after `openmoat trust`
 
-Your policy has `require_signed_repo_policy: true`, so only a signature by a trusted key lets a repository policy allow. `openmoat status` in the project says `not signed by a trusted key: tightening only`. Ask the maintainer to sign `.moat/policy.yaml`, or remove the setting with `openmoat edit`.
+Your policy has `require_signed_repo_policy: true`, so only a signature by a trusted key lets a repository policy allow. `openmoat status` in the project says `not signed by a trusted key: tightening only`. Ask the maintainer to sign `.moat/policy.yaml` with `-n openmoat-repo-policy` (a signature made before 0.9.0 no longer counts), or remove the setting with `openmoat edit`.
 
 ## `openmoat audit verify --against` fails
 
@@ -54,6 +54,21 @@ The audit database now records file provenance (schema version 4), and builds be
 ## An MCP server's tools are denied with `mcp-server-changed`
 
 Its definition changed, or it was added, since you last accepted the agents' MCP servers. Run `openmoat mcp accept <server>`: it shows the change and asks. See [MCP servers](/docs/mcp-servers/).
+
+## A wrapped MCP server shows no tools after an upgrade
+
+Since 0.9.0, `openmoat mcp proxy` pins more of each tool (its title, output schema, annotations and every other field), so every tool it pinned before is held once, even unchanged. `openmoat status` says so. Run `openmoat mcp accept` once.
+
+## A connection to a port other than 443 or 80 is refused
+
+Through `openmoat proxy` and `openmoat run`, a host allowed without a port is reached on ports 443 and 80 only, and any other port is refused (`proxy-port`). Add a rule that names the port with `openmoat edit`, and keep the bare host in it too, because the hook decides by host alone and a `host:port` pattern matches nothing there:
+
+```yaml
+allow:
+  - id: example-8443
+    reason: the staging API listens on 8443
+    net: ["example.com", "example.com:8443"]
+```
 
 ## A call is denied with `no decision within 30 s`
 
@@ -69,8 +84,12 @@ openmoat status
 |---|---|
 | `not protected: hook missing` | `openmoat init` |
 | the hook is out of date (after an upgrade) | `openmoat init` |
+| `not protected` with a settings file named, such as `disableAllHooks` or `[features] hooks = false` | Remove that setting from the file it names |
 | sandbox `differs from the policy` | `openmoat sandbox sync`, then start a new agent session |
-| `hook only` on native Windows | Expected: use WSL2 for the OS sandbox |
+| `hook only` for OpenClaw, GitHub Copilot CLI, pi or Gemini CLI | Expected: OpenMoat sets up no OS sandbox for them. Use `openmoat run` for one |
+| `hook only` for Claude Code or Cursor on native Windows | Expected: use WSL2 for the OS sandbox |
+
+Codex shows its hook as installed but runs it only after you trust it: open `/hooks` in Codex and trust OpenMoat's. `openmoat doctor` reminds you on Codex's line. See [Supported agents](/docs/agents/).
 
 ## `openmoat doctor` warns about a project's `.claude` settings
 
@@ -82,11 +101,11 @@ The project's `.claude/settings.json` or `.claude/settings.local.json` turns hoo
 
 ## Nothing seems to happen
 
-Hooks are read when a session starts. Start a new agent session after `openmoat init`, and check `openmoat status`.
+Hooks are read when a session starts. Start a new agent session after `openmoat init`, and check `openmoat status`. Restart OpenClaw's Gateway and pi, which load OpenMoat's plugin and extension when they start. Gemini CLI runs hooks only in folders it trusts.
 
 ## The `openmoat` binary is missing or broken
 
-Codex, and Claude Code before 2.1.295, then run calls without the check; Cursor blocks them. With Claude Code 2.1.295 or later, `openmoat init` sets `"onFailure": "block"` on OpenMoat's hook, so a call is blocked when `openmoat` cannot start, crashes or times out. It writes the key only when the `claude` on your `PATH` reports that version, and `openmoat doctor` warns when Claude Code is older or not found. Reinstall it (`brew reinstall crocodile-labs/tap/openmoat`, or the installer), then run `openmoat status`.
+Codex, and Claude Code before 2.1.295, then run calls without the check; Cursor, OpenClaw, GitHub Copilot CLI, pi and Gemini CLI block them. With Claude Code 2.1.295 or later, `openmoat init` sets `"onFailure": "block"` on OpenMoat's hook, so a call is blocked when `openmoat` cannot start, crashes or times out. It writes the key only when the `claude` on your `PATH` reports that version, and `openmoat doctor` warns when Claude Code is older or not found. Reinstall it (`brew reinstall crocodile-labs/tap/openmoat`, or the installer), then run `openmoat status`.
 
 ## Reporting a bug
 

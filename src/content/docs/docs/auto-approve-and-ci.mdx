@@ -32,13 +32,22 @@ openmoat run -- claude --dangerously-skip-permissions
 openmoat run --isolate -- codex          # Linux: the agent sees only the project, the read roots and temp
 ```
 
-`openmoat run` starts the agent inside an OS sandbox generated from your policy (macOS 13 or later, Linux). It covers every process the agent starts, but is coarser per command than the hook. On macOS 12 and earlier it refuses to start and says so; the agent hooks still apply the policy there.
+`openmoat run` starts the agent inside an OS sandbox generated from your policy (macOS 13 or later, Linux; not on Windows). It covers every process the agent starts, but is coarser per command than the hook. On macOS 12 and earlier it refuses to start and says so; the agent hooks still apply the policy there.
+
+Turn the agent's own sandbox off when you use it: sandboxes do not nest. The agent keeps its state in its own folder, so grant that folder with `--write`:
+
+```bash
+openmoat run --write ~/.claude --write ~/.claude.json -- claude
+```
+
+`--write` adds a file or folder the agent and its commands may write; deny rules still win. On Linux without a network namespace, a `--write` outside the project is refused (see below).
 
 What else `openmoat run` does:
 
 - **Hooks still decide each call.** The agent's hooks run inside the sandbox, which cannot open `~/.moat`. Each one sends its call to the `openmoat run` process outside the sandbox, with a token made for the run, and that process decides and records it. A wrong token gets no decision, and any failure denies.
 - **The run's proxy serves only that run.** The agent's `HTTP_PROXY` and `HTTPS_PROXY` carry a credential made for the run. A request without it, or with another run's, gets `407`. A client that drops the user and password from its proxy URL has no network under `openmoat run`.
-- **On Linux, network only through the proxy.** Where bubblewrap can run, the agent starts in a network namespace of its own with only loopback, and the proxy's port is relayed into it, so a command cannot connect to a host directly and skip the proxy's checks. Where bubblewrap is missing or cannot create user namespaces, `openmoat run` starts as before, says on every start that the network is restricted by port only, and `openmoat doctor` warns.
+- **On Linux, network only through the proxy.** Where bubblewrap can run, the agent starts in a network namespace of its own with only loopback, and the proxy's port is relayed into it, so a command cannot connect to a host directly and skip the proxy's checks. Where bubblewrap is missing or cannot create user namespaces, `openmoat run` starts as before, says on every start that the network is restricted by port only, refuses `--write` paths outside the project, and `openmoat doctor` warns. `openmoat run --netns=require` refuses to start there instead.
+- **Agent settings stay put.** Commands inside cannot write an agent's own hooks and MCP settings in the project (`.claude/hooks/`, `.mcp.json`, `.github/hooks/`, `.pi/extensions/` and the like), which the agent would load later outside the sandbox. Change those files outside `openmoat run`.
 - **Session taint reaches the network.** Once an agent session of the run has read secret material, the run's proxy refuses a request to any host but that secret's own (`session-taint`), registries included, so a script the hook never sees cannot send it on. The default policy denies secret reads, so default setups see no change.
 - **Brokered secrets' variables are removed** before the agent starts, so the agent does not hold their values.
 
@@ -56,5 +65,9 @@ On Linux, plain `openmoat run` does not protect files inside the project (`.env`
 - **Cursor** runs some commands outside the sandbox OpenMoat configures: when its Auto-review approves them, in Run Everything mode, and in the Cursor CLI without `--sandbox enabled`.
 - **Claude Code** in its `bypassPermissions` and `dontAsk` modes shows no question to a person, so an OpenMoat ask becomes a deny that says how to approve it (`openmoat allow --last`), as for Codex. Calls OpenMoat leaves to Claude Code are unchanged.
 - **Claude Code** applies its sandbox to `Bash`, `PowerShell` and `Monitor`; file tools, `WebFetch` and MCP servers are checked by the hook only.
+- **GitHub Copilot CLI** in autopilot turns an ask into a deny; approve it with `openmoat allow --last`.
+- **Gemini CLI** still shows an OpenMoat ask as its own confirmation in YOLO mode.
+- **pi** has no approval step at all, so a deferred call always runs, and in print or JSON mode an ask is a deny.
+- **OpenClaw, Copilot CLI, pi and Gemini CLI** have no OS sandbox from OpenMoat: in auto-approve, `openmoat run` is the only thing that bounds what an allowed command does.
 
-More in [Limits](/docs/limits/).
+More in [Supported agents](/docs/agents/) and [Limits](/docs/limits/).

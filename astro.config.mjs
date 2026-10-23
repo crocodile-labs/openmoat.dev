@@ -36,7 +36,7 @@ export default defineConfig({
         './src/styles/docs.css',
       ],
       sidebar: [
-        group('Get started', ['index', 'quickstart', 'how-it-decides', 'the-project']),
+        group('Get started', ['index', 'quickstart', 'agents', 'how-it-decides', 'the-project']),
         group('Everyday use', ['blocked', 'work-across-repos', 'allow-a-site', 'local-services', 'env-files',
           'keep-tokens-safe', 'github', 'mcp-servers', 'cloud-clis', 'packages', 'see-what-happened', 'check-a-command']),
         group('Set up', ['change-the-rules', 'team-rules', 'auto-approve-and-ci', 'upgrade', 'turn-off']),

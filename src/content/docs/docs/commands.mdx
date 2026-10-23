@@ -14,7 +14,7 @@ You know what you want and need the exact command.
 
 </Aside>
 
-Run these in your own terminal. The ones that change what agents may do need a terminal, and the default policy denies them to agents. They also refuse to run when Claude Code, Codex, the Cursor CLI or `openmoat run` started them, even through a terminal wrapper, and read your answer from the terminal itself (on Windows only the terminal is checked).
+Run these in your own terminal. The ones that change what agents may do need a terminal, and the default policy denies them to agents. They also refuse to run when Claude Code, Codex, the Cursor CLI, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, the Continue CLI or `openmoat run` started them, even through a terminal wrapper, and read your answer from the terminal itself (on Windows only the terminal is checked). On macOS they also refuse in a terminal inside the Cursor editor, whose agent runs in the same process tree: use a terminal of your own.
 
 <Aside type="note" title="The moat name">
 
@@ -27,51 +27,75 @@ Releases up to 0.7.0 called the command `moat`. Every install still puts a `moat
 | Command | What it does |
 |---|---|
 | `openmoat` | Which agents are protected, today's decisions, and anything that needs you |
-| `openmoat allow --last` | Allow the last ask for the rest of that agent session (24 h) |
+| `openmoat allow --last` | Allow the last ask for the rest of that agent session (24 h; a command only in the project it was asked in) |
 | `openmoat allow --last --always` | Allow it for good: a rule for exactly that command or those files |
+| `openmoat allow "<command>" --always` | A permanent rule for a command you name |
+| `openmoat allow "<command>" --host <id> --session <id> [--project <dir>]` | A session grant for a command you name |
 | `openmoat allow --dir <folder>` | Read and write a folder outside the project |
 | `openmoat allow --site <host>` | Network access to one host |
 | `openmoat allow --remove <id>` | Take back a rule `openmoat allow` added |
+| `openmoat allowed` | Permanent rules, session grants still in force and trusted repositories, each with the command that takes it back |
 | `openmoat secret add gh` | Keep the GitHub token from the agent |
-| `openmoat policy check "<command>"` | The verdict for a command, without running it |
+| `openmoat secret add <id> --host <host> --env <NAME>` | Keep another token from the agent, for that host only (`--file <path>` reads it from a file, `--header <name>` picks the header) |
+| `openmoat secret list` | Each brokered secret's host, header and source, never the value |
+| `openmoat policy check "<command>"` | The verdict for a command, without running it (`--kind fetch`, `fs-read` and others for a URL or a file) |
 | `openmoat demo` | The verdict, rule and reason for a fixed list of example agent calls, with your policy; nothing runs and nothing is changed |
 
 ## See what happened
 
 | Command | What it does |
 |---|---|
-| `openmoat show [id] [--since today]` | Recent events, or one in full |
-| `openmoat replay --since today` | Each agent session as a timeline |
-| `openmoat report --since 7d` | Totals, hosts, top rules, asks per hour |
+| `openmoat show [id] [--session <id>] [--since today]` | Recent events, one session, or one event in full |
+| `openmoat replay --since today` · `--session <id>` | Each agent session as a timeline |
+| `openmoat report --since 7d [--host <id>]` | Totals, hosts, top rules, asks per hour |
 | `openmoat audit export` · `openmoat audit verify <file>` | Export events with their chain hashes · check an export |
 | `openmoat audit anchor --git <repo>` · `--file <path>` | Record the log's head outside it: a commit on `refs/moat/anchors` in that repository, or a line appended to that file; nothing is sent anywhere |
 | `openmoat audit verify --against <repo or file>` | Check the log against every anchor there; fails, naming the first anchor whose event is gone or changed ([Keep a record outside the log](/docs/see-what-happened/#keep-a-record-outside-the-log)) |
+| `openmoat audit report <file>…` | One report over verified exports from several machines: per agent, per rule, top asks and denies |
+
+`--since` takes `all`, `today`, `yesterday`, `12h`, `7d`, `2w` or a date (`2026-10-15`, UTC). Most commands take `--format json`.
 
 ## Set up and maintain
 
 | Command | What it does |
 |---|---|
 | `openmoat init [--mcp-proxy]` | Install the policy, lock and log, and pin the agents' MCP servers; asks before hooking each agent (`--mcp-proxy` wraps every MCP server) |
+| `openmoat init --hosts claude-code,codex` · `--yes` · `--dry-run` | Hook those agents without asking · every agent found · show what would change |
 | `openmoat status` · `openmoat doctor` | Each agent's protection level · what drifted, and re-pin with `--accept` |
 | `openmoat doctor --bundle <file>` | Write one local file to attach to a bug report: versions, hook states, doctor checks and the last decisions, without commands, paths or secrets; nothing is sent |
 | `openmoat edit` | Edit the policy; checked and diffed before it applies |
 | `openmoat policy lint` | Check a policy |
-| `openmoat policy upgrade` | Take what a new release's default adds, keeping your edits |
+| `openmoat policy compile` | What the OS layers enforce for the policy, and what they cannot |
+| `openmoat policy upgrade` · `--undo` | Take what a new release's default adds, keeping your edits · put the previous policy back |
 | `openmoat sandbox show` · `openmoat sandbox sync` | The sandbox settings the policy compiles to · write them for your agents |
 | `openmoat trust [--revoke]` | Let a repository's `.moat/policy.yaml` allow |
 | `openmoat policy trust-key <key.pub> --name <who>` | Trust an SSH public key to sign policy packs, and repository policies where the policy asks for signed ones |
 | `openmoat policy install <pack.yaml> [--sig <file>] [--name <name>]` · `openmoat policy remove <name>` | Install a signed policy pack once its signature verifies; its rules apply as `pack:<name>:<id>` · take it out ([Signed policy packs](/docs/team-rules/#signed-policy-packs)) |
 | `openmoat mcp accept [<server>]` | Review a changed or new MCP server, or tools `openmoat mcp proxy` holds, and accept them ([MCP servers](/docs/mcp-servers/)) |
-| `openmoat mcp wrap [<server>…] [--sandbox]` · `openmoat mcp unwrap` | Run stdio MCP servers through `openmoat mcp proxy`, which pins each tool's description · point them back |
+| `openmoat mcp wrap [<server>…] [--sandbox] [--dry-run]` · `openmoat mcp unwrap` | Run stdio MCP servers through `openmoat mcp proxy`, which pins each tool · point them back |
 | `openmoat uninstall [--hosts …] [--purge]` | Remove OpenMoat and restore every settings file |
+
+Host ids for `--hosts` and `--host`: `claude-code`, `codex`, `cursor`, `openclaw`, `copilot-cli`, `pi`, `gemini-cli`.
 
 ## Advanced
 
 | Command | What it does |
 |---|---|
-| `openmoat run [--isolate] -- <agent>` | Run a whole agent in a sandbox generated from the policy; on Linux its network goes only through OpenMoat's proxy where bubblewrap can run |
-| `openmoat proxy` · `openmoat proxy install` | The egress proxy, on its own or as a user service |
+| `openmoat run [--isolate] [--write <path>]… [--netns require] -- <agent>` | Run a whole agent in a sandbox generated from the policy; on Linux its network goes only through OpenMoat's proxy where bubblewrap can run (`--netns require` refuses to start where it cannot). `--write` grants a path ([Auto-approve and CI](/docs/auto-approve-and-ci/#run-a-whole-agent-in-a-sandbox)) |
+| `openmoat proxy` · `openmoat proxy install` | The egress proxy, on its own or as a user service (not on Windows yet) |
 | `openmoat bench` | Score OpenMoat, or any hook, against the bundled attack scenarios |
 | `openmoat guard --host <id>` | The hook entry point: agents call it, you do not |
+
+## Exit codes
+
+| Code | Means |
+|---|---|
+| `0` | allow or success |
+| `1` | the agent `openmoat run` started exited with an error |
+| `2` | deny |
+| `3` | an ask nobody answered (`openmoat policy check`) |
+| `64` | a usage or configuration error |
+
+`openmoat guard` never exits 64: it denies with 2 instead, so a broken hook blocks rather than lets a call through.
 
 Every option: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#commands).
