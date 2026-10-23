@@ -1,0 +1,24 @@
+---
+// A row of chips, one per agent or platform: its mark (src/data/logos.ts) in the
+// text colour, then its name. A mark is decoration; the name is the content.
+import type { Logo } from '../data/logos';
+interface Props { items: Logo[]; size?: number }
+const { items, size = 16 } = Astro.props;
+---
+<ul class="logo-row">
+  {items.map((item) => (
+    <li class="logo-chip">
+      {item.path && (
+        <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" focusable="false"><path fill="currentColor" d={item.path} /></svg>
+      )}
+      {!item.path && item.glyph && <span class="logo-glyph" aria-hidden="true">{item.glyph}</span>}
+      <span>{item.name}</span>
+    </li>
+  ))}
+</ul>
+<style>
+  .logo-row { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .logo-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--panel); color: var(--fg-2); font-size: 14px; line-height: 1.2; }
+  .logo-chip svg { flex: none; }
+  .logo-glyph { font-size: 15px; line-height: 1; width: 16px; text-align: center; }
+</style>

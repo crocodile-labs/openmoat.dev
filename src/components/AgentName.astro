@@ -1,0 +1,12 @@
+---
+// An agent's name with its mark in front (src/data/logos.ts), for table rows.
+import { agents } from '../data/logos';
+interface Props { name: string }
+const { name } = Astro.props;
+const logo = agents.find((a) => a.name === name);
+---
+<span style="display: inline-flex; align-items: center; gap: 8px">
+  {logo?.path && <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" style="flex: none"><path fill="currentColor" d={logo.path} /></svg>}
+  {!logo?.path && logo?.glyph && <span aria-hidden="true" style="width: 16px; text-align: center; line-height: 1">{logo.glyph}</span>}
+  <span>{name}</span>
+</span>
