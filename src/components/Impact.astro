@@ -1,6 +1,7 @@
 ---
 // What an allow changes: what it opens, what stays protected, what to think about.
-// Items are short sentences; `code` in backticks is shown as code.
+// Items are short sentences; `code` in backticks is shown as code, and [text](/docs/page/)
+// is a link.
 interface Props {
   opens?: string[];
   keeps?: string[];
@@ -8,7 +9,10 @@ interface Props {
 }
 const { opens = [], keeps = [], think = [] } = Astro.props;
 const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const render = (s: string) => escape(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+const render = (s: string) =>
+  escape(s)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\((\/[^)\s"]*)\)/g, '<a href="$2">$1</a>');
 const columns = [
   { key: 'opens', title: 'What this opens', items: opens },
   { key: 'keeps', title: 'What stays protected', items: keeps },
