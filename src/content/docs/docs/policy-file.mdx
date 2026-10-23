@@ -5,7 +5,7 @@ sidebar:
   label: "The policy file"
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
@@ -23,7 +23,7 @@ You want to read or write a rule. To change one safely, see [Change the rules](/
 | `<project>/.moat/policy.yaml` | A repository's rules, committed with the code | the repository's maintainers ([Team rules](/docs/team-rules/)) |
 | `~/.moat/policy.lock` | The digests of the policy and the hook files | OpenMoat ([Self-protection](/docs/self-protection/)) |
 
-The agent may read `~/.moat/policy.yaml`, so it can explain a deny; it can change none of these.
+The agent may read `~/.moat/policy.yaml`, so it can explain a deny; it can change none of these. Your policy, the `openmoat allow` rules and installed packs decide together, in every project; a repository's file adds to them in that repository only.
 
 ## A rule
 
@@ -50,85 +50,16 @@ A group lists patterns of one or more kinds, and matches when **any** of them ma
 
 Rule ids must be unique across the policy; unknown keys are errors.
 
-## The four verdicts, one rule each
-
-Each tool call is split into actions (a command, each file, each host). Each action is tried against `deny`, then `allow`, then `ask`, then `defer`; the first list with a match decides, and `defaults` decides when none does. The call gets the strictest answer of its actions: `deny > ask > defer > allow`.
-
-**Deny**: never, whatever else matches. A deny cannot be overridden by an allow, by `openmoat allow` or by a repository.
-
-```yaml
-deny:
-  - id: no-prod-config
-    reason: production settings stay with the release pipeline
-    fs.write: ["${project}/deploy/prod/**"]
-```
-
-**Allow**: runs without your agent's prompt. Allow only what you would approve every time.
-
-```yaml
-allow:
-  - id: company-registry
-    net: ["npm.internal.example.com", "pypi.internal.example.com"]
-```
-
-**Ask**: OpenMoat asks you itself, tagged with the rule, even where your agent would not.
-
-```yaml
-ask:
-  - id: push
-    shell: ["git push *"]
-```
-
-**Defer**: your agent's own permission prompt decides, as without OpenMoat. The default for anything no rule names.
-
-```yaml
-defaults:
-  "*": defer      # everything else: your agent decides
-  net: deny       # outbound network from shell commands to unlisted hosts: denied
-```
-
-## Patterns
-
-| Pattern | Means |
-|---|---|
-| `*` in a path or host | any characters within one path segment |
-| `**` | any number of segments: `~/.ssh/**`, `**/.env.*` |
-| `~`, `${project}` | your home, and the git root of the call's working directory |
-| `!pattern` | excludes from the same list: `["${project}/**", "!${project}/.git/**"]` |
-| `shell` tokens | one glob per argument; a pattern is a prefix (`git status` matches `git status --short`) |
-| a bare `*` in `shell` | any number of arguments: `curl * \| sh` |
-| a trailing `$` in `shell` | no further arguments: `env $` matches `env` alone |
-
-Flags are compared as written: `rm -rf ~` does not match `rm -fr ~`. Guard the path with `fs.write` instead.
-
-## Other keys
-
-```yaml
-executables:                      # programs pinned to their paths
-  git: ["/usr/bin/git", "/opt/homebrew/bin/git"]
-sandbox:                          # what the OS sandboxes may read beyond the rules
-  read_roots: ["/usr", "~/.cargo"]
-secrets: []                       # brokered secrets: openmoat secret add
-taint:
-  protected_writes: ["**/deploy/**"]
-require_signed_repo_policy: false # trust a repository policy only when signed
-mcp:
-  trust_first_sight: false
-```
-
-See [OS sandboxes](/docs/sandboxes/#settings), [Token broker](/docs/keep-tokens-safe/), [Session taint](/docs/session-taint/#settings), [Team rules](/docs/team-rules/) and [MCP](/docs/mcp-servers/).
+<CardGrid>
+  <LinkCard title="The four verdicts" href="/docs/policy-file/verdicts/" description="The order rules are tried in, and one worked rule each." />
+  <LinkCard title="Patterns" href="/docs/policy-file/patterns/" description="Globs, shell patterns, ~, ${project} and exclusions." />
+  <LinkCard title="Other keys" href="/docs/policy-file/other-keys/" description="executables, sandbox, secrets, taint, mcp." />
+  <LinkCard title="Repository policies" href="/docs/policy-file/repositories/" description="How a repository's rules and packs combine with yours." />
+</CardGrid>
 
 ## How your policy and a repository's combine
 
-A repository's `.moat/policy.yaml` is untrusted input, so by itself it can only make your policy stricter:
-
-| The repository's | Applies |
-|---|---|
-| `deny` rules | at once, for everyone, as `repo:<id>` |
-| `ask` rules | at once, right after the deny rules |
-| `allow` rules | only after you run `openmoat trust` on that exact file, or, with `require_signed_repo_policy: true`, when a key you trusted signed it |
-
-Any later change to the file drops it back to deny and ask only, until you trust it again. A file that does not parse denies every call in the project until it is fixed. Repository rules apply in the hook, not in the agents' OS sandboxes. A signed policy pack's rules show up as `pack:<name>:<id>`: its deny rules join yours, its ask rules come before your allow rules, and its allow rules after yours.
+A repository's deny and ask rules apply at once, as `repo:<id>`; its allow rules only after you run `openmoat trust` on that exact file, or when a key you trusted signed it. The details: [Repository policies](/docs/policy-file/repositories/).
 
 ## Check a policy
 
@@ -146,5 +77,7 @@ rule `push` has no patterns
 bad shell pattern `git push "*` (unbalanced quotes?)
 unsupported policy version 2; this build supports 1
 ```
+
+With `--policy`, only that file decides: not the `openmoat allow` rules, packs or a repository's policy. Without it, `openmoat policy check` decides as the hook does.
 
 The full language and the default policy, rule by rule: [POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md).

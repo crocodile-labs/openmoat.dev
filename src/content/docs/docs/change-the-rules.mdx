@@ -48,16 +48,27 @@ Then run `openmoat sandbox sync`, so the agents' OS sandboxes follow the new rul
   undo: the previous policy is in /Users/you/.moat/policy.yaml.bak; copy it back and run `openmoat doctor --accept`
 ```
 
-A rule added by `openmoat allow` comes out with `openmoat allow --remove <id>`; `openmoat allowed` lists them with their ids.
+In your own terminal:
+
+```bash
+cp ~/.moat/policy.yaml.bak ~/.moat/policy.yaml
+openmoat doctor --accept     # re-pins the restored policy; until then every call is denied (kernel-integrity)
+openmoat sandbox sync
+```
+
+An `openmoat policy upgrade` is undone with `openmoat policy upgrade --undo` ([below](#new-default-rules-after-an-upgrade)). A rule added by `openmoat allow` comes out with `openmoat allow --remove <id>`; `openmoat allowed` lists them with their ids.
 
 ### Test a rule before you apply it
 
 Write the rule into a copy, then decide a command against it:
 
 ```bash
+cp ~/.moat/policy.yaml ./policy.yaml     # then add the rule to ./policy.yaml
 openmoat policy lint ./policy.yaml
 openmoat policy check "npm run deploy:prod" --policy ./policy.yaml
 ```
+
+With `--policy`, only that file decides: the `openmoat allow` rules, packs and a repository's policy are left out. When the verdicts are what you want, make the same change with `openmoat edit`.
 
 ### Example: read-only access to every repo under a folder
 

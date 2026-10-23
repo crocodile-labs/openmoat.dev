@@ -65,7 +65,7 @@ A tool OpenMoat has no mapping for, such as one an extension adds, is still chec
 
 | What the agent does | Rule |
 |---|---|
-| Sends a GitHub, OpenAI, AWS or other known token to a host that is not its service's, allowed hosts included | `token-egress` ([Keep a token from the agent](/docs/keep-tokens-safe/#tokens-sent-to-the-wrong-host)) |
+| Sends a GitHub, OpenAI, AWS or other known token to a host that is not its service's, allowed hosts included | `token-egress` ([Keep a token from the agent](/docs/keep-tokens-safe/token-egress/)) |
 | Pushes a commit that adds a token | `push-secret` ([GitHub and gh](/docs/github/#what-a-push-would-publish)) |
 | Calls a tool of an MCP server whose definition changed or is new | `mcp-server-changed` ([MCP servers](/docs/mcp-servers/)) |
 | Reads OpenMoat's own state: the audit log, the lock, the approvals, the trust records, the MCP pins | `kernel-self` ([Something was blocked](/docs/blocked/#openmoats-own-files)) |

@@ -1,0 +1,49 @@
+---
+title: "Messages in the agent"
+description: "Each deny and ask message your agent shows, what it means and what to run."
+sidebar:
+  label: "Messages in the agent"
+  order: 1
+---
+
+A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`. The reason is the rule's own, from the default policy. Run the fix in your own terminal; agents are denied every one of these commands.
+
+| Message starts with | Means | Run |
+|---|---|---|
+| `moat: deny [secrets-paths] — secret material` | A key, token file, `.env` or a command that prints a stored token | Nothing; to give the agent a token, [`openmoat secret add`](/docs/keep-tokens-safe/) |
+| `moat: deny [build-credentials] — build tool credentials` | `~/.m2/settings.xml` or `~/.gradle/gradle.properties` | Nothing; `mvn` and `gradle` still read them in the sandbox |
+| `moat: deny [env-secrets] — secret environment variable` | A variable named like a secret (`*_TOKEN`, `*_KEY`, `AWS_*`, …) | Nothing; see [.env and variables](/docs/env-files/) |
+| `moat: deny [env-dump] — prints every environment variable, secrets included` | `env`, `printenv`, `export -p`, `/proc/self/environ`, inline code printing the environment | Print the one variable you need, if its name is not a secret's |
+| `moat: deny [env-poison] — changes how later commands resolve or load code` | Setting `PATH`, `LD_PRELOAD`, `NODE_OPTIONS`, `GIT_*`, `MOAT_*` and the like | Set it yourself before you start the agent |
+| `moat: deny [pipe-to-shell] — executes remote or decoded content` | `curl … \| sh`, `base64 -d \| sh`, `eval` | Download the script, read it, run it yourself |
+| `moat: deny [destructive] — irreversible damage` | `git push --force`, `git reset --hard`, `rm -rf ~`, `sudo`, … | Run it yourself if you mean it |
+| `moat: deny [kernel-self] — OpenMoat protects its own policy, hooks and binary` | The agent touched OpenMoat's files or ran a person-only `openmoat` command | Nothing; run the command yourself ([Self-protection](/docs/self-protection/)) |
+| `moat: deny [agent-folders] — renaming or removing this folder moves agent settings OpenMoat protects` | `mv .github …`, `rm -r .github` | Rename it yourself |
+| `moat: deny [shell-rc] — edits persist into every future shell session` | A write to `~/.zshrc`, `~/.bashrc`, `~/.curlrc`, … | Edit the file yourself |
+| `moat: deny [cloud-metadata] — instance metadata and link-local services hand out cloud credentials` | `169.254.169.254`, `metadata.google.internal` | Nothing |
+| `moat: deny [token-egress] — sends a known kind of token to a host that is not its service's` | A GitHub, OpenAI, AWS, … token on its way to another host | Nothing; see [tokens sent to the wrong host](/docs/keep-tokens-safe/token-egress/) |
+| `moat: deny [placeholder-egress] — sends a brokered secret's placeholder to a host the proxy does not put that secret in` | A brokered placeholder sent elsewhere | Nothing |
+| `moat: deny [default.net] — no rule matched net <host>` | A host the policy does not list, for a command that can send data | `openmoat allow --site <host>` ([Network allowlist](/docs/allow-a-site/)) |
+| `moat: deny [push-secret]` | A commit the push would publish adds a token | Remove it from the commits ([GitHub](/docs/github/#what-a-push-would-publish)) |
+| `moat: deny [mcp-server-changed]`, ending in ``a person must review it: run `openmoat mcp accept <server>` in a terminal`` | The server's definition changed or is new | `openmoat mcp accept <server>` ([MCP](/docs/mcp-servers/)) |
+| `moat: deny [kernel-integrity] — … was modified` | A pinned file changed | `openmoat` ([Hooks, lock and binary](/docs/troubleshooting/hooks-and-lock/#every-call-is-denied-with-kernel-integrity)) |
+| `moat: deny [project-settings]` | A project's `.claude/settings.json` turns hooks off or sets a command | Look at the file ([Something was blocked](/docs/blocked/#project-settings-that-turn-hooks-off)) |
+| `moat: deny [executables]` | The command's program resolves somewhere other than its pin | If you installed it there, `openmoat doctor --accept` |
+| `moat: deny [kernel-error]` | OpenMoat could not decide at all: missing state, unreadable policy, a repository policy that does not parse | `openmoat doctor` ([a repository policy denies every call](/docs/troubleshooting/policies-and-network/#a-repository-policy-denies-every-call)) |
+| `moat: deny [repo:<id>] — …`, `moat: ask [repo:<id>] — …` | A rule in the project's own `.moat/policy.yaml` | Read the rule in that file; approve an ask as any other ([Use it in your projects](/docs/your-projects/#rules-for-one-project)) |
+| `moat: deny [pack:<name>:<id>] — …`, `moat: ask [pack:<name>:<id>] — …` | A rule of a policy pack you installed | Ask the pack's maintainer, or `openmoat policy remove <name>` ([Signed policy packs](/docs/team-rules/policy-packs/)) |
+| `moat: ask [git-internals] — git runs what its config, hooks and refs name, later and outside any sandbox` | A write into `.git`, `git config`, `git remote` | Approve, or `openmoat allow --last` |
+| `moat: ask [runs-later] — CI, commit hooks, the editor or the agent host run this later, outside any sandbox` | A CI workflow, commit hook, agent hook, skill or MCP setting | Approve, or `openmoat allow --last` |
+| `moat: ask [persistence] — runs again later, outside this session` | `~/Library/LaunchAgents`, `~/.gitconfig`, `crontab`, `at` | Approve, or `openmoat allow --last` |
+| `moat: ask [stops-openmoat]` | `pkill` or `killall` naming `moat` | Approve only if you mean it |
+| `moat: ask [home-sweep] — reads the whole home folder, secrets included` | `grep -r … ~`, `find ~` | Ask the agent to search a narrower folder |
+| `moat: ask [secret-names]`, `[other-home]`, `[opaque-code]` | A secret's file name behind an unknown variable, another user's home, a program OpenMoat cannot read | Approve if it is what you expect |
+| `moat: ask [package-near-miss] — looks like a typo of a popular package's name` | The name is one typo from a popular package | Check the name ([Install and publish](/docs/packages/#a-name-close-to-a-popular-package)) |
+| `moat: ask [docker-secrets] — hands secrets, the SSH agent or the host to a build` | `docker build --secret`, `--ssh`, `--network`, … | Approve if the build needs it |
+| `moat: ask [session-taint]` | The session read a secret or untrusted content earlier | [Session taint](/docs/session-taint/) |
+| `moat: ask [push-runs-later]`, `[push-unchecked]` | A tainted session's push changes a CI or hook file; a push OpenMoat could not check in 10 s | Push from your own terminal |
+| `moat: ask [unchecked]`, `[unparseable]` | OpenMoat sees only part of the call, or cannot read part of it | Approve if it is what you expect |
+| A deny whose message says to run `openmoat allow --last` | An ask on an agent that cannot show one (Codex, Claude Code in `bypassPermissions`, …) | `openmoat allow --last`, then ask the agent to retry |
+| `no decision within 30 s` | OpenMoat could not decide in time | Retry ([details](/docs/troubleshooting/hooks-and-lock/#a-call-is-denied-with-no-decision-within-30-s)) |
+
+The same messages with the one command that gets you moving again, for everyday work: [Something was blocked](/docs/blocked/).

@@ -21,7 +21,7 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
    <Tabs>
    <TabItem label="Homebrew">
 
-   macOS and Linux.
+   macOS and Linux. On macOS 12 and earlier, where Homebrew may ask for a newer Xcode, use the installer or Cargo instead.
 
    ```bash
    brew install crocodile-labs/tap/openmoat
@@ -75,7 +75,9 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
    Protect Codex (/Users/you/.codex)? [Y/n]
    ```
 
-   It backs up every file before it changes it. `openmoat uninstall` puts them all back. `openmoat init --hosts claude-code,codex` skips the questions; `--dry-run` shows what would change.
+   It backs up every file before it changes it, and its last lines name the backups and `Undo anytime: openmoat uninstall`. `openmoat init --hosts claude-code,codex` skips the questions; `--dry-run` shows what would change. Run it in your own terminal: without a terminal and without `--hosts` or `--yes`, it sets up `~/.moat` but changes no agent's files.
+
+   Nothing is added to your projects: every project you open with a protected agent is covered by this one policy ([Use it in your projects](/docs/your-projects/)).
 
 3. **Start your agent in a new session**
 
@@ -97,13 +99,28 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
       also  : shell "cat ~/.ssh/id_rsa"
    ```
 
+   `openmoat status` marks each agent's line `✔ installed`, `· not set up`, `· host not found` or ``✗ hook missing (run `openmoat init`)``, then its protection, and exits 64 when something needs fixing; each fix is in [Hooks, lock and binary](/docs/troubleshooting/hooks-and-lock/#an-agent-shows-hook-only-or-not-protected).
+
    `openmoat demo` shows the verdict, rule and reason for a short list of example agent calls (everyday work, a private key read, a key sent out, a misspelled package, switching OpenMoat off) with your policy. Nothing runs, and no file is changed.
+
+5. **When something is blocked**
+
+   The agent shows the rule and the reason, for example `moat: deny [default.net] — no rule matched net docs.rs` or `moat: ask [git-internals] — …`. Find the message in [Something was blocked](/docs/blocked/) and run the command next to it in your own terminal:
+
+   ```bash
+   openmoat allow --last            # the call you were just asked about, for this agent session
+   openmoat allow --site docs.rs    # a host, for good
+   openmoat allow --dir ~/work/lib  # a folder outside the project, for good
+   ```
+
+   Then ask the agent to try again; after `--site` or `--dir`, start a new session so the sandbox follows. `openmoat allowed` lists what you allowed, with the command that takes each back. A deny on your keys or `.env` files is the block working: nothing to fix.
 
 </Steps>
 
 ## What next
 
 <CardGrid>
+  <LinkCard title="Use it in your projects" href="/docs/your-projects/" description="What applies in the projects you already have, and rules for one project." />
   <LinkCard title="How it decides" href="/docs/how-it-decides/" description="Why some calls run, some go to your agent's prompt and a few are blocked." />
   <LinkCard title="Supported agents" href="/docs/agents/" description="What OpenMoat covers in the agent you use." />
   <LinkCard title="Something was blocked" href="/docs/blocked/" description="What to do when a block gets in your way." />

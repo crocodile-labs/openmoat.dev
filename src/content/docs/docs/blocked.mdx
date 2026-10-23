@@ -31,7 +31,11 @@ Find the message you saw, then run the command next to it **in your own terminal
 | `moat: ask [session-taint] — … which session … wrote after it read untrusted content` | The session read or ran a file another session wrote after it read a web page or an MCP result, and now writes a CI, build or agent file. | Look at the file it names, then approve, or `openmoat allow --last`, see [How it decides](/docs/how-it-decides/#files-a-tainted-session-wrote) |
 | `moat: deny [project-settings] — …` | A project's `.claude/settings.json` or `.claude/settings.local.json` changed during the session (a `git pull`, a checkout) and turns hooks off or sets hooks, `env` or a command. | Look at the file, see [Project settings that turn hooks off](#project-settings-that-turn-hooks-off) |
 | `moat: deny [kernel-self] — …` for `~/.moat/audit.db` or another OpenMoat file | The agent tried to read or change OpenMoat's own state. | Nothing, see [OpenMoat's own files](#openmoats-own-files) |
-| `moat: deny [kernel-integrity] — … was modified` | A pinned file (the policy, a hook) changed. Every call is blocked until you look. | `openmoat`, see [Troubleshooting](/docs/troubleshooting/) |
+| `moat: deny [kernel-integrity] — … was modified` | A pinned file (the policy, a hook) changed. Every call is blocked until you look. | `openmoat`, see [Troubleshooting](/docs/troubleshooting/hooks-and-lock/#every-call-is-denied-with-kernel-integrity) |
+| `moat: deny [repo:<id>] — …` or `moat: ask [repo:<id>] — …` | A rule in the project's own `.moat/policy.yaml`, which applies to everyone working there. | Read the rule in that file; approve an ask in the prompt or with `openmoat allow --last`, see [Use it in your projects](/docs/your-projects/#rules-for-one-project) |
+| `moat: deny [kernel-error] — …` for every call in one project | The project's `.moat/policy.yaml` does not parse, or sets a key a repository may not. | Fix the file, see [A repository policy denies every call](/docs/troubleshooting/policies-and-network/#a-repository-policy-denies-every-call) |
+
+Every other message: [Messages in the agent](/docs/troubleshooting/agent-messages/).
 
 ## An ask you want to approve
 

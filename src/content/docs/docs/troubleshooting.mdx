@@ -6,173 +6,96 @@ sidebar:
   order: 2
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
-Something about OpenMoat itself is not working.
+Something about OpenMoat itself is not working. A call your agent needs was blocked: start with [Something was blocked](/docs/blocked/).
 
 </Aside>
+
+Run every fix in your own terminal; agents are denied these commands. `openmoat doctor` names most problems and the command for each.
+
+<CardGrid>
+  <LinkCard title="Messages in the agent" href="/docs/troubleshooting/agent-messages/" description="Each deny and ask your agent shows: what it means and what to run." />
+  <LinkCard title="Messages from openmoat" href="/docs/troubleshooting/openmoat-messages/" description="Errors and status lines of openmoat itself." />
+  <LinkCard title="Hooks, lock and binary" href="/docs/troubleshooting/hooks-and-lock/" description="kernel-integrity, not protected, nothing happens, a moved binary." />
+  <LinkCard title="Policies, MCP, network, audit" href="/docs/troubleshooting/policies-and-network/" description="Repository policies, packs, MCP servers, ports, the audit log." />
+</CardGrid>
 
 ## Messages in the agent
 
-A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`. The reason is the rule's own, from the default policy. Run the fix in your own terminal; agents are denied every one of these commands.
-
-| Message starts with | Means | Run |
-|---|---|---|
-| `moat: deny [secrets-paths] — secret material` | A key, token file, `.env` or a command that prints a stored token | Nothing; to give the agent a token, [`openmoat secret add`](/docs/keep-tokens-safe/) |
-| `moat: deny [build-credentials] — build tool credentials` | `~/.m2/settings.xml` or `~/.gradle/gradle.properties` | Nothing; `mvn` and `gradle` still read them in the sandbox |
-| `moat: deny [env-secrets] — secret environment variable` | A variable named like a secret (`*_TOKEN`, `*_KEY`, `AWS_*`, …) | Nothing; see [.env and variables](/docs/env-files/) |
-| `moat: deny [env-dump] — prints every environment variable, secrets included` | `env`, `printenv`, `export -p`, `/proc/self/environ`, inline code printing the environment | Print the one variable you need, if its name is not a secret's |
-| `moat: deny [env-poison] — changes how later commands resolve or load code` | Setting `PATH`, `LD_PRELOAD`, `NODE_OPTIONS`, `GIT_*`, `MOAT_*` and the like | Set it yourself before you start the agent |
-| `moat: deny [pipe-to-shell] — executes remote or decoded content` | `curl … \| sh`, `base64 -d \| sh`, `eval` | Download the script, read it, run it yourself |
-| `moat: deny [destructive] — irreversible damage` | `git push --force`, `git reset --hard`, `rm -rf ~`, `sudo`, … | Run it yourself if you mean it |
-| `moat: deny [kernel-self] — OpenMoat protects its own policy, hooks and binary` | The agent touched OpenMoat's files or ran a person-only `openmoat` command | Nothing; run the command yourself ([Self-protection](/docs/self-protection/)) |
-| `moat: deny [agent-folders] — renaming or removing this folder moves agent settings OpenMoat protects` | `mv .github …`, `rm -r .github` | Rename it yourself |
-| `moat: deny [shell-rc] — edits persist into every future shell session` | A write to `~/.zshrc`, `~/.bashrc`, `~/.curlrc`, … | Edit the file yourself |
-| `moat: deny [cloud-metadata] — instance metadata and link-local services hand out cloud credentials` | `169.254.169.254`, `metadata.google.internal` | Nothing |
-| `moat: deny [token-egress] — sends a known kind of token to a host that is not its service's` | A GitHub, OpenAI, AWS, … token on its way to another host | Nothing; see [tokens sent to the wrong host](/docs/keep-tokens-safe/#tokens-sent-to-the-wrong-host) |
-| `moat: deny [placeholder-egress] — sends a brokered secret's placeholder to a host the proxy does not put that secret in` | A brokered placeholder sent elsewhere | Nothing |
-| `moat: deny [default.net] — no rule matched net <host>` | A host the policy does not list, for a command that can send data | `openmoat allow --site <host>` ([Network allowlist](/docs/allow-a-site/)) |
-| `moat: deny [push-secret]` | A commit the push would publish adds a token | Remove it from the commits ([GitHub](/docs/github/#what-a-push-would-publish)) |
-| `moat: deny [mcp-server-changed]`, ending in ``a person must review it: run `openmoat mcp accept <server>` in a terminal`` | The server's definition changed or is new | `openmoat mcp accept <server>` ([MCP](/docs/mcp-servers/)) |
-| `moat: deny [kernel-integrity] — … was modified` | A pinned file changed | `openmoat` ([below](#every-call-is-denied-with-kernel-integrity)) |
-| `moat: deny [project-settings]` | A project's `.claude/settings.json` turns hooks off or sets a command | Look at the file ([Something was blocked](/docs/blocked/#project-settings-that-turn-hooks-off)) |
-| `moat: deny [executables]` | The command's program resolves somewhere other than its pin | If you installed it there, `openmoat doctor --accept` |
-| `moat: deny [kernel-error]` | OpenMoat could not decide at all: missing state, unreadable policy, a repository policy that does not parse | `openmoat doctor` |
-| `moat: ask [git-internals] — git runs what its config, hooks and refs name, later and outside any sandbox` | A write into `.git`, `git config`, `git remote` | Approve, or `openmoat allow --last` |
-| `moat: ask [runs-later] — CI, commit hooks, the editor or the agent host run this later, outside any sandbox` | A CI workflow, commit hook, agent hook, skill or MCP setting | Approve, or `openmoat allow --last` |
-| `moat: ask [persistence] — runs again later, outside this session` | `~/Library/LaunchAgents`, `~/.gitconfig`, `crontab`, `at` | Approve, or `openmoat allow --last` |
-| `moat: ask [stops-openmoat]` | `pkill` or `killall` naming `moat` | Approve only if you mean it |
-| `moat: ask [home-sweep] — reads the whole home folder, secrets included` | `grep -r … ~`, `find ~` | Ask the agent to search a narrower folder |
-| `moat: ask [secret-names]`, `[other-home]`, `[opaque-code]` | A secret's file name behind an unknown variable, another user's home, a program OpenMoat cannot read | Approve if it is what you expect |
-| `moat: ask [package-near-miss] — looks like a typo of a popular package's name` | The name is one typo from a popular package | Check the name ([Install and publish](/docs/packages/#a-name-close-to-a-popular-package)) |
-| `moat: ask [docker-secrets] — hands secrets, the SSH agent or the host to a build` | `docker build --secret`, `--ssh`, `--network`, … | Approve if the build needs it |
-| `moat: ask [session-taint]` | The session read a secret or untrusted content earlier | [Session taint](/docs/session-taint/) |
-| `moat: ask [push-runs-later]`, `[push-unchecked]` | A tainted session's push changes a CI or hook file; a push OpenMoat could not check in 10 s | Push from your own terminal |
-| `moat: ask [unchecked]`, `[unparseable]` | OpenMoat sees only part of the call, or cannot read part of it | Approve if it is what you expect |
-| A deny whose message says to run `openmoat allow --last` | An ask on an agent that cannot show one (Codex, Claude Code in `bypassPermissions`, …) | `openmoat allow --last`, then ask the agent to retry |
-| `no decision within 30 s` | OpenMoat could not decide in time | Retry ([below](#a-call-is-denied-with-no-decision-within-30-s)) |
+A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`. Every rule, what it means and what to run: [Messages in the agent](/docs/troubleshooting/agent-messages/).
 
 ## Messages from openmoat
 
-Errors from `openmoat` itself start with `moat:`.
+Errors from `openmoat` itself start with `moat:`: [Messages from openmoat](/docs/troubleshooting/openmoat-messages/).
 
-| Message | Means | Run |
-|---|---|---|
-| ``moat: `openmoat allow` must be run by a person in a terminal, not from a hook or script`` (the same for `edit`, `trust`, `uninstall`, `secret add`, `sandbox sync`, `doctor --accept`, `audit anchor`, `mcp …`, `proxy uninstall`) | There is no terminal: a script, a hook or an agent's shell ran it | Run it in a terminal of your own |
-| ``moat: `openmoat allow` must be run by a person, not by an agent: it was started from `<agent>`. Run it in a terminal of your own`` | An agent is among the programs that started it, a terminal wrapper included | Run it in a terminal of your own, not one inside the agent or the Cursor editor |
-| `moat: refusing to <do this> while the policy lock shows drift (kernel-integrity):` | A pinned file changed; OpenMoat changes nothing over it | `openmoat doctor`, then `openmoat doctor --accept` |
-| ``<agent>  hook missing; run `openmoat init` `` (`openmoat doctor`), ``✗ hook missing (run `openmoat init`)`` (`openmoat status`) | The agent's hook is not installed | `openmoat init` |
-| ``hook entry for … is out of date (written by an older OpenMoat); run `openmoat init` `` | The hook was written by an earlier release | `openmoat init`, then restart the agent |
-| ``differs from the policy; run `openmoat sandbox sync` `` | The agent's sandbox settings do not match the policy | `openmoat sandbox sync`, then a new agent session |
-| `Codex … open Codex and trust OpenMoat's hook in /hooks; Codex runs a changed hook only then` | Codex has the hook but does not run it yet | Open `/hooks` in Codex and trust OpenMoat's |
-| ``mcp servers      ✗ …; `openmoat mcp accept` shows it and asks`` | An MCP server changed or is new | `openmoat mcp accept <server>` |
-| `not signed by a trusted key: tightening only, allow rules ignored (…)` | `require_signed_repo_policy: true`, and the repository policy has no signature by a key you trusted | [below](#a-repositorys-allow-rules-stopped-applying-after-openmoat-trust) |
-| `the edited policy does not lint:` | `openmoat edit` found an error; nothing was written | `y` at `Edit again? [y/N]` |
-| `duplicate rule id …`, `rule … has no patterns`, `bad glob …`, `bad shell pattern … (unbalanced quotes?)`, `unsupported policy version …` | `openmoat policy lint` found an error | Fix the rule it names ([The policy file](/docs/policy-file/)) |
-| `moat proxy: … (proxy-port)` | An allowed host on a port no rule names | Add `host:port` ([below](#a-connection-to-a-port-other-than-443-or-80-is-refused)) |
-| `moat proxy: … the proxy cannot ask, so a host the hook would ask for or leave to the agent is refused (…)` | A host the policy does not allow | `openmoat allow --site <host>` |
-| `moat proxy: … is a cloud metadata service (proxy-address)` | Refused whatever the policy says | Nothing |
-| ``moat: `openmoat run` needs macOS 13 or later; this Mac has macOS …, whose `sandbox-exec` cannot read the sandbox profile. The agent was not started.`` | macOS 12 or earlier | Start the agent without `openmoat run`; the hooks still apply |
-| ``moat: `openmoat run` needs an operating-system sandbox OpenMoat can generate (Seatbelt on macOS, Landlock on Linux); there is none on windows.`` | Windows | Use WSL2, or the agent's own sandbox |
-| ``moat: `openmoat run` confines the agent to a project: start it in the project, not in your home directory, one of its ancestors or a filesystem root`` | Started in `~` or `/` | Start it in the project folder |
-| ``moat: `openmoat run --netns=require`: the agent cannot get a network of its own here, so it does not start.`` | Linux without a usable bubblewrap | Install bubblewrap and allow unprivileged user namespaces |
-| ``moat: bubblewrap cannot create its namespaces here, so `openmoat run --isolate` refuses: …`` | Linux, `--isolate`, no user namespaces (Ubuntu 24.04 AppArmor, for one) | Allow unprivileged user namespaces for `bwrap` |
-| ``moat: `openmoat run --isolate` runs on Linux only (bubblewrap); there is no Isolated tier on …`` | `--isolate` on Windows (on macOS it refuses and names what is missing) | Use plain `openmoat run` |
+## Common problems
 
-## Every call is denied with `kernel-integrity`
+### Every call is denied with `kernel-integrity`
 
-```text
-moat: deny [kernel-integrity] — /Users/you/.moat/policy.yaml was modified;
-      run `openmoat doctor` to inspect; `openmoat doctor --accept` or `openmoat init` to re-pin
-```
+A pinned file changed without you accepting it: run `openmoat`, which shows the change and asks. [Details](/docs/troubleshooting/hooks-and-lock/#every-call-is-denied-with-kernel-integrity).
 
-A pinned file (the policy, a hook, an agent's settings) changed without you accepting it. Run `openmoat`: it shows the change and asks whether to accept it. If you did not make the change, you caught what OpenMoat exists for: look at `openmoat doctor` before accepting.
+### A hook still runs `moat`
 
-<Aside type="note" title="Claude Code's own settings do not block">
+Run `openmoat init` once. [Details](/docs/troubleshooting/hooks-and-lock/#a-hook-still-runs-moat).
 
-A change to one of Claude Code's own settings, such as a permission list, `permissions.blockReadsOutsideWorkingDirectories`, the model or a display setting, does not deny every call. Calls are decided by the policy as usual, the change is recorded once per session, and `openmoat doctor` and `openmoat status` report it until you run `openmoat doctor --accept`. A change to hooks, `env`, `apiKeyHelper`, plugins, MCP servers or `sandbox`, removing a deny rule OpenMoat wrote, an unknown key, or a file that no longer parses still blocks every call. So, since 0.9.0, does `permissions.defaultMode` set to a mode that runs calls without asking (`acceptEdits`, `auto`, `bypassPermissions`), any change to `permissions.additionalDirectories`, and a change to `autoMode`. Under a lock written before 0.5.7, a change to `permissions` also blocks until you re-pin.
+### `openmoat policy install` refuses a pack
 
-</Aside>
+The signature does not verify against a key you trusted. [Details](/docs/troubleshooting/policies-and-network/#openmoat-policy-install-refuses-a-pack).
 
-A [policy pack](/docs/team-rules/#signed-policy-packs) you installed is pinned the same way, and so are the keys you trusted: a change to a file in `~/.moat/policy.d/packs/` or to `~/.moat/allowed_signers` blocks every call too. `openmoat doctor` names the file.
+### A repository's allow rules stopped applying after `openmoat trust`
 
-## A hook still runs `moat`
+`require_signed_repo_policy: true` wants a signature. [Details](/docs/troubleshooting/policies-and-network/#a-repositorys-allow-rules-stopped-applying-after-openmoat-trust).
 
-After an upgrade from 0.7 or earlier, `openmoat doctor` says a hook still uses the old name. It keeps working, because every install puts a `moat` beside `openmoat` that runs it, but the `moat` name will be removed in a later release. Run `openmoat init` once: it backs up each agent's file, rewrites OpenMoat's hooks to run `openmoat` and re-pins. See [Upgrading from 0.7 or earlier](/docs/upgrade/#upgrading-from-07-or-earlier).
+### Every call in one project is denied
 
-## `openmoat policy install` refuses a pack
+The project's `.moat/policy.yaml` does not parse. [Details](/docs/troubleshooting/policies-and-network/#a-repository-policy-denies-every-call).
 
-The signature did not verify, or it was made by a key you have not trusted. Check that `<pack>.yaml.sig` belongs to that exact file and was made with `-n openmoat-pack` (signatures made with `-n openmoat-policy` before 0.9.0 no longer verify), then trust the signer's key with `openmoat policy trust-key <key.pub> --name <who>`. A key trusted before 0.9.0 needs `trust-key` again. The commands need the system `ssh-keygen` from OpenSSH 8.1 or later. See [Signed policy packs](/docs/team-rules/#signed-policy-packs).
+### `openmoat audit verify --against` fails
 
-## A repository's allow rules stopped applying after `openmoat trust`
+The log was cut short or rewritten after you anchored it. [Details](/docs/troubleshooting/policies-and-network/#openmoat-audit-verify---against-fails).
 
-Your policy has `require_signed_repo_policy: true`, so only a signature by a trusted key lets a repository policy allow. `openmoat status` in the project says `not signed by a trusted key: tightening only`. Ask the maintainer to sign `.moat/policy.yaml` with `-n openmoat-repo-policy` (a signature made before 0.9.0 no longer counts), or remove the setting with `openmoat edit`.
+### An older OpenMoat cannot open the audit log
 
-## `openmoat audit verify --against` fails
+Upgrade every `openmoat` on the machine to the same release. [Details](/docs/troubleshooting/policies-and-network/#an-older-openmoat-cannot-open-the-audit-log).
 
-An event that an anchor recorded is no longer in the log, or has another hash: the log was cut short or rewritten after you anchored it. The message names the first such anchor. Look at the events around it with `openmoat show`, and keep the database file as it is while you find out what changed it.
+### An MCP server's tools are denied with `mcp-server-changed`
 
-## An older OpenMoat cannot open the audit log
+Run `openmoat mcp accept <server>`. [Details](/docs/troubleshooting/policies-and-network/#an-mcp-servers-tools-are-denied-with-mcp-server-changed).
 
-The audit database now records file provenance (schema version 4), and builds before 0.6.0 cannot open it. Upgrade every `openmoat` (and any older `moat`) on the machine to the same release.
+### A wrapped MCP server shows no tools after an upgrade
 
-## An MCP server's tools are denied with `mcp-server-changed`
+Run `openmoat mcp accept` once. [Details](/docs/troubleshooting/policies-and-network/#a-wrapped-mcp-server-shows-no-tools-after-an-upgrade).
 
-Its definition changed, or it was added, since you last accepted the agents' MCP servers. Run `openmoat mcp accept <server>`: it shows the change and asks. See [MCP servers](/docs/mcp-servers/).
+### A connection to a port other than 443 or 80 is refused
 
-## A wrapped MCP server shows no tools after an upgrade
+Add a `host:port` rule next to the bare host. [Details](/docs/troubleshooting/policies-and-network/#a-connection-to-a-port-other-than-443-or-80-is-refused).
 
-Since 0.9.0, `openmoat mcp proxy` pins more of each tool (its title, output schema, annotations and every other field), so every tool it pinned before is held once, even unchanged. `openmoat status` says so. Run `openmoat mcp accept` once.
+### A call is denied with `no decision within 30 s`
 
-## A connection to a port other than 443 or 80 is refused
+Ask the agent to try again. [Details](/docs/troubleshooting/hooks-and-lock/#a-call-is-denied-with-no-decision-within-30-s).
 
-Through `openmoat proxy` and `openmoat run`, a host allowed without a port is reached on ports 443 and 80 only, and any other port is refused (`proxy-port`). Add a rule that names the port with `openmoat edit`, and keep the bare host in it too, because the hook decides by host alone and a `host:port` pattern matches nothing there:
+### An agent shows "hook only" or "not protected"
 
-```yaml
-allow:
-  - id: example-8443
-    reason: the staging API listens on 8443
-    net: ["example.com", "example.com:8443"]
-```
+`openmoat status` names the cause. [Details](/docs/troubleshooting/hooks-and-lock/#an-agent-shows-hook-only-or-not-protected).
 
-## A call is denied with `no decision within 30 s`
+### `openmoat doctor` warns about a project's `.claude` settings
 
-OpenMoat could not decide the call in 30 seconds, usually on a heavily loaded machine, and denied it rather than let it run. Ask the agent to try again. `openmoat doctor` names the step most such calls were stuck in.
+Check the file before you start an agent there. [Details](/docs/troubleshooting/hooks-and-lock/#openmoat-doctor-warns-about-a-projects-claude-settings).
 
-## An agent shows "hook only" or "not protected"
+### `openmoat run` refuses on macOS 12
 
-```bash
-openmoat status
-```
+It needs macOS 13 or later; the hooks still apply. [Details](/docs/troubleshooting/hooks-and-lock/#openmoat-run-refuses-on-macos-12).
 
-| It says | Run |
-|---|---|
-| `not protected: hook missing` | `openmoat init` |
-| the hook is out of date (after an upgrade) | `openmoat init` |
-| `not protected` with a settings file named, such as `disableAllHooks` or `[features] hooks = false` | Remove that setting from the file it names |
-| sandbox `differs from the policy` | `openmoat sandbox sync`, then start a new agent session |
-| `hook only` for OpenClaw, GitHub Copilot CLI, pi or Gemini CLI | Expected: OpenMoat sets up no OS sandbox for them. Use `openmoat run` for one |
-| `hook only` for Claude Code or Cursor on native Windows | Expected: use WSL2 for the OS sandbox |
+### Nothing seems to happen
 
-Codex shows its hook as installed but runs it only after you trust it: open `/hooks` in Codex and trust OpenMoat's. `openmoat doctor` reminds you on Codex's line. See [Supported agents](/docs/agents/).
+Start a new agent session and run `openmoat status`. [Details](/docs/troubleshooting/hooks-and-lock/#nothing-seems-to-happen).
 
-## `openmoat doctor` warns about a project's `.claude` settings
+### The `openmoat` binary is missing or broken
 
-The project's `.claude/settings.json` or `.claude/settings.local.json` turns hooks off (`disableAllHooks`) or sets its own hooks, `env` or a command. Claude Code loads it when a session starts, before OpenMoat's hook runs, so check the file before you start an agent there. See [Project settings that turn hooks off](/docs/blocked/#project-settings-that-turn-hooks-off).
-
-## `openmoat run` refuses on macOS 12
-
-`openmoat run` needs macOS 13 or later, and says so on earlier versions. The agent hooks still apply the policy to each tool call there.
-
-## Nothing seems to happen
-
-Hooks are read when a session starts. Start a new agent session after `openmoat init`, and check `openmoat status`. Restart OpenClaw's Gateway and pi, which load OpenMoat's plugin and extension when they start. Gemini CLI runs hooks only in folders it trusts.
-
-## The `openmoat` binary is missing or broken
-
-Codex, and Claude Code before 2.1.295, then run calls without the check; Cursor, OpenClaw, GitHub Copilot CLI, pi and Gemini CLI block them. With Claude Code 2.1.295 or later, `openmoat init` sets `"onFailure": "block"` on OpenMoat's hook, so a call is blocked when `openmoat` cannot start, crashes or times out. It writes the key only when the `claude` on your `PATH` reports that version, and `openmoat doctor` warns when Claude Code is older or not found. Reinstall it (`brew reinstall crocodile-labs/tap/openmoat`, or the installer), then run `openmoat status`.
+Reinstall it, then run `openmoat status`. [Details](/docs/troubleshooting/hooks-and-lock/#the-openmoat-binary-is-missing-or-broken).
 
 ## Reporting a bug
 

@@ -24,10 +24,13 @@ It takes OpenMoat out of every agent it set up and restores each settings file f
 |---|---|
 | Remove it from every agent | `openmoat uninstall` |
 | Remove it from one agent | `openmoat uninstall --hosts claude-code` |
-| Also delete the policy and the audit log | `openmoat uninstall --purge` |
-| Set it up again later | `openmoat init` |
+| Also delete the policy and the audit log | `openmoat uninstall --purge` (not with `--hosts`: the agents left set up would deny every call without it) |
+| Set it up again later | `openmoat init` (or `openmoat init --hosts <id>` for one agent) |
+| Stop a repository's rules in one project | `openmoat trust --revoke` stops its allow rules; see [Use it in your projects](/docs/your-projects/#stop-using-it) |
 
-Without `--purge`, your policy and log stay in `~/.moat`.
+It prints one line per file. A file unchanged since `openmoat init` gets its backup back byte for byte, a file `openmoat init` created is deleted, and a file you changed since keeps your changes and loses only OpenMoat's entries. It also stops the lock pinning those files, removes the proxy service if you ran `openmoat proxy install`, and points wrapped MCP servers back at their own commands.
+
+Without `--purge`, your policy and log stay in `~/.moat`, and it says ``· state directory  /Users/you/.moat kept (policy, audit log); `openmoat uninstall --purge` deletes it``. There is no switch for one project: OpenMoat covers every project of a protected agent.
 
 <Aside type="note" title="Run it yourself">
 

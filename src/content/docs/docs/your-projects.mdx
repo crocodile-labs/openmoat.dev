@@ -1,0 +1,188 @@
+---
+title: "Use it in your projects"
+description: "After openmoat init, every project you open with a protected agent is covered by one policy. How to check a project, give it more, add rules for one project, and take OpenMoat out again."
+sidebar:
+  label: "Use it in your projects"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You already have projects and want to know what changes in them, how your rules apply there, and how to give one project more, or different, rules.
+
+</Aside>
+
+## Nothing to add per project
+
+`openmoat init` sets up your agents, not your projects. From the next agent session on, every project you open with a protected agent is covered, the ones you already have included. There is no per-project setup, file or command, and nothing is written into your projects: OpenMoat's state stays in `~/.moat`.
+
+- **One policy decides everywhere:** `~/.moat/policy.yaml`, with the rules `openmoat allow` added (`~/.moat/policy.d/approved.yaml`) and the policy packs you installed. It applies to every agent and every project.
+- **The project** is the git repository the agent runs in (the folder that holds `.git`), or that folder itself when there is none. Your home folder is never one. How it is found, with monorepos, worktrees and submodules: [The project folder](/docs/the-project/).
+- **A repository may add rules of its own**, in a committed `.moat/policy.yaml` ([below](#rules-for-one-project)).
+
+## What the agent may do in a project
+
+With the default policy:
+
+| The agent, in the project | Answer | Rule |
+|---|---|---|
+| Reads and edits files | allow | `project-fs` |
+| Runs builds, tests and everyday git (`npm test`, `cargo build`, `git commit`) | allow | `dev-shell` |
+| Installs a package, pushes, runs a command no rule names (`npm install left-pad`, `git push origin main`) | defer: your agent's own prompt | `default` |
+| Writes into `.git`, runs `git config` | ask | `git-internals` |
+| Writes a CI workflow, a commit hook, or the agent's hooks, skills or MCP settings | ask | `runs-later` |
+| Reads `.env`, `.envrc` or a key | deny | `secrets-paths` |
+| Writes `.moat/` or agent settings (`.claude/settings.json`) | deny | `kernel-self` |
+| Sends data to a host the policy does not list (`curl -d @notes.txt https://example.com`) | deny | `default.net` |
+| Reads or edits a folder next to the project (`../shared-lib`) | defer: outside the project | `default` |
+
+Why each answer: [How it decides](/docs/how-it-decides/).
+
+## Check a project
+
+In the project, in your own terminal:
+
+```bash
+cd ~/work/app
+openmoat status
+```
+
+Besides each agent's protection, `openmoat status` run in a project shows its repository policy, if it has one, and warns about the project's own agent settings (a `.claude/settings.json` that turns hooks off, a `.mcp.json` server waiting for `openmoat mcp accept`):
+
+```text
+policy           /Users/you/.moat/policy.yaml  sha256:…  (… deny, … allow, … ask)
+repo policy      /Users/you/work/app/.moat/policy.yaml  sha256:…  not trusted: tightening only, allow rules ignored (1 deny, 1 ask, 1 allow)
+…
+```
+
+No `repo policy` line means the project has none: only your policy decides there. To see what a call would get in that project, without running it:
+
+```bash
+openmoat policy check "npm run migrate" --cwd ~/work/app
+openmoat policy check "/Users/you/work/app/deploy/prod/app.yaml" --kind fs-write --cwd ~/work/app
+```
+
+```text
+❓ ask
+   rules : repo:migrations
+   reason: database migrations change shared data: shell "npm run migrate"
+```
+
+`--cwd` decides as if the command ran there, with your policy and the project's repository policy, as the hook does. More examples: [Check a command first](/docs/check-a-command/).
+
+## Give a project more
+
+| You need | Run | Applies | Lasts |
+|---|---|---|---|
+| A sibling folder, a shared library | `openmoat allow --dir ~/work/shared-lib` | every project, every agent | until `openmoat allow --remove <id>` |
+| A host (a docs site, an API) | `openmoat allow --site docs.rs` | every project, every agent | until removed |
+| The call you were just asked about | `openmoat allow --last` | that agent session; a command only in the project it was asked in | 24 h |
+| That command for good | `openmoat allow --last --always` | every project, every agent | until removed |
+| A read-only folder, a pattern, a port | `openmoat edit` | every project, every agent | until you change it |
+
+`--dir` and `--site` write a rule into your policy, and your policy applies everywhere: there is no `--dir` or `--site` for one project. For an allow in one repository only, put it in that repository's `.moat/policy.yaml` (below). `openmoat allowed` lists everything you allowed, with the command that takes each back. What each one opens: [Every allow and what it opens](/docs/allow-reference/). Folders outside the project: [Work across several repos](/docs/work-across-repos/).
+
+## Rules for one project
+
+A repository can carry rules for everyone who works in it: commit `.moat/policy.yaml` at its root.
+
+```yaml
+version: 1
+deny:
+  - id: no-prod-config
+    reason: production settings stay with the release pipeline
+    fs.write: ["${project}/deploy/prod/**"]
+ask:
+  - id: migrations
+    reason: database migrations change shared data
+    shell: ["npm run migrate*"]
+allow:
+  - id: company-registry
+    reason: the team's package registry
+    net: ["npm.internal.example.com"]
+```
+
+Only `version`, `deny`, `ask` and `allow` are accepted. Write it in your own editor: the agent cannot write `.moat/` (`kernel-self`).
+
+| Its rules | Apply |
+|---|---|
+| `deny`, `ask` | at once, for everyone who works in the repository, with any agent, as `repo:<id>` (`repo:no-prod-config`) |
+| `allow` | only for a person who ran `openmoat trust` on that exact file, or, with `require_signed_repo_policy: true` in their policy, when a key they trusted signed it |
+
+They never weaken your deny rules. A repository's ask rules are tried before your allow rules, so an `openmoat allow --last --always` rule does not silence a `repo:` ask; `openmoat allow --last` (that session) and answering the prompt do.
+
+### Open a cloned repository that has one
+
+Nothing asks when the session starts. The deny and ask rules apply from the first call, and the agent's messages name them: `moat: deny [repo:no-prod-config] — production settings stay with the release pipeline: write …`. Its allow rules wait. Before you start an agent there, run `openmoat status` in it, read `.moat/policy.yaml`, and trust the file if you want its allow rules:
+
+```bash
+openmoat trust
+```
+
+```text
+repository policy /Users/you/work/app/.moat/policy.yaml
+  sha256:…
+  trusting it adds 1 allow rule(s) to your policy; your deny rules still win:
+    allow repo:company-registry: net: npm.internal.example.com
+  its 1 ask and 1 deny rule(s) apply trusted or not:
+    ask repo:migrations: shell: npm run migrate*
+    deny repo:no-prod-config: fs.write: ${project}/deploy/prod/**
+Trust this file? [y/N] y
+✔ trusted /Users/you/work/app/.moat/policy.yaml  sha256:…: its 1 allow rule(s) apply until the file changes
+✔ lock re-pinned (… files)
+```
+
+`openmoat status` then says `trusted (1 deny, 1 ask, 1 allow)`. A file that does not parse denies every call in the project (`kernel-error`) until it is fixed, and `openmoat status` says `repo policy      ✗ …; every call in this project is denied`.
+
+### After it changes
+
+Trust holds for that exact file in that checkout. After a pull, a branch switch or an edit, the file applies as deny and ask only, and `openmoat status` says ``changed since `openmoat trust`: tightening only, allow rules ignored (…)``. Review the change and trust it again:
+
+```bash
+git diff ORIG_HEAD -- .moat/policy.yaml   # what the pull changed
+openmoat trust                            # shows the rules again; "replaces the trust given to sha256:…"
+```
+
+### Stop using it
+
+```bash
+openmoat trust --revoke    # ✔ revoked: the repository policy of /Users/you/work/app only tightens again
+```
+
+`--revoke` stops its allow rules. Its deny and ask rules are the repository's: they apply while the file is there. Writing, signing and reviewing one for a team, and checking it in CI: [A repository policy](/docs/team-rules/repository-policy/).
+
+## Your own rules for one project
+
+Your own policy has no switch that limits a rule to one project: `${project}` names whichever project the call runs in, and the reserved `scope:` key has no effect yet. Two ways work:
+
+- **Name the project's paths.** `fs.read` and `fs.write` patterns are absolute paths, so a rule on a path holds for that project only. Add it with `openmoat edit`:
+
+  ```yaml
+  deny:
+    - id: app-prod-config
+      reason: production settings of app
+      fs.write: ["~/work/app/deploy/prod/**"]
+  ```
+
+  `shell`, `net`, `env` and `mcp` patterns have no path, so such a rule applies in every project.
+
+- **Keep an uncommitted `.moat/policy.yaml` in your checkout.** It works like a committed one, for you alone: deny and ask at once, allow after `openmoat trust`. Keep it out of git with a line in `.git/info/exclude`:
+
+  ```bash
+  echo ".moat/" >> .git/info/exclude     # in your own terminal
+  ```
+
+  This only works while the repository has no `.moat/policy.yaml` of its own.
+
+## Take OpenMoat out of one project or one agent
+
+There is no switch that turns OpenMoat off for one project: give that project what it needs ([above](#give-a-project-more)), or take OpenMoat out of an agent, which covers every project of that agent:
+
+```bash
+openmoat uninstall --hosts claude-code   # that agent only; restart it
+openmoat init --hosts claude-code        # set it up again
+```
+
+Everything else: [Turn it off](/docs/turn-off/).

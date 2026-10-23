@@ -1,0 +1,274 @@
+---
+title: "OpenMoat 0.5.0 to 0.5.7"
+description: "The quiet default (defer to the agent's prompt), push and token checks, MCP pinning, runs-later, moat allowed, and their release candidates."
+sidebar:
+  label: "0.5.0 to 0.5.7"
+  order: 6
+---
+
+import { Aside, Badge } from '@astrojs/starlight/components';
+
+Released 2026-10-12 to 2026-10-18. Each version below links to its GitHub release.
+
+<Aside type="caution" title="Upgrading">
+
+- **To 0.5.7: run `moat init` once.** Claude Code's hook shows as out of date until you do: it now also receives MCP resource reads, worktree entries and skills, and with Claude Code 2.1.295 or later it gets `"onFailure": "block"`, so a call is blocked when `moat` cannot start, crashes or times out. `moat init` also pins your agents' MCP servers ([MCP servers](/docs/mcp-servers/)).
+- **Then run `moat policy upgrade`** to get `token-egress` and `placeholder-egress` ([tokens sent to the wrong host](/docs/keep-tokens-safe/token-egress/)), the new `runs-later` files, and the deny of `moat mcp accept`, `wrap` and `unwrap` to agents.
+- **From 0.4.0 or earlier:** existing policies keep their `ask` defaults until `moat policy upgrade` (0.5.0-rc.2).
+- **Folders allowed with `moat allow --dir` before 0.5.2** do not leave out `.git` and the files run later: remove them and add them again ([Work across several repos](/docs/work-across-repos/)).
+
+Every step after an upgrade: [Upgrade](/docs/upgrade/).
+
+</Aside>
+
+## 0.5.7
+
+Released 2026-10-18. [GitHub release v0.5.7](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.7).
+
+Push check for tokens and secrets, token egress, MCP server and tool pinning, a Claude Code hook that blocks when it fails, per-session proxy credentials, hooks inside moat run, human-only commands, and classifier fixes.
+
+### Security
+- `git push` and `gh pr create` are checked for what they would publish: a commit that adds a known token format or a brokered secret's value is denied (`push-secret`), a change to a CI workflow or another `runs-later` file asks in a session that read untrusted content or a secret (`push-runs-later`), and a push that cannot be checked within 2 s or 8 MiB asks (`push-unchecked`); any other push is decided as before ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- With Claude Code 2.1.295 or later, `moat init` sets `"onFailure": "block"` on OpenMoat's `PreToolUse` hook, so a call is blocked when `moat` cannot start, crashes or times out instead of running unchecked. The key is written only when the `claude` on `PATH` reports that version; `moat status` and `moat doctor` report a hook without it as out of date (run `moat init`), and `moat doctor` warns when Claude Code is older or not found ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- `token-egress` denies a GitHub, OpenAI/Anthropic, AWS, Slack, Google, npm or GitLab token sent to a host that is not its service's, allowed hosts included: in a fetch or network tool's URL, an MCP URL argument, a web search, or the arguments of a command that connects to a host and of commands piped into it. `placeholder-egress` denies a brokered secret's placeholder sent anywhere but that secret's host. Only prefixed token formats count, so commit SHAs, UUIDs and base64 data are not affected. Existing policies get both with `moat policy upgrade` ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- Audit redaction also masks Anthropic keys (`sk-ant-…`) and OpenAI project, service-account and admin keys whose body holds `-` or `_` ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- The policy lock pins each MCP server definition the agents read (`~/.claude.json`, a project's `.mcp.json`, Cursor's `mcp.json`, Codex's `config.toml`, and their project files). A server whose definition changed, or one added since (a cloned repository's `.mcp.json` included), has its tool calls denied with `mcp-server-changed` until a person runs `moat mcp accept`, which shows the change and asks. Other servers and tools are not affected, and `moat doctor` and `moat status` report it ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- `moat mcp accept`, `moat mcp wrap` and `moat mcp unwrap` are denied to agents (`kernel-self`), pseudo-terminal wrappers included. Existing policies get it with `moat policy upgrade` ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- `moat run`'s proxy serves its own run only: the agent's `HTTP_PROXY`/`HTTPS_PROXY` carry a per-run credential (`http://<session>:<token>@127.0.0.1:<port>`), and a request without it, or with another run's, gets 407. Each proxy row is recorded under the run's session ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- Session taint reaches `moat run`'s proxy: once an agent session of the run has read secret material, a request to any host but that secret's own is refused (`session-taint`), registries included, so a script the hook never sees cannot send it on. The default policy denies secret reads, so default setups see no change ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- One session of `moat run`'s proxy, or the connections that have not authenticated yet, can hold at most half of its connections; the next gets 503 ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- A deny can no longer be turned into a defer by padding the rest of a command line until the classifier stops. A here-document with no delimiter line and a trailing backslash are read as bash runs them, a command substitution that cannot be classified keeps its command's own reads and writes, and a line not read in full or past a classifier limit (64 KB, nesting depth, 2048 actions) asks instead of taking the catch-all ([#569](https://github.com/crocodile-labs/openmoat/pull/569)).
+- `moat run` removes the environment variables brokered secrets are read from before it starts the agent; the agent and its commands held the real value instead of the placeholder ([#569](https://github.com/crocodile-labs/openmoat/pull/569)).
+- `runs-later` asks before the agent writes what its host starts in the next session, outside any sandbox: a project's `.claude/hooks/`, `.mcp.json`, `.cursor/mcp.json` and `.codex/config.toml`, and `~/.claude.json`, `~/.claude/plugins/`, `~/.cursor/mcp.json` and `~/.cursor/cli-config.json`. Existing policies get it with `moat policy upgrade` ([#569](https://github.com/crocodile-labs/openmoat/pull/569)).
+- A tool OpenMoat does not govern is left to the host's own permission flow instead of being approved past it; it is still recorded. Cursor, whose hooks cannot leave a call undecided, keeps the allow ([#569](https://github.com/crocodile-labs/openmoat/pull/569)).
+- `moat run --isolate` takes bubblewrap from `/usr/bin`, `/bin` or `/usr/local/bin` only, never from `PATH`, where a relative entry let a project ship its own ([#571](https://github.com/crocodile-labs/openmoat/pull/571)).
+- A project root whose path holds a glob character (`*`, `?`, brackets, braces) names no files: spliced into `${project}/**` it widened `project-fs`, with a project at `~/*` to the whole home ([#572](https://github.com/crocodile-labs/openmoat/pull/572)).
+- Under `moat run` on macOS, a pattern with `**` inside braces (`~/{.ssh/**,.aws/**}`) and a pattern under a symlinked directory (`/tmp/x/**`, which is `/private/tmp/x`) are enforced as the hook reads them; both were narrower ([#572](https://github.com/crocodile-labs/openmoat/pull/572)).
+- A patch handed to `apply_patch` in a shell command, which Codex applies like its own patch tool, is checked as writes to every file it names; a write to a denied file deferred ([#572](https://github.com/crocodile-labs/openmoat/pull/572)).
+- MCP arguments named in camel or kebab case (`sourcePath`, `output-dir`, `baseUrl`) are read as paths and URLs, and a write verb anywhere in a tool's name (`file_write`, `download_file`) makes its paths writes ([#572](https://github.com/crocodile-labs/openmoat/pull/572)).
+- In Claude Code's `bypassPermissions` and `dontAsk` modes, where no question reaches a person, an OpenMoat ask is a deny that says how to approve it (`moat allow --last`), as for Codex; calls OpenMoat leaves to Claude Code are unchanged ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- `moat allow`, `moat doctor --accept`, `moat trust`, `moat secret add`, `moat edit`, `moat policy upgrade`, `moat uninstall`, `moat sandbox sync`, `moat mcp accept`/`wrap`/`unwrap` and `moat proxy install`/`uninstall` refuse when Claude Code, Codex, the Cursor CLI or `moat run` started them, even through a terminal wrapper, and read their answer from the controlling terminal. Windows checks the terminal only ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- `moat proxy` refuses a TLS tunnel whose ClientHello carries an encrypted server name (ECH or ESNI), with which an allowed host's provider could serve another site; `sandbox.proxy_allow_ech: true` allows it ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- The Claude Code hook also receives `ReadMcpResourceTool` (a `file:` resource is checked as a read of that file, another as the MCP server's read), `EnterWorktree` (entering an existing worktree is checked as a read of its directory) and `Skill` (recorded, left to Claude Code). Existing installs show the hook as out of date until `moat init` is run ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- Session taint protects every file `runs-later` asks about (`azure-pipelines.yml`, `Jenkinsfile`, `.buildkite/`, `.pre-commit-config.yaml`, `lefthook.yml`, `~/.claude.json`) and OpenMoat's own `.moat/`, and a test keeps the lists in step ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- A shell command that gives `HOME`, `PWD` or `project` a value it does not show (`project=$(cat f)`, `read HOME`) no longer has paths under them read as the real home, working directory or project: `project=$(cat f); cat ${project}/id_rsa` was allowed as a project file, and now asks like any unknown directory ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- `${project}` in a shell command is the shell's variable `project`, empty when unset, not the project root: `cat ${project}/Users/me/.ssh/id_rsa` reads the key and was allowed as a project file ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- A relative path from the root directory (`cd / && cat Users/me/.ssh/id_rsa`) is checked as `/Users/…`; it was read as the network path `//Users/…`, which no rule names ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- `xargs` input that the command line shows, a here-string, a here-document or text piped from `echo`, is checked as the arguments of the command xargs runs, with `-I`, `-n` and `-0` read as xargs reads them ([#575](https://github.com/crocodile-labs/openmoat/pull/575)).
+- Files that `curl` and `wget` send are checked as reads: `curl -F name=@FILE`, `-F name=<FILE`, `--form`, `-T`/`--upload-file`, `-d @FILE` and the other data options, `--data-urlencode name@FILE` and `-K FILE`, and `wget --post-file`, `--body-file` and `-i` ([#575](https://github.com/crocodile-labs/openmoat/pull/575)).
+- Files rewritten in place are checked as writes: the file operands of `perl -i` and `ruby -i` (and their backups), the file `patch` patches and its `-o` and `-r` files (its `-i` patch file is a read), and `dd of=~/…`, whose `~` bash expands ([#575](https://github.com/crocodile-labs/openmoat/pull/575)).
+- `env -S 'cmd args'` (`--split-string`) is checked as the command line env runs ([#575](https://github.com/crocodile-labs/openmoat/pull/575)).
+- An unquoted glob that starts with `.` (`.*`) also names `.` and `..`, as macOS `/bin/bash` and other bash before 5.2 expand it, so the directory and its parent are checked; `rm` and `rmdir`, which refuse those two operands, are unchanged ([#575](https://github.com/crocodile-labs/openmoat/pull/575)).
+- Shell rule patterns match in time bounded by the pattern length times the command length; a pattern with many `*` against a long command took exponential time ([#575](https://github.com/crocodile-labs/openmoat/pull/575)).
+- The program git runs for the other side of a remote, `--upload-pack` and `-u` for `clone`, `fetch`, `pull` and `ls-remote`, `push --receive-pack`/`--exec` and `archive --exec`, is checked as a command line. A local repository that `clone`, `fetch`, `pull`, `ls-remote` or `archive --remote` names is a read, and the directory `clone` creates and a local repository `push` updates are writes ([#575](https://github.com/crocodile-labs/openmoat/pull/575)).
+- Hooks inside `moat run` send each tool call to the `moat run` process over the proxy's port with a token made for the run, and that process decides and records it; the sandbox stays closed to `~/.moat`, a wrong token is recorded and gets no decision, and any failure denies ([#575](https://github.com/crocodile-labs/openmoat/pull/575)).
+
+### Added
+- `moat mcp proxy`, opt-in per server with `moat mcp wrap` or `moat init --mcp-proxy`: it runs a stdio MCP server through OpenMoat, pins each tool's description and input schema on first sight, hides a tool that changed or is new until `moat mcp accept`, and records every tool call in the audit log. With `--sandbox` the server runs under `moat run`. `moat uninstall` and `moat mcp unwrap` restore the original command ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+
+### Changed
+- Changing one of Claude Code's own settings, such as `permissions.blockReadsOutsideWorkingDirectories`, a permission list or mode, or a display toggle, no longer makes `moat guard` deny every call until `moat doctor --accept`. Calls are decided by the policy as usual, the change is recorded once per session, and `moat doctor` and `moat status` report it until you accept it. Any change to hooks, to keys that run a program or redirect the agent (`env`, `apiKeyHelper`, the model, plugins, MCP servers, `sandbox`), removing a deny rule OpenMoat wrote, an unknown key or a file that no longer parses still denies every call. Under a lock pinned by an earlier release a change to `permissions` still denies until the next re-pin ([#575](https://github.com/crocodile-labs/openmoat/pull/575)).
+- `moat proxy` says at start-up that it asks for no session credential, so any local process may use it and session taint does not apply; the host sandboxes cannot send one ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- `moat status` says when a policy update waits for `moat policy upgrade`, and its JSON adds `policy_update` and `lock_drift` ([#573](https://github.com/crocodile-labs/openmoat/pull/573)).
+- On a session-taint ask, `moat allow --last` offers `s`: it approves every protected write of that session until it reads untrusted content again (other sessions still ask; a secret's asks never) ([#573](https://github.com/crocodile-labs/openmoat/pull/573)).
+- `moat init` shows a diff of every file it would change for an agent before asking about it, hooks and sandbox settings together ([#573](https://github.com/crocodile-labs/openmoat/pull/573)).
+- `--help` and the `moat run` banner use plain words: no ADR numbers or tier names, and the banner is two lines (`--verbose` for the rest) ([#573](https://github.com/crocodile-labs/openmoat/pull/573)).
+- A tool call over the 1 MiB payload limit is refused with a message naming the limit, instead of failing as malformed input ([#573](https://github.com/crocodile-labs/openmoat/pull/573)).
+- `moat guard` stays fast in long agent sessions: the session's taint is folded from the calls since the last one, cached in the audit database, instead of from the whole session. Late in a 5,000-call session a call took 158 ms on Linux and 370 ms on macOS; it now takes about 10 and 18 ms ([#571](https://github.com/crocodile-labs/openmoat/pull/571)).
+
+### Fixed
+- `moat guard` no longer denies slow calls on a heavily loaded machine as `no decision within 10 s`: the time limit is 30 s (still a deny when it runs out), the session-cache write skips instead of waiting for the audit database's lock and shares the record's connection, and `moat doctor` names the step most such calls were stuck in ([#574](https://github.com/crocodile-labs/openmoat/pull/574)).
+- Under `moat run`, every governed tool call was denied as a `kernel-error` and nothing was recorded, because the hook could not read the policy lock or write the audit log from inside the sandbox; hooks now get the real decision, and session taint reaches the run's proxy ([#575](https://github.com/crocodile-labs/openmoat/pull/575)).
+
+## 0.5.6
+
+Released 2026-10-18. [GitHub release v0.5.6](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.6).
+
+Security hardening: the egress proxy applies deny rules that name an address to every address a host resolves to and refuses two ambiguous plain-HTTP framings, and session grants are ordered by audit row instead of the clock.
+
+### Security
+- The egress proxy checks a policy deny rule naming an address against every address a host resolves to: a deny such as `net: ["203.0.113.7"]` only matched the name, so an allowed name resolving to that address was connected to; it is refused now ([#565](https://github.com/crocodile-labs/openmoat/pull/565)).
+- The egress proxy refuses plain-HTTP framing a server could read differently: an HTTP/1.0 request that carries `Transfer-Encoding`, and a chunk size over 2^31 - 1 ([#565](https://github.com/crocodile-labs/openmoat/pull/565)).
+- `moat policy lint` warns when a secret sets `plain_http: true` for a loopback host: the proxy never connects there, so the secret is never injected ([#565](https://github.com/crocodile-labs/openmoat/pull/565)).
+- A session grant answering a taint ask is ordered against the session's latest untrusted read by audit row instead of wall-clock time, so a clock that steps back cannot make a grant made before the read look newer ([#566](https://github.com/crocodile-labs/openmoat/pull/566)).
+
+## 0.5.5
+
+Released 2026-10-17. [GitHub release v0.5.5](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.5).
+
+Two security fixes: `moat allow --last` shows which ask it takes and asks before approving, and the egress proxy refuses numeric host spellings and more local addresses. New read-only listings: `moat allowed`, `moat secret list` and `moat doctor --format json`.
+
+### Security
+- `moat allow --last` says which ask it takes (id, host, session, how long ago, what the agent wanted) and asks `Approve it? [y/N]` before it approves anything; another ask could have come in after the one you meant ([#552](https://github.com/crocodile-labs/openmoat/pull/552)).
+- The egress proxy refuses a host whose last label is a number or starts with `0x` (`0x7f.1`, `2130706433`), which some resolvers read as an IP address, and refuses more local addresses: NAT64 local-use `64:ff9b:1::/48`, Azure's WireServer `168.63.129.16` (as metadata) and `192.0.0.0/24` ([#551](https://github.com/crocodile-labs/openmoat/pull/551)).
+
+### Added
+- `moat allowed` lists what you have allowed: policy rules, session grants with what they cover and when they expire, and trusted repositories; `moat secret list` says whether a secret's source is still readable by the agent. Both are read-only and take `--format json` ([#550](https://github.com/crocodile-labs/openmoat/pull/550)).
+- `moat doctor --format json` prints every check with its status and detail, for scripts and the menu bar app ([#549](https://github.com/crocodile-labs/openmoat/pull/549)).
+
+### Changed
+- A session-taint ask answered with `moat allow --last` stays answered for that call for the rest of the session, until the agent reads untrusted content again; secret taint is never answered this way. Claude Code's prompt says how ([#544](https://github.com/crocodile-labs/openmoat/pull/544)).
+
+## 0.5.4
+
+Released 2026-10-17. [GitHub release v0.5.4](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.4).
+
+Two security fixes: the egress proxy no longer passes along a second request pipelined after the first, and a session grant can no longer be made for a call without a session id, where it applied to every such session. Long agent sessions also stay fast.
+
+### Security
+- The egress proxy forwards one plain-HTTP request per connection: a request pipelined after the first one's body, possibly for another host, was relayed to the first host's server without a decision; it is now dropped, and chunked framing the proxy cannot follow is refused ([#540](https://github.com/crocodile-labs/openmoat/pull/540)).
+- `moat allow --last` on a call whose agent sent no session id wrote a "session" grant that held for every session without an id for 24 hours; it is refused now, and the guard never applies such a grant ([#541](https://github.com/crocodile-labs/openmoat/pull/541)).
+
+### Changed
+- The guard stays fast in long agent sessions: when it works out a session's taint, each distinct earlier call is classified once instead of once per later call ([#542](https://github.com/crocodile-labs/openmoat/pull/542)).
+
+## 0.5.3
+
+Released 2026-10-15. [GitHub release v0.5.3](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.3).
+
+Two security fixes: a path that steps up (`..`) after a symlink is checked where the OS really goes, and a shell variable whose value names itself can no longer crash the guard, which let Claude Code and Codex run a command unchecked.
+
+### Security
+- A path that steps up (`..`) after a symlink is checked where the OS really goes: with `c` linked to `~/.config`, `cat c/../.ssh/id_rsa` and a file-tool read of it were allowed as project files; they are denied, and so is `cd -P c/.. && cat .ssh/id_rsa` ([#536](https://github.com/crocodile-labs/openmoat/pull/536)).
+- A shell variable whose value names itself (`e='${e}'; cat $e`) was expanded again and again until the guard crashed; a crashed guard is not a deny, so Claude Code and Codex ran the rest of the command unchecked. A value is now expanded once, as the shell does ([#539](https://github.com/crocodile-labs/openmoat/pull/539)).
+
+## 0.5.2
+
+Released 2026-10-15. [GitHub release v0.5.2](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.2).
+
+Writes an agent should not make without a question now ask: CI workflows and commit hooks (`runs-later`), and `.git` in a directory allowed with `moat allow --dir`. `moat secret add` denies the secret's source to the agent, and `moat allow` updates the agents' sandboxes at once.
+
+### Security
+- A new ask group, `runs-later`, asks before an agent writes what CI runs with the repository's secrets once a branch is pushed (`.github/workflows/`, `.gitlab-ci.yml`, `.circleci/`, `azure-pipelines.yml`, `Jenkinsfile`, `.buildkite/`) or what runs on this machine outside any sandbox (`.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`, `.vscode/tasks.json`). They were allowed as project files. `project-fs` and `moat allow --dir` leave them out; reading them stays allowed, and the OS sandboxes do not deny them. Existing policies get the group with `moat policy upgrade`.
+- `moat allow --dir` no longer allows writes into a `.git` in that directory (hooks, config, a `.git` file pointing elsewhere). As in the project, git runs what those name later, outside any sandbox; such a write now goes to the agent's own prompt. Rules added by an earlier version keep their old form: remove and add the directory again to get it.
+- `moat secret add` adds a deny rule for the secret's source when none covers it (an environment variable whose name the policy does not deny, a file outside the secret paths), so the agent cannot read the value it brokers. It only warned before.
+
+### Changed
+- `moat allow --dir`, `--site`, `--remove` and a permanent file rule update the agents' sandbox settings at once, as `moat sandbox sync` does; before, sandboxed commands met the old settings until you ran it.
+- The README says where a brokered secret's value is injected today: into HTTPS through Claude Code's sandbox broker, through `moat proxy` into plain HTTP only.
+
+## 0.5.1
+
+Released 2026-10-14. [GitHub release v0.5.1](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.1).
+
+Security fixes from an outside review of 0.5.0: paths hidden in `$'…'` quoting or in a command's output, `file:` URLs, `$IFS`, commands handed to `ssh`, `git rebase --exec` and other programs, `/proc/*/environ` and commands that print a stored token.
+
+### Security
+- `$'…'` (ANSI-C quoting) is decoded the way bash decodes it, and `$"…"` is read as `"…"`. `cat $'/Users/me/.ssh/id_rsa'` and `cat $'\x2f'Users/me/.ssh/id_rsa` were allowed as project files; they are reads of the key and denied, and `$'moat' allow --last` is denied like `moat allow --last`.
+- A path that is the output of a command (`cat $(cat list.txt)`, `` cat `cmd` ``) is no longer allowed as a project file: like a path through an unknown variable it defers, and asks when its file name is a key's or a `.env`.
+- A `file:` URL is a read of its file: `curl file:///Users/me/.ssh/id_rsa` is denied; it was left to the agent's prompt.
+- `$IFS` splits a word where it stands: `cat${IFS}~/.ssh/id_rsa` is denied.
+- A command handed to `watch`, `git rebase --exec`, `git submodule foreach`, `git bisect run`, `git difftool --extcmd`, `git filter-branch --*-filter`, `ssh -o ProxyCommand=` (and `LocalCommand`, `KnownHostsCommand`) or `rsync -e` is checked as a command of its own.
+- `env-dump` denies reading a process environment from `/proc/<pid>/environ`, and `secrets-paths` denies the commands that print a stored token or password (`gh auth token`, `gcloud auth print-access-token`, `az account get-access-token`, `aws configure export-credentials`, `git credential fill`, `security find-generic-password -w`).
+
+## 0.5.0
+
+Released 2026-10-14. [GitHub release v0.5.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.0).
+
+The first stable release with the quiet default (ADR-025): OpenMoat denies what must never happen, asks for the few calls whose effect outlives the session, and leaves every other call to your agent's own permission prompt. This section lists what changed since 0.5.0-rc.5; the release candidates below list the rest since 0.4.0.
+
+### Security
+- A key's, a token file's or a `.env`'s name in a directory a variable hides (`cat $X/id_rsa`) asks (`secret-names`) instead of being left to the agent's prompt, so an auto-approve mode does not run it unseen.
+- An uppercase variable set on the line (`X=~/.ssh; cat $X/id_rsa`, `export D=~/.ssh`) is substituted where it names a path or a host, like a lowercase one, so the read is denied; it was left to the agent's prompt.
+
+### Changed
+- The README starts with three setup steps, one command for each everyday case and answers to common questions, and its demo shows the quiet default; the docs describe 0.5.0 as it behaves.
+
+## 0.5.0-rc.5
+
+Released 2026-10-14. [GitHub release v0.5.0-rc.5](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.0-rc.5).
+
+A release candidate for testing; not a stable release. A security fix: a shell variable set on the command line is checked as the path or host it holds, so `d=~/.ssh; cat $d/id_rsa` is denied (it was allowed in 0.5.0-rc.2 to rc.4). Inline code of versioned interpreters, `lua` and `Rscript` is scanned too.
+
+### Security
+- A shell variable set on the line is substituted where it names a path or a host: `d=~/.ssh; cat $d/id_rsa` is denied. Since 0.5.0-rc.2 a lowercase variable's read was no environment read, and its path was taken as a file in the project, so the read was allowed. A path through a variable whose value is not known (`$X/id_rsa`, `d=$(pwd)`, `${d:-x}`) is `unparseable`, never allowed, and `$PWD` is the working directory.
+- Inline code of versioned interpreters (`python3.12 -c`, `python2.7 -c`) and of `lua -e`, `luajit -e` and `Rscript -e` is scanned for paths and hosts like `python3 -c`.
+
+## 0.5.0-rc.4
+
+Released 2026-10-14. [GitHub release v0.5.0-rc.4](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.0-rc.4).
+
+A release candidate for testing; not a stable release. Fixes from a day of dogfooding the quiet default: commands after shell reserved words are checked as themselves, `for` loops, lowercase shell variables, `python3 -I script.py`, `grep` patterns and `tr` no longer leave normal work to the agent's prompt, and `moat secret add gh` keeps the GitHub token from the agent in one step.
+
+### Added
+- `moat secret add gh` keeps the GitHub token from the agent in one step: it adds the brokered secret to the policy, shows the diff and asks, then re-pins and syncs the sandbox settings. Other services take `--host` and `--env` or `--file`. Agents are denied `moat secret` like `moat edit` (`kernel-self`).
+
+### Security
+- The command after a shell reserved word (`do`, `then`, `if`, `!`, `{`, …) is classified as that command, so `for f in a; do cat ~/.ssh/id_rsa; done` is a read of the key; the reserved word was taken as the program and the command's file operands were missed. `for PATH in …` is a set of `PATH`, which `env-poison` denies.
+
+### Changed
+- Common shell forms an agent writes no longer leave the call to the agent: a `for` loop or a lowercase shell variable (`n=3; git log -$n`) over allowed commands is allowed (`shell-locals`), and so is a project script run with whole-word safe Python options (`python3 -I script.py`).
+
+### Fixed
+- A `grep` pattern is no longer read as a file: `grep -n '\.env' notes.md` was denied as a read of `.env` (a `\` became a path separator); with `-e` or `-f` anywhere every operand is still a file. `tr` is allowed (`text-tools`) and its character sets are not files, and reading Claude Code's own temporary folder is allowed (`agent-temp`).
+- docs/POLICY.md §3 and §4 had an outdated copy of seven paragraphs (here-documents, shell options, `cd`, symlinks, globs, braces) next to the current one; the outdated copies are gone.
+- `moat show`, `moat audit` and the other readers refuse an audit log a newer `moat` wrote (schema too new), as `moat guard` already does, instead of reading it with an older schema.
+
+## 0.5.0-rc.3
+
+Released 2026-10-13. [GitHub release v0.5.0-rc.3](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.0-rc.3).
+
+A release candidate for testing; not a stable release. Security fixes found in a review of the quiet default: a bracket-glob read of a secret file that was allowed, more network clients and quoted hosts in inline code denied, unknown Cursor tools checked as writes, other users' homes asked, and docs that match the defer verdict.
+
+### Security
+- More network clients count as naming a host (`openssl`, `socat` addresses, `psql`/`mysql`/`redis-cli -h`, `nmap`, `mosh`, `aria2c` and others), and a host in a quoted string in inline interpreter code is network access again, so an unlisted host there is denied, not left to the agent. A path in another user's home (`~alice/.ssh/id_rsa`) always asks (`other-home`).
+- A host quoted as an argument of a program that names hosts (`curl 'host'`, `ssh "user@host"`) and a host after git's global options (`git -C dir push host:repo`) are network again, so an unlisted host is denied instead of left to the agent; the output of any program other than `cat`, `echo` or `printf`, and of a `( … )` group, piped into a shell asks (`opaque-code`) like other text the command line does not show.
+- `sh` is read with bash's long options (`sh --norc -c '…'`), as macOS runs it, so the command string is classified and a secret read in it is denied; it was left to the agent as `unparseable`.
+- A glob operand with a POSIX bracket class (`cat .e[[:alpha:]]v`, `cat ~/.s[[:alpha:]]h/id_rsa`) names the paths the shell opens, so `secrets-paths` denies it; it was allowed inside the project and left to the agent outside it.
+- A Cursor `preToolUse` tool OpenMoat does not know that names a path is checked as writing it unless it is one of Cursor's listing or search tools, so an editing tool without a write verb in its name (`search_replace`) can no longer change `.cursor/hooks.json` or `.git/hooks` under the project read allow.
+
+### Fixed
+- docs/THREAT_MODEL.md, docs/POLICY.md and SECURITY.md say `defer` where the default policy leaves a call to the agent's own prompt; they still said `ask` for `unparseable` input, recursive `rm`, discarding checkouts, `local-net`, `WebFetch`, `npx` and PowerShell ([#505](https://github.com/crocodile-labs/openmoat/pull/505)).
+
+## 0.5.0-rc.2
+
+Released 2026-10-13. [GitHub release v0.5.0-rc.2](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.0-rc.2).
+
+A release candidate for testing; not a stable release. Quiet by default: OpenMoat denies what must never happen and leaves every other call to your agent's own permission prompt. Existing policies keep their `ask` defaults until `moat policy upgrade`.
+
+### Changed
+- **Quiet by default (ADR-025).** A new verdict, `defer`, leaves a call to the agent's own permission prompt (Claude Code's prompt or auto mode, Codex's approval policy), exactly as without OpenMoat. The default policy defers everything no rule names, installs, pushes, publishing, `WebFetch` and local services included, so OpenMoat shows no prompt of its own in normal work (the first dogfood day had 191 asks in 4 hours, none of them an attack). OpenMoat still asks itself where the effect outlives the sandbox or the session: new `git-internals`, `persistence`, `home-sweep`, `opaque-code` and `docker-secrets` ask groups, and session taint. Every deny rule and the generated sandboxes are unchanged; OS layers treat `defer` like `ask`, and `moat proxy` refuses a deferred host. Codex and the Continue CLI no longer turn an unknown command into a deny. Cursor's file tools cannot prompt, so there a deferred call still asks. ([#499](https://github.com/crocodile-labs/openmoat/pull/499))
+- A host-shaped word without a scheme outside programs that name hosts (`check_runs.0.id`, `defaults.net`) is matched by `net` rules but is no longer denied by `defaults.net`; it gets the catch-all default.
+- The policy has a `defer:` rule list, evaluated after `ask`; `defaults` accept `defer`. `unparseable` input defers under an `allow` or `defer` catch-all and asks under `ask` or `deny`.
+- A policy written before this release keeps its own `ask` defaults; `moat policy upgrade` offers the new ones. The audit log moves to schema version 3 (a `defer` verdict); an older `moat` refuses to open it. `moat report` and `moat team report` count calls left to the agent. Library: `Verdict::Defer`, `AtomicAction::NetWord` and `Policy::defer` are new (`Verdict` and `AtomicAction` are `#[non_exhaustive]`; `Policy` gains a field).
+
+### Security
+- `destructive` denies writes to raw disks (`/dev/disk*`, `/dev/sd*`, `/dev/nvme*`, …), and text piped into a shell that the command line does not show (`printf '\x63at .env' | sh`) asks (`opaque-code`).
+
+### Added
+- `moat sandbox show` starts with a `Secrets` list: each policy secret's host, header and source (never the value), and whether Claude Code injects it or why it skips it ([#498](https://github.com/crocodile-labs/openmoat/pull/498)).
+
+### Fixed
+- The Codex sandbox profile no longer lists `**/` denies below a file it grants (`~/.gitconfig/**/.env`); they could match nothing ([#496](https://github.com/crocodile-labs/openmoat/pull/496)).
+- A function call in interpreter code, such as Python's `subprocess.run(`, is no longer taken for a host name, so the command asks instead of being denied as network access ([#495](https://github.com/crocodile-labs/openmoat/pull/495)).
+- `moat sandbox sync` writes only the agents whose OpenMoat hook is installed: it no longer added OpenMoat's sandbox to an agent you left out (such as Codex after `moat init --hosts claude-code`) or removed with `moat uninstall`, and says `not set up` for it instead; `moat status` and `moat doctor` check the sandbox of those agents only ([#493](https://github.com/crocodile-labs/openmoat/pull/493)).
+- `moat status` no longer lists Claude Code `WebSearch` as a known gap: it has been checked as `web.search` since 0.5.0-rc.1 ([#494](https://github.com/crocodile-labs/openmoat/pull/494)).
+- `moat show`, `audit`, `report` and the other audit readers say the audit log cannot be read, not that it is missing and `moat init` should run, when an agent's sandbox blocks `~/.moat` ([#494](https://github.com/crocodile-labs/openmoat/pull/494)).
+
+## 0.5.0-rc.1
+
+Released 2026-10-12. [GitHub release v0.5.0-rc.1](https://github.com/crocodile-labs/openmoat/releases/tag/v0.5.0-rc.1).
+
+A release candidate for testing; not a stable release.
+
+### Added
+- `moat policy upgrade` brings a new release's default-policy changes into your policy: it keeps every line you changed, shows the diff, asks, and `--undo` restores the old file; `moat`, `moat init` and `moat doctor` say when an update is available ([#477](https://github.com/crocodile-labs/openmoat/pull/477)).
+- docs/USAGE.md "If OpenMoat gets in your way": one command for each way it can block work, including turning it off with `moat uninstall` ([#486](https://github.com/crocodile-labs/openmoat/pull/486)).
+
+### Changed
+- After upgrading, run `moat policy upgrade` (the default-policy fixes below) and `moat sandbox sync`.
+- A policy that repeats a key in one mapping, or uses `<<` merge keys, no longer loads (the old parser kept the last value silently); `moat policy lint` names the line, `moat edit` fixes it ([#492](https://github.com/crocodile-labs/openmoat/pull/492)).
+- <Badge text="Breaking" variant="caution" /> **Breaking** for openmoat-audit: `ExportReport::anchor_found` is now `anchor` (`AnchorCheck`); `moat audit verify` says when an export is not anchored, and `--require-anchor` fails then ([#469](https://github.com/crocodile-labs/openmoat/pull/469)).
+- <Badge text="Breaking" variant="caution" /> **Breaking** for the library crates: `Kind`, `Action` and `AtomicAction` gain `UnknownTool` ([#472](https://github.com/crocodile-labs/openmoat/pull/472)).
+- Docs state plainly that `moat run` on Linux does not protect `.env`, `.git` or `.moat` inside the project (use `--isolate`), and ADR-023 has a correction note on Apple's container tooling ([#487](https://github.com/crocodile-labs/openmoat/pull/487)).
+
+### Fixed
+- Normal work no longer asks: redirections to `/dev/null` and the standard streams ([#471](https://github.com/crocodile-labs/openmoat/pull/471)), read-only git commands (and `git config --get user.name`, which was denied as a host) ([#473](https://github.com/crocodile-labs/openmoat/pull/473)), read-only utilities, in-project edits (`sed -i`, `git merge`, `git restore`, `rm -rf build`) and the build and test commands of more ecosystems ([#483](https://github.com/crocodile-labs/openmoat/pull/483)), and toolchain version checks ([#484](https://github.com/crocodile-labs/openmoat/pull/484)).
+- `moat uninstall` deletes only the backups OpenMoat created, never a file of yours at a backup's name ([#478](https://github.com/crocodile-labs/openmoat/pull/478)).
+
+### Security
+- An output or build directory given as an option value outside the project asks in every spelling (`cmake -B/tmp/x`, `go build -o/tmp/x`), and options that load code (`cmake -C`, `cargo --config`, `pytest -p`) ask ([#490](https://github.com/crocodile-labs/openmoat/pull/490)).
+- After a web fetch or MCP result, editing the build definitions of every ecosystem the default policy runs asks (`CMakeLists.txt`, `pom.xml`, `build.gradle`, `*.csproj`, `Rakefile`, `.cargo/config.toml` and more) ([#491](https://github.com/crocodile-labs/openmoat/pull/491)).
+- Policies are parsed by a maintained pure-Rust YAML parser instead of one built on the unmaintained `unsafe-libyaml` (RUSTSEC-2024-0449) ([#492](https://github.com/crocodile-labs/openmoat/pull/492)).
+- Cursor tools OpenMoat cannot classify ask (`tool.unknown`), and Cursor `WebFetch` is checked as a fetch ([#472](https://github.com/crocodile-labs/openmoat/pull/472)).
+- Codex from its standalone installer works on Linux and keeps working across updates, while its credentials, conversations and databases stay unreadable to commands ([#470](https://github.com/crocodile-labs/openmoat/pull/470)).

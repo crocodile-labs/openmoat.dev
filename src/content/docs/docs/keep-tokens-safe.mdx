@@ -62,27 +62,7 @@ An agent that can read a token can send it anywhere a prompt injection tells it 
 
 ## Tokens sent to the wrong host
 
-Even without a brokered secret, `token-egress` denies a well-known token sent to a host that is not its service's, allowed hosts included: a GitHub token to `registry.npmjs.org` is denied, to `api.github.com` it is not.
-
-| Token | Its own hosts |
-|---|---|
-| GitHub (`ghp_`, `gho_`, `github_pat_`, …) | `github.com`, `githubusercontent.com`, `ghcr.io` |
-| OpenAI and Anthropic (`sk-`, `sk-proj-`, `sk-ant-`, …) | `openai.com`, `anthropic.com` |
-| AWS access key ids (`AKIA…`) | `amazonaws.com`, `aws.amazon.com` |
-| Slack (`xoxb-`, `xoxp-`, …) | `slack.com` |
-| Google API keys (`AIza…`) | `googleapis.com`, `google.com` |
-| npm (`npm_`) | `npmjs.org`, `npmjs.com` |
-| GitLab (`glpat-`) | `gitlab.com` |
-
-Each with its subdomains. It is checked in a fetch or network tool's URL, an MCP URL argument, a web search, and the arguments of a command that connects to a host and of commands piped into it. Only these prefixed formats count, so commit SHAs, UUIDs and base64 data are never taken for a token. A self-hosted GitLab or GitHub Enterprise server is not the service's host; to send tokens there, narrow the rule with `openmoat edit` ([POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md)).
-
-It does not see a token in a file a command uploads (`curl -d @file`), a here-document, a variable whose value is not on the command line, or an encoded or split token.
-
-<Aside type="note" title="Upgrading from 0.5.6 or earlier">
-
-An existing policy gets `token-egress` and `placeholder-egress` with `openmoat policy upgrade` ([Upgrade](/docs/upgrade/)).
-
-</Aside>
+Even without a brokered secret, `token-egress` denies a well-known token (GitHub, OpenAI, Anthropic, AWS, Slack, Google, npm, GitLab) sent to a host that is not its service's, allowed hosts included: a GitHub token to `registry.npmjs.org` is denied, to `api.github.com` it is not. Each token's hosts, and what it does not see: [Tokens sent to the wrong host](/docs/keep-tokens-safe/token-egress/).
 
 ## Another service
 
@@ -93,52 +73,11 @@ openmoat allow --site api.stripe.com
 openmoat secret add stripe --host api.stripe.com --env STRIPE_API_KEY
 ```
 
-The value goes in the `Authorization` header unless you pass `--header <name>`.
-
-### Make sure the agent cannot read the source
-
-A brokered value the agent can read anyway protects nothing, so `openmoat secret add` checks where the value comes from. When no rule denies it yet, it adds one, `secret-<id>`, in the same diff you approve:
-
-| Source | Already denied? | What `openmoat secret add` does |
-|---|---|---|
-| `--env NAME` ending in `_KEY`, `_TOKEN`, `_SECRET`, `_PASSWORD`, or starting with `AWS_`, and the other names in [.env and variables](/docs/env-files/#what-is-denied) | yes, `env-secrets` | nothing more |
-| `--env NAME` with another name (`STRIPE_LIVE`) | no | adds `secret-<id>` with an `env.read` deny of it |
-| `--file PATH` under `~/.ssh`, `~/.aws`, `~/.config/gh` and the other secret folders | yes, `secrets-paths` | nothing more |
-| `--file PATH` anywhere else (`~/.config/example/token`) | no | adds `secret-<id>` with an `fs.read` deny of it |
-
-The diff shows the rule, and the line `The deny rule secret-<id> keeps the agent from reading the value at its source.`
-
-<Aside type="note" title="Secrets added with OpenMoat 0.5.1 or earlier">
-
-They only warned. Run `openmoat policy lint`: a warning `no deny … rule covers …, so the agent can read it` means you should add the deny with `openmoat edit`:
-
-```yaml
-deny:
-  - id: example-token
-    reason: brokered secret source
-    fs.read: ["~/.config/example/token"]
-```
-
-</Aside>
-
-<Aside type="caution" title="Prefer --env on macOS with Claude Code">
-
-Claude Code's broker reads `env` and `file` sources. On macOS it denies a `file` source to sandboxed commands instead of masking it, so the tool that reads that file cannot authenticate. Use `--env` there.
-
-</Aside>
+The value goes in the `Authorization` header unless you pass `--header <name>`. `openmoat secret add` also checks that the agent cannot read the value's source, and adds a deny rule `secret-<id>` when none covers it: [Broker a token for another service](/docs/keep-tokens-safe/another-service/).
 
 ## Where it works today
 
-| Agent | HTTPS requests | Plain HTTP |
-|---|---|---|
-| Claude Code, sandboxed shell commands | yes: Claude Code's own sandbox broker puts the value in | through `openmoat proxy` only, with `plain_http: true`, and only while `sandbox.proxy_port` sends the sandbox's traffic there |
-| Codex, Cursor, `openmoat run` (through `openmoat proxy`) | not yet: the request keeps the placeholder and the server rejects it | yes, with `plain_http: true` |
-
-A `plain_http: true` secret goes only to port 80 of its host, or to the port its `port` field names; a request to another port keeps the placeholder. It is never handed to Claude Code's broker, which would put it in on every port.
-
-`openmoat run` removes the environment variables brokered secrets are read from before it starts the agent, so neither the agent nor its commands hold the real value.
-
-`openmoat secret list` shows each brokered secret's host, header and source (never the value), and whether a deny rule covers that source. A `keychain` source, set with `openmoat edit` ([POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#21-brokered-secrets-secrets)), works through `openmoat proxy` only, on macOS and Linux.
+Over HTTPS, the value is put in only by Claude Code's own sandbox broker, for its sandboxed shell commands. Through `openmoat proxy` (Codex, Cursor, `openmoat run`) only plain-HTTP requests get it, with `plain_http: true`. The details per agent: [Where it works today](/docs/keep-tokens-safe/where-it-works/).
 
 <Impact opens={["Programs the agent runs can call the API with your token"]} keeps={["The agent itself never holds the value, and cannot print or read it", "A request carrying the placeholder or the value to any other host is refused", "Its source is denied too: `openmoat secret add` adds the rule when none covers it"]} think={["The API host can still be told to do anything the token allows: give the token the smallest scope that works"]} />
 

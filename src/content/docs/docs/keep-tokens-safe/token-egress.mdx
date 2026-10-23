@@ -1,0 +1,31 @@
+---
+title: "Tokens sent to the wrong host"
+description: "token-egress denies a well-known token sent to a host that is not its service's, even without a brokered secret."
+sidebar:
+  label: "Tokens to the wrong host"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Even without a brokered secret, `token-egress` denies a well-known token sent to a host that is not its service's, allowed hosts included: a GitHub token to `registry.npmjs.org` is denied, to `api.github.com` it is not.
+
+| Token | Its own hosts |
+|---|---|
+| GitHub (`ghp_`, `gho_`, `github_pat_`, …) | `github.com`, `githubusercontent.com`, `ghcr.io` |
+| OpenAI and Anthropic (`sk-`, `sk-proj-`, `sk-ant-`, …) | `openai.com`, `anthropic.com` |
+| AWS access key ids (`AKIA…`) | `amazonaws.com`, `aws.amazon.com` |
+| Slack (`xoxb-`, `xoxp-`, …) | `slack.com` |
+| Google API keys (`AIza…`) | `googleapis.com`, `google.com` |
+| npm (`npm_`) | `npmjs.org`, `npmjs.com` |
+| GitLab (`glpat-`) | `gitlab.com` |
+
+Each with its subdomains. It is checked in a fetch or network tool's URL, an MCP URL argument, a web search, and the arguments of a command that connects to a host and of commands piped into it. Only these prefixed formats count, so commit SHAs, UUIDs and base64 data are never taken for a token. A self-hosted GitLab or GitHub Enterprise server is not the service's host; to send tokens there, narrow the rule with `openmoat edit` ([POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md)).
+
+It does not see a token in a file a command uploads (`curl -d @file`), a here-document, a variable whose value is not on the command line, or an encoded or split token.
+
+<Aside type="note" title="Upgrading from 0.5.6 or earlier">
+
+An existing policy gets `token-egress` and `placeholder-egress` with `openmoat policy upgrade` ([Upgrade](/docs/upgrade/)).
+
+</Aside>

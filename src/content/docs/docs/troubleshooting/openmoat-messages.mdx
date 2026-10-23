@@ -1,0 +1,55 @@
+---
+title: "Messages from openmoat"
+description: "Errors and status lines the openmoat command prints, what they mean and what to run."
+sidebar:
+  label: "Messages from openmoat"
+  order: 2
+---
+
+Errors from `openmoat` itself start with `moat:`. Lines from `openmoat status` and `openmoat doctor` start with the part they check (`policy`, `repo policy`, `lock`, an agent's name).
+
+## Commands that refuse
+
+| Message | Means | Run |
+|---|---|---|
+| ``moat: `openmoat allow` must be run by a person in a terminal, not from a hook or script`` (the same for `edit`, `trust`, `uninstall`, `secret add`, `sandbox sync`, `doctor --accept`, `audit anchor`, `mcp …`, `proxy uninstall`) | There is no terminal: a script, a hook or an agent's shell ran it | Run it in a terminal of your own |
+| ``moat: `openmoat allow` must be run by a person, not by an agent: it was started from `<agent>`. Run it in a terminal of your own`` | An agent is among the programs that started it, a terminal wrapper included | Run it in a terminal of your own, not one inside the agent or the Cursor editor |
+| `moat: refusing to <do this> while the policy lock shows drift (kernel-integrity):` | A pinned file changed; OpenMoat changes nothing over it | `openmoat doctor`, then `openmoat doctor --accept` |
+| `moat: … has no .moat/policy.yaml` (`openmoat trust`) | The project has no repository policy at its root | Run it in the repository, or name it: `openmoat trust ~/code/app` |
+| `moat: … is not in a project: it is the home directory, one of its ancestors or a filesystem root` (`openmoat trust`) | Run in your home folder or above it | Run it in the project folder |
+
+## Status and doctor lines
+
+| Message | Means | Run |
+|---|---|---|
+| ``<agent>  hook missing; run `openmoat init` `` (`openmoat doctor`), ``✗ hook missing (run `openmoat init`)`` (`openmoat status`) | The agent's hook is not installed | `openmoat init` |
+| ``hook entry for … is out of date (written by an older OpenMoat); run `openmoat init` `` | The hook was written by an earlier release | `openmoat init`, then restart the agent |
+| ``hook runs …, which does not exist; run `openmoat init` ``, ``hook runs …, a different OpenMoat binary than this one; run `openmoat init` with the openmoat hooks should use``, ``binary           lock expects …, running …; run `openmoat init` `` | `openmoat` moved, or two installs are on the machine | Keep one install, then `openmoat init` with it ([Upgrade](/docs/upgrade/#keep-one-openmoat-installed)) |
+| ``differs from the policy; run `openmoat sandbox sync` `` | The agent's sandbox settings do not match the policy | `openmoat sandbox sync`, then a new agent session |
+| `Codex … open Codex and trust OpenMoat's hook in /hooks; Codex runs a changed hook only then` | Codex has the hook but does not run it yet | Open `/hooks` in Codex and trust OpenMoat's |
+| ``mcp servers      ✗ …; `openmoat mcp accept` shows it and asks`` | An MCP server changed or is new | `openmoat mcp accept <server>` |
+| `repo policy      ✗ …; every call in this project is denied` | The project's `.moat/policy.yaml` does not parse, or sets a key a repository may not | Fix the file ([below](/docs/troubleshooting/policies-and-network/#a-repository-policy-denies-every-call)) |
+| `repo policy      … not trusted: tightening only, allow rules ignored (…)` | Its deny and ask rules apply; its allow rules wait for you | Read the file, then `openmoat trust` if you want them ([Use it in your projects](/docs/your-projects/#rules-for-one-project)) |
+| ``repo policy      … changed since `openmoat trust`: tightening only, allow rules ignored (…)`` | The file changed (a pull, a branch switch) after you trusted it | Review the change, then `openmoat trust` again |
+| `not signed by a trusted key: tightening only, allow rules ignored (…)` | `require_signed_repo_policy: true`, and the repository policy has no signature by a key you trusted | [Repositories and packs](/docs/troubleshooting/policies-and-network/#a-repositorys-allow-rules-stopped-applying-after-openmoat-trust) |
+
+## Policy edits
+
+| Message | Means | Run |
+|---|---|---|
+| `the edited policy does not lint:` | `openmoat edit` found an error; nothing was written | `y` at `Edit again? [y/N]` |
+| `duplicate rule id …`, `rule … has no patterns`, `bad glob …`, `bad shell pattern … (unbalanced quotes?)`, `unsupported policy version …` | `openmoat policy lint` found an error | Fix the rule it names ([The policy file](/docs/policy-file/)) |
+
+## Proxy and `openmoat run`
+
+| Message | Means | Run |
+|---|---|---|
+| `moat proxy: … (proxy-port)` | An allowed host on a port no rule names | Add `host:port` ([a port other than 443 or 80](/docs/troubleshooting/policies-and-network/#a-connection-to-a-port-other-than-443-or-80-is-refused)) |
+| `moat proxy: … the proxy cannot ask, so a host the hook would ask for or leave to the agent is refused (…)` | A host the policy does not allow | `openmoat allow --site <host>` |
+| `moat proxy: … is a cloud metadata service (proxy-address)` | Refused whatever the policy says | Nothing |
+| ``moat: `openmoat run` needs macOS 13 or later; this Mac has macOS …, whose `sandbox-exec` cannot read the sandbox profile. The agent was not started.`` | macOS 12 or earlier | Start the agent without `openmoat run`; the hooks still apply |
+| ``moat: `openmoat run` needs an operating-system sandbox OpenMoat can generate (Seatbelt on macOS, Landlock on Linux); there is none on windows.`` | Windows | Use WSL2, or the agent's own sandbox |
+| ``moat: `openmoat run` confines the agent to a project: start it in the project, not in your home directory, one of its ancestors or a filesystem root`` | Started in `~` or `/` | Start it in the project folder |
+| ``moat: `openmoat run --netns=require`: the agent cannot get a network of its own here, so it does not start.`` | Linux without a usable bubblewrap | Install bubblewrap and allow unprivileged user namespaces |
+| ``moat: bubblewrap cannot create its namespaces here, so `openmoat run --isolate` refuses: …`` | Linux, `--isolate`, no user namespaces (Ubuntu 24.04 AppArmor, for one) | Allow unprivileged user namespaces for `bwrap` |
+| ``moat: `openmoat run --isolate` runs on Linux only (bubblewrap); there is no Isolated tier on …`` | `--isolate` on Windows (on macOS it refuses and names what is missing) | Use plain `openmoat run` |

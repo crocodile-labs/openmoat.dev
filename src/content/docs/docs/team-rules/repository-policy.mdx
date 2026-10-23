@@ -1,0 +1,95 @@
+---
+title: "A repository policy"
+description: "Commit .moat/policy.yaml so everyone who works in a repository gets its deny and ask rules; trust its allow rules; review a change; check it in CI."
+sidebar:
+  label: "Repository policy"
+  order: 1
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You maintain a repository and want rules for everyone who works in it, or you review a change to one.
+
+</Aside>
+
+A repository's committed `.moat/policy.yaml` adds `deny` and `ask` rules for everyone who works in it, whatever agent they use; its `allow` rules apply only for a person who trusted that exact file, or where a key they trusted signed it. How it combines with each person's policy: [Repository policies](/docs/policy-file/repositories/).
+
+## Example
+
+<Steps>
+
+1. **Add a policy to the repository**
+
+   Create `.moat/policy.yaml` at the root of the repository and commit it:
+
+   ```yaml
+   version: 1
+   deny:
+     - id: no-prod-config
+       reason: production settings stay with the release pipeline
+       fs.write: ["${project}/deploy/prod/**"]
+   ask:
+     - id: migrations
+       reason: database migrations change shared data
+       shell: ["npm run migrate*"]
+   ```
+
+   Only `version`, `deny`, `ask` and `allow` are accepted; `defaults`, `executables`, `sandbox` and any other key make the file invalid, and every call in the project is then denied (`kernel-error`) until it is fixed. The agent cannot write the file (`kernel-self` denies writes under `.moat/`): edit it yourself.
+
+2. **Everyone gets the deny and ask rules at once**
+
+   They apply to everyone who works in the repository, whatever agent they use, and show up as `repo:<id>`, such as `repo:no-prod-config`.
+
+3. **Each person trusts the allow rules**
+
+   A repository is untrusted input, so by itself it can only make your policy stricter. Its `allow` rules apply after you review and trust that exact file:
+
+   ```bash
+   openmoat trust             # in the repository; prints the allow rules it lets in
+   openmoat trust --revoke
+   ```
+
+   It asks `Trust this file? [y/N]` before it trusts anything. `openmoat allowed` lists the repositories you trusted. What it prints: [Use it in your projects](/docs/your-projects/#rules-for-one-project).
+
+</Steps>
+
+<Aside type="note">
+
+Any later change to the file drops it back to deny and ask only, until you trust it again. A file that does not parse denies every call in the project until it is fixed. Repository rules apply in the hook, not in the agents' OS sandboxes. Under `openmoat run`, the proxy also refuses the hosts a repository policy denies.
+
+</Aside>
+
+## Check a rule before you commit it
+
+```bash
+openmoat policy check "npm run migrate" --cwd ~/work/app   # decides with the repository's policy, as the hook does
+openmoat status                                            # in the repository: the file, its digest and which form applies
+```
+
+Leave out `--policy`: with it, only the file you name decides, without your policy or the repository's. `openmoat policy lint .moat/policy.yaml` checks the rule syntax, but not the keys only a repository may not set; `openmoat status` in the project reports those.
+
+## Review a change to it
+
+A pull request that edits `.moat/policy.yaml` drops the file back to deny and ask only, for everyone who trusted it, until each trusts it again. To review it:
+
+```bash
+git diff origin/main -- .moat/policy.yaml   # what the change adds
+openmoat status                             # in the project: whether its allow rules apply
+openmoat trust                              # shows the file, its digest and every rule it adds, then asks
+```
+
+`openmoat trust` asks `Trust this file? [y/N]` before it trusts anything; `openmoat allowed` lists the repositories you trusted, and `openmoat trust --revoke` takes it back. Under `require_signed_repo_policy: true` ([Signed policy packs](/docs/team-rules/policy-packs/#require-a-signature-on-repository-policies)), `openmoat status` says `trusted: signed by alice@example.com`, or `not signed by a trusted key: tightening only, allow rules ignored (…)`.
+
+## Check it in CI
+
+`openmoat policy check` exits `0` for allow or defer, `2` for deny and `3` for ask, so a CI job can assert what the repository's rules decide. On a runner, `openmoat init` without a terminal writes the default policy to `~/.moat` and changes no agent's files:
+
+```bash
+openmoat init                                         # default policy in ~/.moat; no agent is changed
+openmoat policy check "npm run migrate" --cwd .       # exits 3: ask, repo:migrations
+openmoat policy check "$PWD/deploy/prod/app.yaml" --kind fs-write --cwd .   # exits 2: deny, repo:no-prod-config
+```
+
+Install `openmoat` on the runner as in the [Quick start](/docs/quickstart/). A job that runs these in a shell with `set -e` stops at the first non-zero exit: check the code yourself, for example `openmoat policy check "npm run migrate" --cwd . || test $? -eq 3`. The runner decides with the default policy, not each person's, so it checks the repository's rules, not what a given person gets.

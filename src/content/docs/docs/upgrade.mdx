@@ -10,7 +10,7 @@ import { Aside, Steps, TabItem, Tabs } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
-A new OpenMoat release is out, or `openmoat` says "policy update available". Coming from 0.7 or earlier, when the command was `moat`? Read [Upgrading from 0.7 or earlier](#upgrading-from-07-or-earlier) first.
+A new OpenMoat release is out, or `openmoat` says "policy update available". Coming from 0.7 or earlier, when the command was `moat`? Read [Upgrading from 0.7 or earlier](#upgrading-from-07-or-earlier) first. What a release changes, and what it needs you to run: [Releases](/docs/releases/).
 
 </Aside>
 
@@ -46,7 +46,11 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
 
    Hooks keep working after an upgrade in the same place. `openmoat doctor` confirms it, and names anything left to do.
 
-2. **Take the new default rules, if you want them**
+2. **Read the release's Upgrading box**
+
+   Each page under [Releases](/docs/releases/) starts with what that release needs, such as `openmoat init` once (0.9.0) or nothing at all (0.10.0). Skipped releases? Read the box of each one in between.
+
+3. **Take the new default rules, if you want them**
 
    Your policy is kept as it is, so a rule the new default gained is offered, not forced. `openmoat` says "policy update available: N changes" and offers to show them.
 
@@ -56,9 +60,9 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
    openmoat policy upgrade --undo      # put the previous policy back
    ```
 
-   Lines you changed are never touched.
+   Lines you changed are never touched. What each line of the output means: [New default rules after an upgrade](/docs/change-the-rules/#new-default-rules-after-an-upgrade).
 
-3. **Check the installation**
+4. **Check the installation**
 
    ```bash
    openmoat --version    # prints (OpenMoat) after the version number
@@ -66,9 +70,9 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
    openmoat doctor       # drift, out-of-date hooks and sandboxes, and what to run for each
    ```
 
-   A hook written by an older release shows as ``hook entry for … is out of date (written by an older OpenMoat); run `openmoat init` ``: run `openmoat init`. The version notes below say when a release needs it.
+   A hook written by an older release shows as ``hook entry for … is out of date (written by an older OpenMoat); run `openmoat init` ``: run `openmoat init`. Re-run `openmoat init` only when `openmoat doctor` or the release's Upgrading box asks for it; it keeps your policy.
 
-4. **Bring the sandboxes up to date**
+5. **Bring the sandboxes up to date**
 
    ```bash
    openmoat sandbox sync
@@ -76,11 +80,17 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
 
    It rewrites the agents' sandbox settings from the current policy and re-pins them. `openmoat status` shows ``differs from the policy; run `openmoat sandbox sync` `` until you do.
 
-5. **Restart your agents**
+6. **Restart your agents**
 
    An agent keeps the hook and sandbox it read when its session started. Start a new session; restart OpenClaw's Gateway and pi. After `openmoat init` rewrote Codex's hook entry, trust it again in Codex's `/hooks`.
 
 </Steps>
+
+## Keep one OpenMoat installed
+
+An older binary left elsewhere (a Homebrew install beside a `cargo install`) can still be the one a hook runs, and an older binary denies every call over a lock a newer release wrote. `openmoat doctor` names it: `hook runs …, which does not exist`, `hook runs …, a different OpenMoat binary than this one`, or `lock expects …, running …`. Remove one install, run `openmoat init` with the one you keep (by its full path, if needed), run `openmoat proxy install` again if the proxy runs as a service, and restart the agents.
+
+On macOS 12 and earlier, Homebrew may stop and ask for a newer Xcode: upgrade with the installer or `cargo install` instead, then `brew uninstall openmoat` and run `openmoat init` once.
 
 ## Upgrading from 0.7 or earlier
 
@@ -91,51 +101,15 @@ From 0.8.0 the command is `openmoat`. Every install still puts a `moat` beside i
 
 Until you do, the old hooks keep working through `moat`. `openmoat doctor` says when a hook still uses the old name. OpenMoat's state stays where it was: `~/.moat`, a project's `.moat/policy.yaml` and the `MOAT_*` variables are unchanged, and messages still start with `moat:`.
 
-<Aside type="note" title="Upgrading to 0.10.0">
+## What each release needs
 
-- **Nothing to run for a default install.** `brew upgrade` (or your install method) is enough; the policy lock keeps verifying.
-- **An OpenClaw configuration at another path** (`OPENCLAW_CONFIG_PATH`) shows drift once: run `openmoat init`.
-- **Fixes you get:** a granted file replaced by a symlink is asked about again, an open proxy tunnel closes at the next recheck after the session reads a secret, and a mail address in `git -c user.email=…` or `curl -u` is no longer read as a host.
-- The `openmoat` command, the policy format and the hooks are unchanged. Only the `openmoat-hosts` library changed its API.
+| Upgrading to | Run |
+|---|---|
+| [0.10.0](/docs/releases/v0-10-0/) | Nothing for a default install; `openmoat init` if OpenClaw's configuration is at another path (`OPENCLAW_CONFIG_PATH`) |
+| [0.9.0](/docs/releases/v0-9-0/) | `openmoat init` once and restart the agents; `openmoat policy upgrade` and `openmoat sandbox sync`; sign repository policies and packs again |
+| [0.8.0](/docs/releases/v0-8-0/) | `openmoat init` once (the new command name); `openmoat policy upgrade` |
+| [0.7.0](/docs/releases/v0-7-0/) | `moat policy upgrade` |
+| [0.6.0](/docs/releases/v0-6-0/) | The same release for every `moat` on the machine (audit log schema 4) |
+| [0.5.7](/docs/releases/v0-5/) | `moat init` once; `moat policy upgrade` |
 
-</Aside>
-
-<Aside type="note" title="Upgrading to 0.9.0">
-
-- **Run `openmoat init` once, then restart your agents.** An agent keeps the hook it read when it started, and an OpenMoat older than 0.9.0 denies every call over a lock 0.9.0 has written. Keep one OpenMoat installed: if you have a Homebrew install and a `cargo install`, remove one.
-- **Run `openmoat policy upgrade`**, then `openmoat sandbox sync`, to get the new rules: agents' own configuration folders (Gemini CLI's policies and commands, Claude Code's agents, skills and commands, a repository's `.github` agents) ask before a write, writing `~/.curlrc` or `~/.wgetrc` is denied (`shell-rc`), stopping the proxy service is denied, and `at` and `batch` ask like `crontab`.
-- **Nothing to do for the rest.** As soon as the new binary runs, commands started through launchers (`flock -c`, `taskset`, `nsenter` and others) are checked as the commands they run, and hard links count as writes. A `curl` or `wget` is decided like a web fetch only as `curl -q …` or `wget --no-config --no-netrc …`, so a plain `curl` to an unlisted host is denied again ([Let the agent use a site](/docs/allow-a-site/)).
-- **New agents:** GitHub Copilot CLI, pi and Gemini CLI. `openmoat init` finds the ones you have ([Supported agents](/docs/agents/)).
-- **Things you may notice:** tools of MCP servers wrapped with `openmoat mcp proxy` are held once after the upgrade until you run `openmoat mcp accept`; session grants from earlier releases need approving again; through `openmoat proxy` and `openmoat run`, a host allowed without a port is reached on ports 443 and 80 only (add `host:port` for another); repository policies and policy packs must be signed again in their new namespaces (`openmoat-repo-policy`, `openmoat-pack`), and their keys trusted again with `openmoat policy trust-key` ([Signed policy packs](/docs/team-rules/#signed-policy-packs)); on Linux without bubblewrap, `openmoat run` refuses a `--write` path outside the project, `~/.claude` included. Codex runs OpenMoat's hook only after you trust it in Codex's `/hooks`.
-
-</Aside>
-
-<Aside type="note" title="Upgrading to 0.8.0">
-
-- **Run `openmoat init` once** to move the hooks to the new name ([above](#upgrading-from-07-or-earlier)).
-- **Run `openmoat policy upgrade`** to get the new denies: environment reads inside `python -c`, `node -e` and similar one-liners (`env-secrets`, `env-dump`), Maven and Gradle settings files (`~/.m2/settings.xml`, `~/.gradle/gradle.properties`), and the protection of both command names.
-- **Nothing to do for the rest.** As soon as the new binary runs, an unquoted variable is split into words as bash splits it, a `curl` or `wget` that sends nothing is decided like a web fetch (it goes to your agent's prompt instead of being denied), and a project's `.claude/settings.json` that turns hooks off during a session is blocked and reported.
-- **On Linux, `openmoat run`** starts the agent in a network namespace of its own where bubblewrap can run, so its network goes only through OpenMoat's proxy.
-- **To see what OpenMoat decides**, run `openmoat demo`: it decides a few example calls with your policy and runs nothing.
-
-</Aside>
-
-<Aside type="note" title="Upgrading to 0.7.0">
-
-- **Run `moat policy upgrade`** to get the new denies: more credential files (`~/.pgpass`, `~/.my.cnf`, `~/.vault-token`, `~/.authinfo` and others), more secret variables (`DATABASE_URL` and other connection strings, `*_PASSWORD`-style names), and commands that print a stored secret (`vault kv get`, `pass show`, `kubectl config view --raw`).
-- **Nothing to do for the rest.** The other checks apply as soon as the new binary runs: `tar` and `su` options that run a program, bash network redirections (`/dev/tcp/…`), MCP server pins under `CLAUDE_CONFIG_DIR`, and faster checks in long sessions.
-- **Switching models in Claude Code** no longer stops every call until `moat doctor --accept`.
-- **Reporting a bug?** `moat doctor --bundle report.json` writes one local file to attach; it keeps no commands, paths or secrets.
-
-</Aside>
-
-<Aside type="note" title="Upgrading to 0.5.7">
-
-- **Run `moat init` once.** Claude Code's hook shows as out of date until you do: it now also receives MCP resource reads, worktree entries and skills, and with Claude Code 2.1.295 or later it gets `"onFailure": "block"`, so a call is blocked when `moat` cannot start, crashes or times out. `moat init` also pins your agents' MCP servers ([MCP servers](/docs/mcp-servers/)).
-- **Run `moat policy upgrade`** to get `token-egress` and `placeholder-egress` ([tokens sent to the wrong host](/docs/keep-tokens-safe/#tokens-sent-to-the-wrong-host)), the new `runs-later` files, and the deny of `moat mcp accept`, `wrap` and `unwrap` to agents.
-
-</Aside>
-
-The notes for 0.7.0 and earlier use `moat`, the command's name in those releases; with 0.8.0 installed, run the same commands as `openmoat`.
-
-Every release and what changed in it: [Releases](https://github.com/crocodile-labs/openmoat/releases).
+The notes for 0.7.0 and earlier use `moat`, the command's name in those releases; with 0.8.0 or later installed, run the same commands as `openmoat`. Every release with its downloads: [GitHub releases](https://github.com/crocodile-labs/openmoat/releases).

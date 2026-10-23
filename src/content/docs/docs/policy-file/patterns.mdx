@@ -1,0 +1,23 @@
+---
+title: "Patterns"
+description: "Globs for paths and hosts, shell patterns, ~ and ${project}, and exclusions."
+sidebar:
+  label: "Patterns"
+  order: 2
+---
+
+| Pattern | Means |
+|---|---|
+| `*` in a path or host | any characters within one path segment |
+| `**` | any number of segments: `~/.ssh/**`, `**/.env.*` |
+| `~`, `${project}` | your home, and the git root of the call's working directory |
+| `!pattern` | excludes from the same list: `["${project}/**", "!${project}/.git/**"]` |
+| `shell` tokens | one glob per argument; a pattern is a prefix (`git status` matches `git status --short`) |
+| a bare `*` in `shell` | any number of arguments: `curl * \| sh` |
+| a trailing `$` in `shell` | no further arguments: `env $` matches `env` alone |
+
+Flags are compared as written: `rm -rf ~` does not match `rm -fr ~`. Guard the path with `fs.write` instead.
+
+`${project}` stands for whichever project the call runs in, so a rule with it applies in every project. To make a rule hold for one project only, name its path (`~/work/app/deploy/**`); see [Rules for one project](/docs/your-projects/#your-own-rules-for-one-project).
+
+The full syntax, shell pipelines included: [POLICY.md §3](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#3-pattern-syntax).

@@ -1,0 +1,29 @@
+---
+title: "Releases"
+description: "Every OpenMoat release, latest first: the date, what it brings, and what to run after upgrading."
+sidebar:
+  label: "Overview"
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+A new release is out and you want to know what changed, or whether you need to run anything after upgrading.
+
+</Aside>
+
+Latest first. Each page starts with an **Upgrading** box (what to run after installing it), then the changes grouped as in the [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md): Security, Added, Changed, Fixed. Changes that need action or break something are marked **Breaking**. How to upgrade: [Upgrade](/docs/upgrade/).
+
+| Release | Date | Headline |
+|---|---|---|
+| [0.10.0](/docs/releases/v0-10-0/) | 2026-10-23 | Session grants follow symlinks, proxy tunnels close sooner after a secret read, no host read from a mail address; library API changes only. |
+| [0.9.0](/docs/releases/v0-9-0/) | 2026-10-22 | Launchers and `at` checked as the commands they run, new agents (GitHub Copilot CLI, pi, Gemini CLI), more pinned MCP fields, signature namespaces, ports in the proxy. |
+| [0.8.0](/docs/releases/v0-8-0/) | 2026-10-20 | The command is now `openmoat`; variables split as bash splits them, environment reads in one-liners, a network namespace for `openmoat run` on Linux, `openmoat demo`. |
+| [0.7.0](/docs/releases/v0-7-0/) | 2026-10-19 | `moat doctor --bundle`, `tar` and `su` options that run a program, bash network redirections, more credential files and secret variables. |
+| [0.6.0](/docs/releases/v0-6-0/) | 2026-10-19 | File provenance taint, package name checks and release age, OpenMoat state hidden from agents, audit anchors, signed policy packs. |
+| [0.5.0 to 0.5.7](/docs/releases/v0-5/) | 2026-10-12 to 2026-10-18 | The quiet default (defer to the agent's prompt), push and token checks, MCP pinning, `runs-later`, `moat allowed`, and their release candidates. |
+| [0.1.0 to 0.4.0](/docs/releases/v0-1-to-0-4/) | 2026-10-07 to 2026-10-11 | The first releases, from the first alpha to 0.4.0, when the command was `moat`. |
+
+Releases up to 0.7.0 named the command `moat`; with 0.8.0 or later installed, run the same commands as `openmoat`. Every release with its downloads: [GitHub releases](https://github.com/crocodile-labs/openmoat/releases).

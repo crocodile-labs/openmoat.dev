@@ -78,37 +78,7 @@ The agent's own writes to these files ask first (`runs-later`), since the agent 
 
 ## Pin tool descriptions too
 
-Pinning a definition does not see a server that changes a tool's description later. For that, run a stdio server through `openmoat mcp proxy`. It is opt-in per server:
-
-```bash
-openmoat mcp wrap <server>      # one server
-openmoat init --mcp-proxy       # every server, at setup
-```
-
-`openmoat mcp proxy` sits between the agent and the server and:
-
-- pins each tool's name, title, description, input and output schemas and annotations (such as `readOnlyHint`, which an agent may read to run a call without asking), and every other field of the tool as it is;
-- leaves every tool of a server it has not pinned yet out of the tool list, and refuses its calls, naming `openmoat mcp accept <server>`, which shows each tool and asks;
-- leaves a changed or new tool out of the tool list, and answers a call to it with an error naming `openmoat mcp accept <server>`; the call never reaches the server;
-- records every tool call in the audit log.
-
-`openmoat mcp accept <server>` then shows a diff of what changed. `openmoat mcp wrap` changes only the server's command in your own file (`~/.claude.json`, Cursor's `mcp.json`, Codex's `config.toml`, Copilot CLI's `mcp-config.json`), keeps a backup, and never rewrites a project's file. A server with a change you have not accepted is skipped. Add `--dry-run` to see what it would change.
-
-### Run the server in a sandbox
-
-```bash
-openmoat mcp wrap <server> --sandbox
-```
-
-The server then runs under `openmoat run`: the sandbox made from your policy, with network only to the hosts the policy allows. Many servers need writes (package caches) or hosts the default policy does not list, so this is a choice per server. `--sandbox` cannot be used for an agent that itself runs under `openmoat run`.
-
-### Undo it
-
-```bash
-openmoat mcp unwrap <server>
-```
-
-`openmoat uninstall` also puts every wrapped server back as it was.
+Pinning a definition does not see a server that changes a tool's description later. For that, run a stdio server through `openmoat mcp proxy` (`openmoat mcp wrap <server>`, or `openmoat init --mcp-proxy` for every server): it pins each tool and holds a changed or new one until you run `openmoat mcp accept <server>`. `openmoat mcp wrap <server> --sandbox` also runs the server under `openmoat run`, and `openmoat mcp unwrap <server>` undoes it. Every step: [Tool pinning and the MCP proxy](/docs/mcp-servers/tool-pinning/).
 
 ## Only you accept
 

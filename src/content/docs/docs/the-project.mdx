@@ -15,6 +15,12 @@ You wonder why a file is allowed in one place and goes to a prompt in another, o
 
 </Aside>
 
+<Aside type="tip" title="Using OpenMoat in projects you already have?">
+
+Nothing has to be added per project: after `openmoat init`, your one policy covers every project you open with a protected agent. How to check a project, give it more and give it its own rules: [Use it in your projects](/docs/your-projects/).
+
+</Aside>
+
 The default policy lets the agent read and edit everything inside the **project** (rule `project-fs`). Outside it, file access goes to your agent's own prompt, and secrets stay denied everywhere.
 
 ## How the project is found
@@ -28,7 +34,8 @@ OpenMoat starts at the folder the agent session runs in and walks up to the near
 | `~/scratch/notes` (no git anywhere above it) | `~/scratch/notes`, that folder only |
 | A git worktree (`.git` is a file there) | The worktree's folder |
 | A submodule of `~/work/app` | The submodule only, because it has its own `.git` |
-| Your home folder, or a dotfiles repository in it | **No project**: nothing is allowed as project files |
+| Your home folder (also when it is itself a git repository, as with dotfiles), or a folder above it | **No project**: nothing is allowed as project files |
+| `~/code/app` with no `.git` of its own, when your home folder is a git repository | `~/code/app`, that folder only: a repository at your home folder never counts |
 
 <Aside type="caution" title="Home is never a project">
 
@@ -46,7 +53,7 @@ Start the agent anywhere in the repository: the project is the whole repository,
 
 ## Rules that come with the project
 
-A repository can commit its own `.moat/policy.yaml`. Its deny and ask rules apply to everyone who works in it at once (as `repo:<id>`); its allow rules only once you trust that file with `openmoat trust`, or, with `require_signed_repo_policy: true`, when a key you trusted signed it. See [Team rules](/docs/team-rules/).
+A repository can commit its own `.moat/policy.yaml`. Its deny and ask rules apply to everyone who works in it at once (as `repo:<id>`); its allow rules only once you trust that file with `openmoat trust`, or, with `require_signed_repo_policy: true`, when a key you trusted signed it. `openmoat status`, run in the project, shows the file and which of its rules apply. What you see in such a repository, and how to re-trust or stop using it: [Use it in your projects](/docs/your-projects/#rules-for-one-project). Writing one for a team: [A repository policy](/docs/team-rules/repository-policy/).
 
 ## Beyond one project
 
@@ -55,4 +62,5 @@ A repository can commit its own `.moat/policy.yaml`. Its deny and ask rules appl
 | A sibling repository, a shared library, a notes folder | [Work across several repos](/docs/work-across-repos/): `openmoat allow --dir <folder>` |
 | The same rules for the whole team | [Team rules](/docs/team-rules/) |
 | An agent in CI or with auto-approve | [Auto-approve and CI](/docs/auto-approve-and-ci/) |
-| Check what a call in another folder gets | `openmoat policy check "<command>" --cwd <dir>` |
+| Check what a call in another folder gets | `openmoat policy check "<command>" --cwd <dir>` ([Check a command first](/docs/check-a-command/)) |
+| Rules of your own for one project only | [Your own rules for one project](/docs/your-projects/#your-own-rules-for-one-project) |

@@ -1,0 +1,50 @@
+---
+title: "Policies, MCP, network and audit"
+description: "Repository policies and packs that do not apply, MCP servers held back, a refused port, and audit log errors."
+sidebar:
+  label: "Policies, MCP, network, audit"
+  order: 4
+---
+
+## A repository policy denies every call
+
+Every call in one project is denied with `kernel-error`, and `openmoat status` there says `repo policy      ✗ …; every call in this project is denied`. The project's `.moat/policy.yaml` cannot be read or parsed, sets a key a repository may not (only `version`, `deny`, `ask` and `allow` are accepted), or is not a regular file. OpenMoat never ignores it, because that would drop the team's deny rules. Fix the file in your own editor (the agent cannot write `.moat/`), then run `openmoat status` again. The rule syntax: [The policy file](/docs/policy-file/).
+
+## A repository's allow rules do not apply
+
+`openmoat status` in the project says `not trusted: …` or ``changed since `openmoat trust`: …``: its allow rules wait until you trust that exact file. Read it, then run `openmoat trust` there ([Use it in your projects](/docs/your-projects/#rules-for-one-project)).
+
+## A repository's allow rules stopped applying after `openmoat trust`
+
+Your policy has `require_signed_repo_policy: true`, so only a signature by a trusted key lets a repository policy allow. `openmoat status` in the project says `not signed by a trusted key: tightening only`. Ask the maintainer to sign `.moat/policy.yaml` with `-n openmoat-repo-policy` (a signature made before 0.9.0 no longer counts), or remove the setting with `openmoat edit`.
+
+## `openmoat policy install` refuses a pack
+
+The signature did not verify, or it was made by a key you have not trusted. Check that `<pack>.yaml.sig` belongs to that exact file and was made with `-n openmoat-pack` (signatures made with `-n openmoat-policy` before 0.9.0 no longer verify), then trust the signer's key with `openmoat policy trust-key <key.pub> --name <who>`. A key trusted before 0.9.0 needs `trust-key` again. The commands need the system `ssh-keygen` from OpenSSH 8.1 or later. See [Signed policy packs](/docs/team-rules/policy-packs/).
+
+## An MCP server's tools are denied with `mcp-server-changed`
+
+Its definition changed, or it was added, since you last accepted the agents' MCP servers. Run `openmoat mcp accept <server>`: it shows the change and asks. See [MCP servers](/docs/mcp-servers/).
+
+## A wrapped MCP server shows no tools after an upgrade
+
+Since 0.9.0, `openmoat mcp proxy` pins more of each tool (its title, output schema, annotations and every other field), so every tool it pinned before is held once, even unchanged. `openmoat status` says so. Run `openmoat mcp accept` once.
+
+## A connection to a port other than 443 or 80 is refused
+
+Through `openmoat proxy` and `openmoat run`, a host allowed without a port is reached on ports 443 and 80 only, and any other port is refused (`proxy-port`). Add a rule that names the port with `openmoat edit`, and keep the bare host in it too, because the hook decides by host alone and a `host:port` pattern matches nothing there:
+
+```yaml
+allow:
+  - id: example-8443
+    reason: the staging API listens on 8443
+    net: ["example.com", "example.com:8443"]
+```
+
+## `openmoat audit verify --against` fails
+
+An event that an anchor recorded is no longer in the log, or has another hash: the log was cut short or rewritten after you anchored it. The message names the first such anchor. Look at the events around it with `openmoat show`, and keep the database file as it is while you find out what changed it.
+
+## An older OpenMoat cannot open the audit log
+
+The audit database now records file provenance (schema version 4), and builds before 0.6.0 cannot open it. Upgrade every `openmoat` (and any older `moat`) on the machine to the same release.

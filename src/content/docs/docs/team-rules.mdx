@@ -6,7 +6,7 @@ sidebar:
   order: 1
 ---
 
-import { Aside, Steps } from '@astrojs/starlight/components';
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
@@ -18,127 +18,17 @@ Your team wants the same guard rails in a repository or in every project, or a r
 
 ## What it does
 
-A repository's committed `.moat/policy.yaml` adds `deny` and `ask` rules for everyone who works in it, whatever agent they use; its `allow` rules apply only for a person who trusted that exact file, or where a key they trusted signed it. A signed policy pack carries a team's rules into every project. Neither can weaken your own deny rules. How the two combine with your policy: [The policy file](/docs/policy-file/#how-your-policy-and-a-repositorys-combine).
+A repository's committed `.moat/policy.yaml` adds `deny` and `ask` rules for everyone who works in it, whatever agent they use; its `allow` rules apply only for a person who trusted that exact file, or where a key they trusted signed it. A signed policy pack carries a team's rules into every project. Neither can weaken your own deny rules. How the two combine with your policy: [Repository policies](/docs/policy-file/repositories/).
 
-## Example: a repository policy
-
-<Steps>
-
-1. **Add a policy to the repository**
-
-   Create `.moat/policy.yaml` at the root of the repository and commit it:
-
-   ```yaml
-   version: 1
-   deny:
-     - id: no-prod-config
-       reason: production settings stay with the release pipeline
-       fs.write: ["${project}/deploy/prod/**"]
-   ask:
-     - id: migrations
-       reason: database migrations change shared data
-       shell: ["npm run migrate*"]
-   ```
-
-2. **Everyone gets the deny and ask rules at once**
-
-   They apply to everyone who works in the repository, whatever agent they use, and show up as `repo:<id>`, such as `repo:no-prod-config`.
-
-3. **Each person trusts the allow rules**
-
-   A repository is untrusted input, so by itself it can only make your policy stricter. Its `allow` rules apply after you review and trust that exact file:
-
-   ```bash
-   openmoat trust             # in the repository; prints the allow rules it lets in
-   openmoat trust --revoke
-   ```
-
-   It asks `Trust this file? [y/N]` before it trusts anything. `openmoat allowed` lists the repositories you trusted.
-
-</Steps>
-
-<Aside type="note">
-
-Any later change to the file drops it back to deny and ask only, until you trust it again. A file that does not parse denies every call in the project until it is fixed. Repository rules apply in the hook, not in the agents' OS sandboxes. Under `openmoat run`, the proxy also refuses the hosts a repository policy denies.
-
-</Aside>
-
-### Review a change to it
-
-A pull request that edits `.moat/policy.yaml` drops the file back to deny and ask only, for everyone who trusted it, until each trusts it again. To review it:
-
-```bash
-git diff origin/main -- .moat/policy.yaml   # what the change adds
-openmoat status                             # in the project: whether its allow rules apply
-openmoat trust                              # shows the file, its digest and every rule it adds, then asks
-```
-
-`openmoat trust` asks `Trust this file? [y/N]` before it trusts anything; `openmoat allowed` lists the repositories you trusted, and `openmoat trust --revoke` takes it back. Under `require_signed_repo_policy: true` (below), `openmoat status` says `trusted: signed by alice@example.com`, or `not signed by a trusted key: tightening only, allow rules ignored (…)`.
-
-To check a rule before you commit it: `openmoat policy check "<command>" --cwd <repo>` decides with the repository's policy as `openmoat guard` does.
+<CardGrid>
+  <LinkCard title="A repository policy" href="/docs/team-rules/repository-policy/" description="Write it, trust its allow rules, review a change, check it in CI." />
+  <LinkCard title="Signed policy packs" href="/docs/team-rules/policy-packs/" description="Sign, trust the key, install; require signed repository policies." />
+  <LinkCard title="Use it in your projects" href="/docs/your-projects/" description="What a person sees in a repository that has one, and how to stop using it." />
+</CardGrid>
 
 ## Signed policy packs
 
-A policy pack is a team's rules that each person installs once, for every project. It has the same shape as a repository policy (`version`, `deny`, `ask` and `allow`) and comes with an OpenSSH signature. OpenMoat installs a pack only when the signature verifies against a key you trusted.
-
-<Steps>
-
-1. **The maintainer signs the pack**
-
-   ```bash
-   ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n openmoat-pack team.yaml   # writes team.yaml.sig
-   ```
-
-   A pack signature (`-n openmoat-pack`) never passes as a repository policy signature, or the other way round.
-
-2. **Each person trusts the maintainer's public key, once**
-
-   ```bash
-   openmoat policy trust-key alice.pub --name alice@example.com
-   ```
-
-   It prints the key's fingerprint and trusts the key for packs and repository policies only (the `openmoat-pack` and `openmoat-repo-policy` namespaces), so the same key's signature on a git commit is never taken as a policy signature.
-
-3. **Install the pack**
-
-   ```bash
-   openmoat policy install team.yaml               # the signature defaults to team.yaml.sig
-   openmoat policy install team.yaml --sig other.sig --name team
-   openmoat policy remove team                     # take it out again
-   ```
-
-   A signature that does not verify, or one from a key you did not trust, is refused and nothing is written.
-
-</Steps>
-
-The pack's rules show up as `pack:<name>:<id>`, such as `pack:team:no-deploy`. Its deny rules join yours, its ask rules come before your allow rules, and its allow rules come after yours, so your deny rules still win. Deny and allow rules also reach the agents' sandboxes at the next `openmoat sandbox sync`; ask rules apply in the hook only.
-
-The installed pack is pinned by the lock: a pack changed after install blocks every call with `kernel-integrity` until you look. Verification uses the system `ssh-keygen` (OpenSSH 8.1 or later); without it the three commands refuse and nothing else changes. Agents cannot run them.
-
-### Require a signature on repository policies
-
-With this line in your own policy (`openmoat edit`), a signature decides whether a repository policy may allow, instead of `openmoat trust`:
-
-```yaml
-require_signed_repo_policy: true
-```
-
-- A repository policy signed by a key you trusted (`.moat/policy.yaml.sig` beside it) has its allow rules applied, without `openmoat trust`.
-- An unsigned one, one signed by another key, or one changed after signing gets deny and ask only, even after `openmoat trust`.
-
-Sign it the same way, in its own namespace: `ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n openmoat-repo-policy .moat/policy.yaml`. Without the setting, which is the default, a signature changes nothing and `openmoat trust` decides. `openmoat status`, run in the project, says which applies, for example `trusted: signed by alice@example.com`.
-
-<Aside type="caution" title="What a signature proves">
-
-That a key you trusted signed those exact bytes, not that the signer meant well. Anyone holding the signing key can sign packs you will install, so keep it as you keep any key that can change your rules.
-
-</Aside>
-
-<Aside type="note" title="Signed before 0.9.0?">
-
-Earlier releases signed packs and repository policies in one namespace, `openmoat-policy`. Those signatures no longer verify: sign each file again in its new namespace, and run `openmoat policy trust-key` again for each key you trusted before. Packs already installed keep working.
-
-</Aside>
+A pack is signed with `ssh-keygen -Y sign -n openmoat-pack`, the signer's key is trusted once with `openmoat policy trust-key`, and `openmoat policy install` adds it only when the signature verifies. Its rules show up as `pack:<name>:<id>`. Every step: [Signed policy packs](/docs/team-rules/policy-packs/).
 
 ## Keep Claude Code's hooks on for everyone
 

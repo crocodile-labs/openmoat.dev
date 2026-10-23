@@ -6,7 +6,7 @@ sidebar:
   order: 1
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
@@ -16,120 +16,22 @@ You know what you want and need the exact command.
 
 Run these in your own terminal. The ones that change what agents may do need a terminal, and the default policy denies them to agents. They also refuse to run when Claude Code, Codex, the Cursor CLI, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, the Continue CLI or `openmoat run` started them, even through a terminal wrapper, and read your answer from the terminal itself (on Windows only the terminal is checked). On macOS they also refuse in a terminal inside the Cursor editor, whose agent runs in the same process tree: use a terminal of your own.
 
-Commands marked **terminal** below are those. Run without a terminal, they stop with ``moat: `<command>` must be run by a person in a terminal, not from a hook or script``.
+Commands marked **terminal** on the pages below are those. Run without a terminal, they stop with ``moat: `<command>` must be run by a person in a terminal, not from a hook or script``.
+
+<CardGrid>
+  <LinkCard title="Set up and everyday" href="/docs/commands/setup/" description="init, uninstall, openmoat, status, show, demo." />
+  <LinkCard title="Allow and approve" href="/docs/commands/allow/" description="allow --last, --always, --dir, --site, --remove; allowed; trust." />
+  <LinkCard title="Policy" href="/docs/commands/policy/" description="edit; policy check, lint, compile, upgrade; signed packs." />
+  <LinkCard title="Sandboxes, run and proxy" href="/docs/commands/sandboxes/" description="sandbox show and sync, run, proxy." />
+  <LinkCard title="MCP and secrets" href="/docs/commands/mcp-and-secrets/" description="mcp accept, wrap, unwrap; secret add and list." />
+  <LinkCard title="Audit and diagnostics" href="/docs/commands/audit-and-diagnostics/" description="replay, report, audit; doctor, bench, guard." />
+</CardGrid>
 
 <Aside type="note" title="The moat name">
 
 Releases up to 0.7.0 called the command `moat`. Every install still puts a `moat` beside `openmoat` that runs it, so hooks and scripts that call `moat` keep working for a few releases; then the `moat` name will be removed. `openmoat init` moves the hooks to the new name, and `openmoat doctor` says when a hook still uses the old one.
 
 </Aside>
-
-## Set up and remove
-
-| Command | What it does | Example |
-|---|---|---|
-| `openmoat init [--hosts <ids>] [--yes] [--dry-run] [--mcp-proxy]` | Install the policy, lock and log, pin the agents' MCP servers, and hook each agent found, asking for each. `--hosts` and `--yes` skip the questions; `--dry-run` shows what would change; `--mcp-proxy` wraps every stdio MCP server. Over an existing lock: **terminal** | `openmoat init --hosts claude-code,codex` |
-| `openmoat uninstall [--hosts <ids>] [--purge]` | Remove OpenMoat's hooks and sandbox settings and restore every backup; `--purge` also deletes `~/.moat`. **Terminal** | `openmoat uninstall --hosts cursor` |
-
-Host ids for `--hosts` and `--host`: `claude-code`, `codex`, `cursor`, `openclaw`, `copilot-cli`, `pi`, `gemini-cli`.
-
-## Everyday
-
-| Command | What it does | Example |
-|---|---|---|
-| `openmoat` | Which agents are protected, today's decisions, and anything that needs you: a changed pinned file, a policy update, the last ask. Its questions are asked only at a terminal | `openmoat` |
-| `openmoat status [--format json]` | Each agent's protection level (`hook + OS sandbox`, `hook only`, `not protected`) and what it does not cover; exits 64 when something needs fixing | `openmoat status` |
-| `openmoat show [<id>] [--session <id>] [--since <when>] [--recent N]` | Recent events, one session, or one event in full | `openmoat show 1` |
-| `openmoat demo [--format json]` | The verdict, rule and reason for a fixed list of example agent calls, with your policy; nothing runs and nothing is changed | `openmoat demo` |
-
-## Allow and approve
-
-| Command | What it does | Example |
-|---|---|---|
-| `openmoat allow --last` | Allow the last ask for the rest of that agent session (24 h; a command only in the project it was asked in). Shows the call and asks `Approve it? [y/N]`. **Terminal** | `openmoat allow --last` |
-| `openmoat allow --last --always` | A permanent rule for exactly that command or those files, in `~/.moat/policy.d/approved.yaml`. **Terminal** | `openmoat allow --last --always` |
-| `openmoat allow "<command>" --always` | A permanent rule for a command you name. **Terminal** | `openmoat allow "make deploy-docs" --always` |
-| `openmoat allow "<command>" --host <id> --session <id> [--project <dir>]` | A session grant for a command you name. **Terminal** | `openmoat allow "git config core.pager less" --host claude-code --session 4f2a…` |
-| `openmoat allow --dir <folder>` | Read and write a folder outside the project; secrets, `.git` and files run later stay protected. **Terminal** | `openmoat allow --dir ~/work/shared-lib` |
-| `openmoat allow --site <host>` | Network access to one exact host, web fetches included. **Terminal** | `openmoat allow --site docs.rs` |
-| `openmoat allow --remove <id>` | Take back a rule `openmoat allow` added. **Terminal** | `openmoat allow --remove approved-2` |
-| `openmoat allowed [--format json]` | Permanent rules, session grants still in force and trusted repositories, each with the command that takes it back | `openmoat allowed` |
-| `openmoat trust [<repo>] [--revoke]` | Let a repository's `.moat/policy.yaml` allow, until the file changes; shows the file, its digest and every rule it adds, then asks. **Terminal** | `openmoat trust` |
-
-What each allow opens: [Every allow and what it opens](/docs/allow-reference/).
-
-## Policy
-
-| Command | What it does | Example |
-|---|---|---|
-| `openmoat edit` | Edit `~/.moat/policy.yaml` in `$VISUAL` or `$EDITOR`; it is linted and the diff shown before `Apply? [y/N]`. **Terminal** | `openmoat edit` |
-| `openmoat policy check "<action>" [--kind shell\|fs-read\|fs-write\|net\|fetch\|mcp] [--policy <file>] [--cwd <dir>] [--project <dir>] [--format json]` | The verdict for an action, without running it; exit 0 allow or defer, 2 deny, 3 ask | `openmoat policy check "~/.aws/credentials" --kind fs-read` |
-| `openmoat policy lint [<file>]` | Check a policy: schema, ids, globs; warnings for rules that can never match | `openmoat policy lint ./policy.yaml` |
-| `openmoat policy compile [--policy <file>] [--format json]` | What the OS layers enforce for the policy, and what they cannot | `openmoat policy compile` |
-| `openmoat policy upgrade [--dry-run] [--yes] [--undo]` | Take what a new release's default adds, keeping your edits; `--dry-run` shows the diff anywhere; `--undo` puts the previous policy back. **Terminal**, except `--dry-run` | `openmoat policy upgrade --dry-run` |
-| `openmoat policy trust-key <key.pub> --name <who>` | Trust an SSH public key to sign policy packs, and repository policies where the policy asks for signed ones. **Terminal** | `openmoat policy trust-key alice.pub --name alice@example.com` |
-| `openmoat policy install <pack.yaml> [--sig <file>] [--name <name>]` | Install a signed policy pack once its signature verifies; its rules apply as `pack:<name>:<id>`. **Terminal** | `openmoat policy install team.yaml` |
-| `openmoat policy remove <name>` | Take a pack out. **Terminal** | `openmoat policy remove team` |
-
-How to write a rule: [The policy file](/docs/policy-file/). How to change one safely: [Change the rules](/docs/change-the-rules/).
-
-## Sandboxes, run and proxy
-
-| Command | What it does | Example |
-|---|---|---|
-| `openmoat sandbox show` | The agents' sandbox settings the policy compiles to, and every place they are stricter or wider; writes nothing | `openmoat sandbox show` |
-| `openmoat sandbox sync` | Write them for the agents whose hook is installed, and re-pin. **Terminal** | `openmoat sandbox sync` |
-| `openmoat run [--isolate] [--write <path>]… [--netns auto\|require] [--verbose] -- <agent> [args]` | Run an agent and everything it starts in a sandbox made from the policy, network only through OpenMoat's proxy (macOS 13 or later, Linux). `--isolate`: Linux, bubblewrap; `--netns=require`: refuse where the agent cannot get a network namespace | `openmoat run --write ~/.claude --write ~/.claude.json -- claude` |
-| `openmoat proxy [--listen 127.0.0.1:<port>]` | The egress proxy, in this terminal; an allowed host is reached on ports 443 and 80 unless a rule names `host:port` | `openmoat proxy` |
-| `openmoat proxy install` · `uninstall` | Run it as a user service (launchd, systemd), or remove it; not on Windows yet. **Terminal** | `openmoat proxy install` |
-| `openmoat proxy status [--format json]` | `not installed`, `stopped`, `running`, `drift-blocked` or `crashlooping` | `openmoat proxy status` |
-
-See [OS sandboxes and openmoat run](/docs/sandboxes/) and [Egress proxy](/docs/egress-proxy/).
-
-## MCP
-
-| Command | What it does | Example |
-|---|---|---|
-| `openmoat mcp accept [<server>]` | Review a changed or new MCP server, or tools `openmoat mcp proxy` holds, and accept them. **Terminal** | `openmoat mcp accept github` |
-| `openmoat mcp wrap [<server>…] [--sandbox] [--dry-run]` | Run stdio MCP servers through `openmoat mcp proxy`, which pins each tool; `--sandbox` also starts them under `openmoat run`. **Terminal** | `openmoat mcp wrap --dry-run` |
-| `openmoat mcp unwrap [<server>…]` | Point them back at their own command. **Terminal** | `openmoat mcp unwrap` |
-| `openmoat mcp proxy --server <name> [--sandbox] [--write <path>]… -- <command>` | The wrapper `openmoat mcp wrap` writes into the agent's configuration: the agent starts it, you do not | |
-
-See [MCP pinning and the MCP proxy](/docs/mcp-servers/).
-
-## Secrets
-
-| Command | What it does | Example |
-|---|---|---|
-| `openmoat secret add gh` | Keep the GitHub token from the agent: `GITHUB_TOKEN`, sent only to `api.github.com`; shows the diff and asks. **Terminal** | `openmoat secret add gh` |
-| `openmoat secret add <id> --host <host> (--env <NAME> \| --file <path>) [--header <name>]` | Keep another token from the agent, for that host only. **Terminal** | `openmoat secret add stripe --host api.stripe.com --env STRIPE_API_KEY` |
-| `openmoat secret list [--format json]` | Each brokered secret's host, header and source, never the value | `openmoat secret list` |
-
-See [Token broker](/docs/keep-tokens-safe/).
-
-## Audit
-
-| Command | What it does | Example |
-|---|---|---|
-| `openmoat replay [--since <when>] [--session <id>]` | Each agent session as a timeline | `openmoat replay --since today` |
-| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts, top rules, asks per hour | `openmoat report --since 7d` |
-| `openmoat audit export [--since <when>] [--host <id>] [--session <id>]` | Events as JSON Lines with their chain hashes, on stdout | `openmoat audit export --since 7d > week.jsonl` |
-| `openmoat audit verify <file> [--anchor <hash>] [--require-anchor]` | Check an export without the database | `openmoat audit verify week.jsonl` |
-| `openmoat audit verify --against <repo or file>` | Check the log against every anchor there; fails, naming the first anchor whose event is gone or changed | `openmoat audit verify --against ~/notes` |
-| `openmoat audit anchor --git <repo>` · `--file <path>` | Record the log's head outside it; nothing is sent anywhere. **Terminal** | `openmoat audit anchor --file ~/anchors.jsonl` |
-| `openmoat audit report <file>…` | One report over verified exports from several machines | `openmoat audit report alice.jsonl bob.jsonl` |
-
-`--since` takes `all`, `today`, `yesterday`, `12h`, `7d`, `2w` or a date (`2026-10-15`, UTC). Most commands take `--format json`. See [Audit log](/docs/see-what-happened/).
-
-## Diagnostics
-
-| Command | What it does | Example |
-|---|---|---|
-| `openmoat doctor [--verbose] [--format json]` | What drifted, hook and sandbox checks, MCP changes, warnings; `--verbose` lists where each sandbox is stricter or wider than the policy | `openmoat doctor` |
-| `openmoat doctor --accept` | Accept the current policy and hook files and re-pin. **Terminal** | `openmoat doctor --accept` |
-| `openmoat doctor --bundle <file> [--bundle-events N]` | One local file to attach to a bug report: versions, hook states, checks and the last decisions without commands, paths or secrets; nothing is sent. Refused when an agent started it | `openmoat doctor --bundle report.json` |
-| `openmoat bench [--hook <command> --host <id>] [--verbose] [--format json]` | Score OpenMoat, or any hook, against the bundled MoatBench scenarios; the scenarios' commands never run | `openmoat bench --hook '<command>' --host claude-code` |
-| `openmoat guard --host <id>` | The hook entry point: agents call it, you do not | |
 
 ## Exit codes
 

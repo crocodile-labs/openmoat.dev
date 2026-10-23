@@ -1,0 +1,52 @@
+---
+title: "Broker a token for another service"
+description: "openmoat secret add for any API: allow its host, and keep the source of the value from the agent."
+sidebar:
+  label: "Another service"
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Add the secret, and allow its host: a secret opens nothing by itself.
+
+```bash
+openmoat allow --site api.stripe.com
+openmoat secret add stripe --host api.stripe.com --env STRIPE_API_KEY
+```
+
+The value goes in the `Authorization` header unless you pass `--header <name>`. Start the agent from a shell that has `STRIPE_API_KEY` set, as for [GitHub](/docs/keep-tokens-safe/).
+
+## Make sure the agent cannot read the source
+
+A brokered value the agent can read anyway protects nothing, so `openmoat secret add` checks where the value comes from. When no rule denies it yet, it adds one, `secret-<id>`, in the same diff you approve:
+
+| Source | Already denied? | What `openmoat secret add` does |
+|---|---|---|
+| `--env NAME` ending in `_KEY`, `_TOKEN`, `_SECRET`, `_PASSWORD`, or starting with `AWS_`, and the other names in [.env and variables](/docs/env-files/#what-is-denied) | yes, `env-secrets` | nothing more |
+| `--env NAME` with another name (`STRIPE_LIVE`) | no | adds `secret-<id>` with an `env.read` deny of it |
+| `--file PATH` under `~/.ssh`, `~/.aws`, `~/.config/gh` and the other secret folders | yes, `secrets-paths` | nothing more |
+| `--file PATH` anywhere else (`~/.config/example/token`) | no | adds `secret-<id>` with an `fs.read` deny of it |
+
+The diff shows the rule, and the line `The deny rule secret-<id> keeps the agent from reading the value at its source.`
+
+<Aside type="note" title="Secrets added with OpenMoat 0.5.1 or earlier">
+
+They only warned. Run `openmoat policy lint`: a warning `no deny … rule covers …, so the agent can read it` means you should add the deny with `openmoat edit`:
+
+```yaml
+deny:
+  - id: example-token
+    reason: brokered secret source
+    fs.read: ["~/.config/example/token"]
+```
+
+</Aside>
+
+<Aside type="caution" title="Prefer --env on macOS with Claude Code">
+
+Claude Code's broker reads `env` and `file` sources. On macOS it denies a `file` source to sandboxed commands instead of masking it, so the tool that reads that file cannot authenticate. Use `--env` there.
+
+</Aside>
+
+Which agents get the value put in, over HTTPS and plain HTTP: [Where it works today](/docs/keep-tokens-safe/where-it-works/).

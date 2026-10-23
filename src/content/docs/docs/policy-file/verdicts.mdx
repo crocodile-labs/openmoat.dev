@@ -1,0 +1,44 @@
+---
+title: "The four verdicts"
+description: "How a call is decided, and one worked rule for each verdict: deny, allow, ask and defer."
+sidebar:
+  label: "The four verdicts"
+  order: 1
+---
+
+Each tool call is split into actions (a command, each file, each host). Each action is tried against `deny`, then `allow`, then `ask`, then `defer`; the first list with a match decides, and `defaults` decides when none does. The call gets the strictest answer of its actions: `deny > ask > defer > allow`. A repository's ask rules, and a pack's, are tried right after the deny rules, before your allow rules ([Repository policies](/docs/policy-file/repositories/)).
+
+**Deny**: never, whatever else matches. A deny cannot be overridden by an allow, by `openmoat allow` or by a repository.
+
+```yaml
+deny:
+  - id: no-prod-config
+    reason: production settings stay with the release pipeline
+    fs.write: ["${project}/deploy/prod/**"]
+```
+
+**Allow**: runs without your agent's prompt. Allow only what you would approve every time.
+
+```yaml
+allow:
+  - id: company-registry
+    net: ["npm.internal.example.com", "pypi.internal.example.com"]
+```
+
+**Ask**: OpenMoat asks you itself, tagged with the rule, even where your agent would not.
+
+```yaml
+ask:
+  - id: push
+    shell: ["git push *"]
+```
+
+**Defer**: your agent's own permission prompt decides, as without OpenMoat. The default for anything no rule names.
+
+```yaml
+defaults:
+  "*": defer      # everything else: your agent decides
+  net: deny       # outbound network from shell commands to unlisted hosts: denied
+```
+
+When no rule matches, the rule shown is the default's: `default` (for example `no rule matched shell "git push origin main"`), `default.net` for a host, `default.fetch` for a fetch. What each verdict looks like in your agent: [How it decides](/docs/how-it-decides/).

@@ -1,0 +1,35 @@
+---
+title: "Audit and diagnostic commands"
+description: "openmoat replay, report and audit; openmoat doctor, bench and guard."
+sidebar:
+  label: "Audit and diagnostics"
+  order: 6
+---
+
+Commands marked **terminal** must be run by a person in a terminal of their own ([Commands](/docs/commands/)).
+
+## Audit
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat replay [--since <when>] [--session <id>]` | Each agent session as a timeline | `openmoat replay --since today` |
+| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts, top rules, asks per hour | `openmoat report --since 7d` |
+| `openmoat audit export [--since <when>] [--host <id>] [--session <id>]` | Events as JSON Lines with their chain hashes, on stdout | `openmoat audit export --since 7d > week.jsonl` |
+| `openmoat audit verify <file> [--anchor <hash>] [--require-anchor]` | Check an export without the database | `openmoat audit verify week.jsonl` |
+| `openmoat audit verify --against <repo or file>` | Check the log against every anchor there; fails, naming the first anchor whose event is gone or changed | `openmoat audit verify --against ~/notes` |
+| `openmoat audit anchor --git <repo>` · `--file <path>` | Record the log's head outside it; nothing is sent anywhere. **Terminal** | `openmoat audit anchor --file ~/anchors.jsonl` |
+| `openmoat audit report <file>…` | One report over verified exports from several machines | `openmoat audit report alice.jsonl bob.jsonl` |
+
+`--since` takes `all`, `today`, `yesterday`, `12h`, `7d`, `2w` or a date (`2026-10-15`, UTC). Most commands take `--format json`. See [Audit log](/docs/see-what-happened/).
+
+## Diagnostics
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat doctor [--verbose] [--format json]` | What drifted, hook and sandbox checks, MCP changes, warnings; `--verbose` lists where each sandbox is stricter or wider than the policy | `openmoat doctor` |
+| `openmoat doctor --accept` | Accept the current policy and hook files and re-pin. **Terminal** | `openmoat doctor --accept` |
+| `openmoat doctor --bundle <file> [--bundle-events N]` | One local file to attach to a bug report: versions, hook states, checks and the last decisions without commands, paths or secrets; nothing is sent. Refused when an agent started it | `openmoat doctor --bundle report.json` |
+| `openmoat bench [--hook <command> --host <id>] [--verbose] [--format json]` | Score OpenMoat, or any hook, against the bundled MoatBench scenarios; the scenarios' commands never run | `openmoat bench --hook '<command>' --host claude-code` |
+| `openmoat guard --host <id>` | The hook entry point: agents call it, you do not | |
+
+See [Troubleshooting](/docs/troubleshooting/).

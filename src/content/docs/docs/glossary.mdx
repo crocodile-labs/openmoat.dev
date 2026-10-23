@@ -1,0 +1,80 @@
+---
+title: "Glossary"
+description: "Every OpenMoat term in one or two sentences, with the page that explains it."
+sidebar:
+  label: "Glossary"
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+A page or a message uses a word you have not met yet.
+
+</Aside>
+
+## Verdicts
+
+| Term | Means |
+|---|---|
+| **allow** | The call runs without a prompt, OpenMoat's or the agent's. [How it decides](/docs/how-it-decides/) |
+| **defer** | OpenMoat has no rule for the call and leaves it to your agent's own permission prompt, as without OpenMoat. In auto-approve modes a deferred call runs. [Auto-approve and CI](/docs/auto-approve-and-ci/) |
+| **ask** | OpenMoat asks you itself, tagged with the rule (`moat: ask [git-internals] — …`). Agents that cannot show a question turn it into a deny you answer with `openmoat allow --last`. [Something was blocked](/docs/blocked/) |
+| **deny** | The call is blocked, with the rule and the reason. No allow, `openmoat allow` or repository overrides it. [How it decides](/docs/how-it-decides/) |
+
+## The policy
+
+| Term | Means |
+|---|---|
+| **policy** | `~/.moat/policy.yaml`: your rules, for every agent and project. [The policy file](/docs/policy-file/) |
+| **rule**, **rule id** | A named group of patterns in `deny`, `allow`, `ask` or `defer` (`secrets-paths`); the id is shown in every message and in the audit log. [The four verdicts](/docs/policy-file/verdicts/) |
+| **defaults**, `default`, `default.net`, `default.fetch` | What decides when no rule matches; the rule shown is then `default`, or `default.net` for a host and `default.fetch` for a fetch. [The four verdicts](/docs/policy-file/verdicts/) |
+| **project**, `${project}` | The git repository the agent runs in, or the folder itself when there is none; never your home folder. [The project folder](/docs/the-project/) |
+| `project-fs`, `dev-shell` | The default rules that allow reading and editing the project, and builds, tests and everyday git. [Use it in your projects](/docs/your-projects/) |
+| `runs-later` | Asks before a write to files something runs later, outside any sandbox: CI workflows, commit hooks, the agent's hooks, skills and MCP settings. [The project folder](/docs/the-project/) |
+| `approved-N` | A rule `openmoat allow --always`, `--dir` or `--site` added to `~/.moat/policy.d/approved.yaml`. [Every allow](/docs/allow-reference/) |
+| **session grant** | What `openmoat allow --last` gives: that one call, for that agent session, for 24 hours; a command only in its project. Shown as rule `approved-session`. [Every allow](/docs/allow-reference/) |
+| **repository policy**, `repo:<id>` | A repository's committed `.moat/policy.yaml`; its rules show up with the prefix `repo:`. [Repository policies](/docs/policy-file/repositories/) |
+| **trust**, **tightening only** | `openmoat trust` lets a repository policy's allow rules apply, for that exact file; until then, or after it changes, only its deny and ask rules apply ("tightening only"). [Use it in your projects](/docs/your-projects/#rules-for-one-project) |
+| **policy pack**, `pack:<name>:<id>` | A team's signed rules installed for every project with `openmoat policy install`. [Signed policy packs](/docs/team-rules/policy-packs/) |
+| **trusted key** | An SSH public key you trusted with `openmoat policy trust-key` to sign packs and repository policies. [Signed policy packs](/docs/team-rules/policy-packs/) |
+| **policy upgrade** | `openmoat policy upgrade`: takes the rules a new release's default policy gained, keeping your own lines. [Change the rules](/docs/change-the-rules/#new-default-rules-after-an-upgrade) |
+
+## Protection
+
+| Term | Means |
+|---|---|
+| **agent**, **host**, **host id** | The coding agent OpenMoat protects (Claude Code, Codex, …); `--hosts` takes its id (`claude-code`, `codex`, …). [Supported agents](/docs/agents/) |
+| **hook** | The agent's own setting that runs `openmoat guard` before every tool call. [Supported agents](/docs/agents/) |
+| **OS sandbox** | The operating system's confinement of every process a command starts, written from the same policy. [OS sandboxes](/docs/sandboxes/) |
+| **hook + OS sandbox**, **hook only**, **not protected** | What `openmoat status` says per agent: both layers, the hook alone, or no working hook. [Supported agents](/docs/agents/) |
+| **Standard**, **Lightweight**, **Isolated** | The sandbox tiers: the agent's own sandbox, `openmoat run`, and `openmoat run --isolate` (Linux). [OS sandboxes](/docs/sandboxes/) |
+| **policy lock**, **pin** | `~/.moat/policy.lock`: the SHA-256 of the policy, the hook files and the agents' settings; each file in it is pinned. [Self-protection](/docs/self-protection/) |
+| **drift**, **re-pin**, **accept** | A pinned file that no longer matches the lock is drift, and every call is denied (`kernel-integrity`) until you accept it (`openmoat`, `openmoat doctor --accept`), which re-pins. [Self-protection](/docs/self-protection/) |
+| `kernel-self` | Denies the agent writing OpenMoat's files and settings, reading its state, and running the commands only a person may run. [Self-protection](/docs/self-protection/) |
+| `kernel-error` | OpenMoat could not decide (missing state, an unreadable policy, a repository policy that does not parse) and denied the call. [Troubleshooting](/docs/troubleshooting/agent-messages/) |
+| **person-only command**, **terminal** | A command that changes what agents may do; it runs only in a terminal, never when an agent started it. [Commands](/docs/commands/) |
+| `executables` | Programs pinned to the paths they resolved to at `openmoat init`; one found elsewhere is denied. [Self-protection](/docs/self-protection/) |
+| `unchecked`, `unparseable` | A call OpenMoat can see but not fully check, and a part of a command it cannot read; neither is ever allowed. [Shell command checks](/docs/shell-commands/#a-command-openmoat-cannot-read) |
+
+## Secrets, network and MCP
+
+| Term | Means |
+|---|---|
+| **brokered secret**, **placeholder** | A token kept by OpenMoat: programs the agent runs hold a placeholder, and the value is put into requests to one host only. [Token broker](/docs/keep-tokens-safe/) |
+| `token-egress` | Denies a well-known token sent to a host that is not its service's. [Tokens to the wrong host](/docs/keep-tokens-safe/token-egress/) |
+| **egress proxy** | `openmoat proxy`: lets sandboxed commands reach only allowed hosts, and refuses metadata and private addresses. [Egress proxy](/docs/egress-proxy/) |
+| **session taint**, **untrusted content** | After a session read a secret, or a web page or MCP result (untrusted content), some of its later calls ask. [Session taint](/docs/session-taint/) |
+| **provenance** | Taint that follows a file a tainted session wrote to the next session that reads or runs it. [How it decides](/docs/how-it-decides/#files-a-tainted-session-wrote) |
+| **MCP pin**, `mcp-server-changed` | The recorded definition of each MCP server; a changed or new one is held until `openmoat mcp accept`. [MCP pinning](/docs/mcp-servers/) |
+| **MCP proxy**, **wrap** | `openmoat mcp proxy`, which `openmoat mcp wrap` puts in front of a stdio server to pin each tool. [Tool pinning](/docs/mcp-servers/tool-pinning/) |
+
+## Records
+
+| Term | Means |
+|---|---|
+| **audit log**, **hash chain** | Every decision in `~/.moat/audit.db`, each event chained to the one before by its hash, so a change in the middle shows. [Audit log](/docs/see-what-happened/) |
+| **anchor** | The log's newest event recorded outside it (`openmoat audit anchor`), to catch a log cut short later. [Audit log](/docs/see-what-happened/#keep-a-record-outside-the-log) |
+| `MOAT_HOME`, `~/.moat` | Where OpenMoat keeps its state; `MOAT_HOME` moves it. [The policy file](/docs/policy-file/) |
+| **MoatBench** | The bundled scenarios `openmoat bench` scores a hook against. [Audit and diagnostics](/docs/commands/audit-and-diagnostics/) |

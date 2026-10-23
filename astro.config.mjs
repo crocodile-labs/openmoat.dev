@@ -3,9 +3,13 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-const group = (label, slugs) => ({
+// An entry is a slug, or a sub-group made with sub(): its overview page first, then its parts.
+const item = (entry) => (typeof entry === 'string' ? (entry === 'index' ? 'docs' : `docs/${entry}`) : entry);
+const group = (label, entries) => ({ label, items: entries.map(item) });
+const sub = (label, overview, parts) => ({
   label,
-  items: slugs.map((slug) => (slug === 'index' ? 'docs' : `docs/${slug}`)),
+  collapsed: true,
+  items: [{ label: 'Overview', slug: `docs/${overview}` }, ...parts.map((p) => `docs/${overview}/${p}`)],
 });
 
 export default defineConfig({
@@ -36,13 +40,28 @@ export default defineConfig({
         './src/styles/docs.css',
       ],
       sidebar: [
-        group('Get started', ['index', 'quickstart', 'agents', 'how-it-decides']),
-        group('Features', ['shell-commands', 'env-files', 'allow-a-site', 'keep-tokens-safe', 'mcp-servers',
-          'sandboxes', 'egress-proxy', 'self-protection', 'session-taint', 'see-what-happened', 'team-rules']),
-        group('Policy', ['policy-file', 'change-the-rules']),
+        group('Get started', ['index', 'quickstart', 'your-projects', 'agents', 'how-it-decides']),
+        group('Features', ['shell-commands', 'env-files', 'allow-a-site',
+          sub('Token broker', 'keep-tokens-safe', ['token-egress', 'another-service', 'where-it-works']),
+          sub('MCP pinning and proxy', 'mcp-servers', ['tool-pinning']),
+          sub('OS sandboxes and run', 'sandboxes', ['openmoat-run']),
+          'egress-proxy', 'self-protection', 'session-taint', 'see-what-happened',
+          sub('Team rules and packs', 'team-rules', ['repository-policy', 'policy-packs'])]),
+        group('Policy', [sub('The policy file', 'policy-file', ['verdicts', 'patterns', 'other-keys', 'repositories']),
+          'change-the-rules']),
         group('Guides', ['blocked', 'check-a-command', 'work-across-repos', 'the-project', 'github', 'local-services',
           'cloud-clis', 'packages', 'auto-approve-and-ci', 'upgrade', 'turn-off']),
-        group('Reference', ['commands', 'allow-reference', 'troubleshooting', 'limits']),
+        group('Reference', [
+          sub('Commands', 'commands', ['setup', 'allow', 'policy', 'sandboxes', 'mcp-and-secrets', 'audit-and-diagnostics']),
+          'allow-reference',
+          sub('Troubleshooting', 'troubleshooting', ['agent-messages', 'openmoat-messages', 'hooks-and-lock', 'policies-and-network']),
+          'limits', 'glossary']),
+        {
+          label: 'Releases',
+          collapsed: true,
+          items: ['docs/releases', ...['v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
+            .map((v) => `docs/releases/${v}`)],
+        },
       ],
     }),
   ],

@@ -35,6 +35,16 @@ openmoat policy check "https://docs.rs/serde" --kind fetch     # a web fetch, no
 openmoat policy check "~/.aws/credentials" --kind fs-read      # a file read by a file tool
 ```
 
+The first line of the output is the answer: `✔ allow`, `→ defer`, `❓ ask` or `⛔ deny`.
+
+## In another project
+
+```bash
+openmoat policy check "npm run migrate" --cwd ~/work/app
+```
+
+It decides as if the command ran in `~/work/app`: `${project}` is that repository's root, and its `.moat/policy.yaml`, if it has one, applies as in the hook (rules shown as `repo:<id>`). `--project <dir>` sets the project root directly. With `--policy <file>`, only that file decides: no `openmoat allow` rules, packs or repository policy. See [Use it in your projects](/docs/your-projects/#check-a-project).
+
 ## A few examples at once
 
 ```bash

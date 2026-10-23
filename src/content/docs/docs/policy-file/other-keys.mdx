@@ -1,0 +1,24 @@
+---
+title: "Other keys"
+description: "executables, sandbox, secrets, taint, require_signed_repo_policy and mcp."
+sidebar:
+  label: "Other keys"
+  order: 3
+---
+
+```yaml
+executables:                      # programs pinned to their paths
+  git: ["/usr/bin/git", "/opt/homebrew/bin/git"]
+sandbox:                          # what the OS sandboxes may read beyond the rules
+  read_roots: ["/usr", "~/.cargo"]
+secrets: []                       # brokered secrets: openmoat secret add
+taint:
+  protected_writes: ["**/deploy/**"]
+require_signed_repo_policy: false # trust a repository policy only when signed
+mcp:
+  trust_first_sight: false
+```
+
+See [OS sandboxes](/docs/sandboxes/#settings), [Token broker](/docs/keep-tokens-safe/), [Session taint](/docs/session-taint/#settings), [Signed policy packs](/docs/team-rules/policy-packs/#require-a-signature-on-repository-policies) and [MCP](/docs/mcp-servers/).
+
+`approval:` and `scope:` (`project_roots`) are reserved: older policy files that set them stay valid, they have no effect yet, and `openmoat policy lint` says so. Unknown keys are errors.

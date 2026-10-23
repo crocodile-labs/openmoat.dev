@@ -75,7 +75,7 @@ Keep the bare host in the rule: the hook decides by host alone, and a `host:port
 ## Limits
 
 - **It checks the host, not what is sent inside HTTPS.** An allowed host can receive whatever a command sends it, and the proxy does not see the HTTP `Host` header inside the tunnel.
-- **Brokered secrets go into plain-HTTP requests only.** HTTPS is not decrypted, so a request there keeps the placeholder ([Token broker](/docs/keep-tokens-safe/#where-it-works-today)).
+- **Brokered secrets go into plain-HTTP requests only.** HTTPS is not decrypted, so a request there keeps the placeholder ([Token broker](/docs/keep-tokens-safe/where-it-works/)).
 - **The standalone `openmoat proxy` takes no credential:** any local process may use it, and session taint does not apply there. `openmoat run`'s own proxy serves only its run.
 - **No user service on Windows yet:** `openmoat proxy install` and `status` refuse; run `openmoat proxy` in a terminal.
 

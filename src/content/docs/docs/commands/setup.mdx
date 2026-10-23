@@ -1,0 +1,29 @@
+---
+title: "Set up, remove and everyday commands"
+description: "openmoat init, openmoat uninstall, openmoat, status, show and demo."
+sidebar:
+  label: "Set up and everyday"
+  order: 1
+---
+
+Commands marked **terminal** must be run by a person in a terminal of their own ([Commands](/docs/commands/)).
+
+## Set up and remove
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat init [--hosts <ids>] [--yes] [--dry-run] [--mcp-proxy]` | Install the policy, lock and log, pin the agents' MCP servers, and hook each agent found, asking for each. `--hosts` and `--yes` skip the questions; `--dry-run` shows what would change; `--mcp-proxy` wraps every stdio MCP server. Without a terminal and without `--hosts` or `--yes`, it changes no agent's files. Over an existing lock: **terminal** | `openmoat init --hosts claude-code,codex` |
+| `openmoat uninstall [--hosts <ids>] [--purge]` | Remove OpenMoat's hooks and sandbox settings and restore every backup; `--purge` also deletes `~/.moat` (not with `--hosts`). **Terminal** | `openmoat uninstall --hosts cursor` |
+
+Host ids for `--hosts` and `--host`: `claude-code`, `codex`, `cursor`, `openclaw`, `copilot-cli`, `pi`, `gemini-cli`.
+
+## Everyday
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat` | Which agents are protected, today's decisions, and anything that needs you: a changed pinned file, a policy update, the last ask. Its questions are asked only at a terminal | `openmoat` |
+| `openmoat status [--format json]` | Each agent's protection level (`hook + OS sandbox`, `hook only`, `not protected`) and what it does not cover; run in a project, also its repository policy and project settings; exits 64 when something needs fixing | `openmoat status` |
+| `openmoat show [<id>] [--session <id>] [--since <when>] [--recent N]` | Recent events, one session, or one event in full | `openmoat show 1` |
+| `openmoat demo [--format json]` | The verdict, rule and reason for a fixed list of example agent calls, with your policy; nothing runs and nothing is changed | `openmoat demo` |
+
+See [Quick start](/docs/quickstart/), [Use it in your projects](/docs/your-projects/) and [Turn it off](/docs/turn-off/).

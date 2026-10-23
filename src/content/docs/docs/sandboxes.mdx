@@ -43,26 +43,7 @@ openmoat run --write ~/.claude --write ~/.claude.json -- claude
 openmoat run --isolate --write ~/.claude --write ~/.claude.json -- claude   # Linux
 ```
 
-The two `--write` paths are Claude Code's own state, which it must write to run. Start `openmoat run` in a project, never in your home directory. Inside it:
-
-- **Network goes only through the run's proxy**, on a loopback port, with a credential made for the run; a request without it gets `407`. On Linux, where bubblewrap can run, the agent gets a network namespace of its own with only loopback.
-- **The agent's hooks still decide each call.** They run inside the sandbox and send each call to the `openmoat run` process outside it, which decides and records it.
-- **npm and uv install no version published in the last 7 days** (`npm_config_before`, `UV_EXCLUDE_NEWER`).
-- **Brokered secrets' variables are removed** before the agent starts.
-- **Nothing types into your terminal:** `TIOCSTI` is denied.
-- **Turn the agent's own sandbox off:** sandboxes do not nest. Claude Code's `sandbox.enabled` fails inside, and Codex needs `--sandbox danger-full-access`. Credentials must not come from the keychain: use an API key or `apiKeyHelper`.
-
-Before the agent starts, `openmoat run` prints how many places the sandbox is stricter or wider than the policy; `--verbose` lists each one.
-
-<Aside type="note" title="Cursor CLI under openmoat run">
-
-It needs its install directory in `sandbox.read_roots` (`~/.local/share/cursor-agent`), an allow rule for `api2.cursor.sh`, and its key in `CURSOR_API_KEY`:
-
-```bash
-CURSOR_API_KEY=… openmoat run --write ~/.cursor -- agent --sandbox disabled
-```
-
-</Aside>
+The two `--write` paths are Claude Code's own state, which it must write to run. Start `openmoat run` in a project, never in your home directory. Network then goes only through the run's proxy, and the agent's hooks still decide each call. Everything it does, and the Cursor CLI setup: [Run a whole agent with openmoat run](/docs/sandboxes/openmoat-run/).
 
 ## Commands
 

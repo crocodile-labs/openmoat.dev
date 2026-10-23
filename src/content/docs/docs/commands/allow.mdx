@@ -1,0 +1,23 @@
+---
+title: "Allow and approve commands"
+description: "openmoat allow, allowed and trust: let the agent do more, and take it back."
+sidebar:
+  label: "Allow and approve"
+  order: 2
+---
+
+Commands marked **terminal** must be run by a person in a terminal of their own ([Commands](/docs/commands/)).
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat allow --last` | Allow the last ask for the rest of that agent session (24 h; a command only in the project it was asked in). Shows the call and asks `Approve it? [y/N]`. **Terminal** | `openmoat allow --last` |
+| `openmoat allow --last --always` | A permanent rule for exactly that command or those files, in `~/.moat/policy.d/approved.yaml`. **Terminal** | `openmoat allow --last --always` |
+| `openmoat allow "<command>" --always` | A permanent rule for a command you name. **Terminal** | `openmoat allow "make deploy-docs" --always` |
+| `openmoat allow "<command>" --host <id> --session <id> [--project <dir>]` | A session grant for a command you name. **Terminal** | `openmoat allow "git config core.pager less" --host claude-code --session 4f2a…` |
+| `openmoat allow --dir <folder>` | Read and write a folder outside the project; secrets, `.git` and files run later stay protected. **Terminal** | `openmoat allow --dir ~/work/shared-lib` |
+| `openmoat allow --site <host>` | Network access to one exact host, web fetches included. **Terminal** | `openmoat allow --site docs.rs` |
+| `openmoat allow --remove <id>` | Take back a rule `openmoat allow` added. **Terminal** | `openmoat allow --remove approved-2` |
+| `openmoat allowed [--format json]` | Permanent rules, session grants still in force and trusted repositories, each with the command that takes it back | `openmoat allowed` |
+| `openmoat trust [<repo>] [--revoke]` | Let a repository's `.moat/policy.yaml` allow, until the file changes; shows the file, its digest and every rule it adds, then asks. **Terminal** | `openmoat trust` |
+
+The rules `--always`, `--dir` and `--site` add apply in every project and to every agent; a session grant and a trusted repository's allow rules are tied to one project. What each allow opens: [Every allow and what it opens](/docs/allow-reference/).

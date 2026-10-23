@@ -1,0 +1,20 @@
+---
+title: "Where the token broker works today"
+description: "Which agents get a brokered value put into HTTPS and plain-HTTP requests."
+sidebar:
+  label: "Where it works today"
+  order: 3
+---
+
+| Agent | HTTPS requests | Plain HTTP |
+|---|---|---|
+| Claude Code, sandboxed shell commands | yes: Claude Code's own sandbox broker puts the value in | through `openmoat proxy` only, with `plain_http: true`, and only while `sandbox.proxy_port` sends the sandbox's traffic there |
+| Codex, Cursor, `openmoat run` (through `openmoat proxy`) | not yet: the request keeps the placeholder and the server rejects it | yes, with `plain_http: true` |
+
+A `plain_http: true` secret goes only to port 80 of its host, or to the port its `port` field names; a request to another port keeps the placeholder. It is never handed to Claude Code's broker, which would put it in on every port.
+
+`openmoat run` removes the environment variables brokered secrets are read from before it starts the agent, so neither the agent nor its commands hold the real value.
+
+`openmoat secret list` shows each brokered secret's host, header and source (never the value), and whether a deny rule covers that source. A `keychain` source, set with `openmoat edit` ([POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#21-brokered-secrets-secrets)), works through `openmoat proxy` only, on macOS and Linux.
+
+The `secrets:` entry and its keys: [Token broker settings](/docs/keep-tokens-safe/#settings).

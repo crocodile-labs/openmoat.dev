@@ -1,0 +1,71 @@
+---
+title: "Hooks, the lock and the binary"
+description: "Every call denied with kernel-integrity, an agent not protected, nothing happening, a missing or moved openmoat."
+sidebar:
+  label: "Hooks, lock and binary"
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Every call is denied with `kernel-integrity`
+
+```text
+moat: deny [kernel-integrity] — /Users/you/.moat/policy.yaml was modified;
+      run `openmoat doctor` to inspect; `openmoat doctor --accept` or `openmoat init` to re-pin
+```
+
+A pinned file (the policy, a hook, an agent's settings) changed without you accepting it. Run `openmoat`: it shows the change and asks whether to accept it. If you did not make the change, you caught what OpenMoat exists for: look at `openmoat doctor` before accepting.
+
+<Aside type="note" title="Claude Code's own settings do not block">
+
+A change to one of Claude Code's own settings, such as a permission list, `permissions.blockReadsOutsideWorkingDirectories`, the model or a display setting, does not deny every call. Calls are decided by the policy as usual, the change is recorded once per session, and `openmoat doctor` and `openmoat status` report it until you run `openmoat doctor --accept`. A change to hooks, `env`, `apiKeyHelper`, plugins, MCP servers or `sandbox`, removing a deny rule OpenMoat wrote, an unknown key, or a file that no longer parses still blocks every call. So, since 0.9.0, does `permissions.defaultMode` set to a mode that runs calls without asking (`acceptEdits`, `auto`, `bypassPermissions`), any change to `permissions.additionalDirectories`, and a change to `autoMode`. Under a lock written before 0.5.7, a change to `permissions` also blocks until you re-pin.
+
+</Aside>
+
+A [policy pack](/docs/team-rules/policy-packs/) you installed is pinned the same way, and so are the keys you trusted: a change to a file in `~/.moat/policy.d/packs/` or to `~/.moat/allowed_signers` blocks every call too. `openmoat doctor` names the file.
+
+## A hook still runs `moat`
+
+After an upgrade from 0.7 or earlier, `openmoat doctor` says a hook still uses the old name. It keeps working, because every install puts a `moat` beside `openmoat` that runs it, but the `moat` name will be removed in a later release. Run `openmoat init` once: it backs up each agent's file, rewrites OpenMoat's hooks to run `openmoat` and re-pins. See [Upgrading from 0.7 or earlier](/docs/upgrade/#upgrading-from-07-or-earlier).
+
+## A hook runs another `openmoat`
+
+`openmoat doctor` or `openmoat status` says `hook runs …, which does not exist`, `hook runs …, a different OpenMoat binary than this one` or `lock expects …, running …`: `openmoat` moved, or a second install (Homebrew beside `cargo install`) is on the machine. Keep one, run `openmoat init` with it, and restart the agents ([Keep one OpenMoat installed](/docs/upgrade/#keep-one-openmoat-installed)).
+
+## An agent shows "hook only" or "not protected"
+
+```bash
+openmoat status
+```
+
+| It says | Run |
+|---|---|
+| `not protected: hook missing` | `openmoat init` |
+| the hook is out of date (after an upgrade) | `openmoat init` |
+| `not protected` with a settings file named, such as `disableAllHooks` or `[features] hooks = false` | Remove that setting from the file it names |
+| sandbox `differs from the policy` | `openmoat sandbox sync`, then start a new agent session |
+| `hook only` for OpenClaw, GitHub Copilot CLI, pi or Gemini CLI | Expected: OpenMoat sets up no OS sandbox for them. Use `openmoat run` for one |
+| `hook only` for Claude Code or Cursor on native Windows | Expected: use WSL2 for the OS sandbox |
+
+Codex shows its hook as installed but runs it only after you trust it: open `/hooks` in Codex and trust OpenMoat's. `openmoat doctor` reminds you on Codex's line. See [Supported agents](/docs/agents/).
+
+## `openmoat doctor` warns about a project's `.claude` settings
+
+The project's `.claude/settings.json` or `.claude/settings.local.json` turns hooks off (`disableAllHooks`) or sets its own hooks, `env` or a command. Claude Code loads it when a session starts, before OpenMoat's hook runs, so check the file before you start an agent there. See [Project settings that turn hooks off](/docs/blocked/#project-settings-that-turn-hooks-off).
+
+## Nothing seems to happen
+
+Hooks are read when a session starts. Start a new agent session after `openmoat init`, and check `openmoat status`. Restart OpenClaw's Gateway and pi, which load OpenMoat's plugin and extension when they start. Gemini CLI runs hooks only in folders it trusts.
+
+## The `openmoat` binary is missing or broken
+
+Codex, and Claude Code before 2.1.295, then run calls without the check; Cursor, OpenClaw, GitHub Copilot CLI, pi and Gemini CLI block them. With Claude Code 2.1.295 or later, `openmoat init` sets `"onFailure": "block"` on OpenMoat's hook, so a call is blocked when `openmoat` cannot start, crashes or times out. It writes the key only when the `claude` on your `PATH` reports that version, and `openmoat doctor` warns when Claude Code is older or not found. Reinstall it (`brew reinstall crocodile-labs/tap/openmoat`, or the installer), then run `openmoat status`.
+
+## A call is denied with `no decision within 30 s`
+
+OpenMoat could not decide the call in 30 seconds, usually on a heavily loaded machine, and denied it rather than let it run. Ask the agent to try again. `openmoat doctor` names the step most such calls were stuck in.
+
+## `openmoat run` refuses on macOS 12
+
+`openmoat run` needs macOS 13 or later, and says so on earlier versions. The agent hooks still apply the policy to each tool call there.

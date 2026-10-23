@@ -1,0 +1,25 @@
+---
+title: "Repository policies"
+description: "How a repository's .moat/policy.yaml and a policy pack combine with your own policy."
+sidebar:
+  label: "Repository policies"
+  order: 4
+---
+
+A repository's `.moat/policy.yaml` (at the project's root, the folder `${project}` names) is untrusted input, so by itself it can only make your policy stricter:
+
+| The repository's | Applies |
+|---|---|
+| `deny` rules | at once, for everyone, as `repo:<id>` |
+| `ask` rules | at once, right after the deny rules |
+| `allow` rules | only after you run `openmoat trust` on that exact file, or, with `require_signed_repo_policy: true`, when a key you trusted signed it |
+
+Any later change to the file drops it back to deny and ask only, until you trust it again. A file that does not parse denies every call in the project until it is fixed. Repository rules apply in the hook, not in the agents' OS sandboxes. A signed policy pack's rules show up as `pack:<name>:<id>`: its deny rules join yours, its ask rules come before your allow rules, and its allow rules after yours.
+
+- **Only `version`, `deny`, `ask` and `allow`.** `defaults`, `executables` and `sandbox` stay yours; any other key makes the file invalid (`kernel-error` on every call in the project).
+- **Its ask rules come before your allow rules**, so a rule you added with `openmoat allow --always` does not silence a `repo:` ask. `openmoat allow --last` (that session) does, and so does answering the prompt.
+- **Trusted allow rules come after yours**, so your deny rules (`secrets-paths`, `kernel-self`, …) still win. They can widen your `ask` rules and defaults: read them before you trust.
+- **Ids are prefixed** (`repo:no-prod-config`) in messages, the audit log and `openmoat show`, so a repository rule cannot pose as one of yours.
+- **Trust is per checkout and per file.** It is kept in `~/.moat/trust.json`, never in the repository: a copy of the repository in another folder, or the file after a pull, applies in its tightening-only form until you run `openmoat trust` there.
+
+Writing one, trusting it and reviewing changes: [A repository policy](/docs/team-rules/repository-policy/). What you see in a repository that has one: [Use it in your projects](/docs/your-projects/#rules-for-one-project).

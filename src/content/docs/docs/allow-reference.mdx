@@ -34,7 +34,7 @@ Two facts hold for every allow below:
 | `openmoat trust` | the allow rules in a repository's `.moat/policy.yaml` | until the file changes | `openmoat trust --revoke` |
 | `openmoat edit` | any rule you write | until you change it | `openmoat edit` again |
 
-Every rule `openmoat allow` adds is in `~/.moat/policy.d/approved.yaml`, with its id and the date. `openmoat allowed` lists all of them, the session grants still in force and the repositories you trusted, each with the command that takes it back.
+Every rule `openmoat allow` adds is in `~/.moat/policy.d/approved.yaml`, with its id and the date. Those rules, like any rule you add with `openmoat edit`, apply in every project and to every agent; only a session grant (`--last`) and a trusted repository's allow rules are tied to one project ([Use it in your projects](/docs/your-projects/#give-a-project-more)). `openmoat allowed` lists all of them, the session grants still in force and the repositories you trusted, each with the command that takes it back.
 
 ## `openmoat allow --last`
 
