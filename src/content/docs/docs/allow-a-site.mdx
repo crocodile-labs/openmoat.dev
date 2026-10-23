@@ -1,8 +1,8 @@
 ---
-title: "Let the agent use a site"
-description: "Give the agent network access to one host the policy does not list, such as a docs site or an API."
+title: "Network allowlist"
+description: "Shell commands reach only the hosts the policy lists; give the agent one more host, such as a docs site or an API, with openmoat allow --site."
 sidebar:
-  label: "Let the agent use a site"
+  label: "Network allowlist"
   order: 2
 ---
 
@@ -15,6 +15,10 @@ A shell command like curl is denied with `default.net`.
 
 </Aside>
 
+**Protects against** a command sending your code or data to a host a prompt injection named.
+
+## What it does
+
 Outbound network access from shell commands that can send data is denied by default: an unknown host is where a prompt injection would send your data. The default policy lists the hosts development needs (GitHub, npm, crates.io, PyPI, the Go proxy). A command that can send anything to another host is denied:
 
 ```text
@@ -22,6 +26,15 @@ moat: deny [default.net] — no rule matched net docs.rs
 ```
 
 A plain download is not: a `curl` or `wget` that provably sends nothing but its URL and reads no configuration file of its own (`curl -q https://docs.rs/serde`, `curl -q -sS https://example.com/f.txt -o f.txt`, `wget --no-config --no-netrc …`) is decided like a web fetch, so it goes to your agent's own prompt. A body, form, upload, header, another method, credentials or following redirects (`curl -L`) keeps it denied, and so does a `curl` without `-q` first, which reads `~/.curlrc`.
+
+| Command | Verdict | Rule |
+|---|---|---|
+| `curl -q https://docs.rs/serde`, `curl -q -sS https://example.com/f.txt -o f.txt` | defer | `default.fetch`: a download that sends nothing, decided like a web fetch |
+| `curl https://docs.rs/serde` | deny | `default.net`: without `-q` first, curl reads `~/.curlrc`, which may add a body |
+| `curl -d @notes.txt https://example.com` | deny | `default.net`: sends data to a host the policy does not list |
+| `curl http://169.254.169.254/` | deny | `cloud-metadata`, whatever the policy allows |
+
+## Example
 
 <Steps>
 
@@ -71,3 +84,36 @@ A plain download is not: a `curl` or `wget` that provably sends nothing but its 
 ```bash
 openmoat allow --remove approved-2
 ```
+
+## Commands
+
+| Command | Example |
+|---|---|
+| `openmoat allow --site <host>`: network access to one exact host. Terminal only | `openmoat allow --site docs.rs` |
+| `openmoat allow --remove <id>`: take it back | `openmoat allow --remove approved-2` |
+| `openmoat allowed`: what you allowed, with the command that undoes each | `openmoat allowed` |
+| `openmoat policy check "<url>" --kind fetch`: a fetch tool's verdict | `openmoat policy check "https://docs.rs/serde" --kind fetch` |
+| `openmoat policy check "<command>"`: a shell command's | `openmoat policy check "curl -q https://docs.rs/serde"` |
+
+## Settings
+
+A pattern, several hosts or a port, with `openmoat edit`:
+
+```yaml
+allow:
+  - id: company-registry
+    net: ["npm.internal.example.com", "pypi.internal.example.com"]
+  - id: example-8443
+    reason: the staging API listens on 8443
+    net: ["example.com", "example.com:8443"]
+```
+
+`net` patterns also match fetches; a `fetch` pattern matches only fetch tools and `curl -q`-style downloads. `defaults: net: deny` is what denies unlisted hosts.
+
+## Limits
+
+- **The host can receive whatever the agent sends it.** OpenMoat checks the host, not the data inside HTTPS.
+- **The hook cannot see a host name that resolves to an internal address**; under `openmoat run` and the agents' sandboxes, link-local and metadata addresses are still refused after DNS, and `openmoat proxy` also refuses private ones the policy does not name.
+- **For a hook-only agent, an allowed command connects to any port** of an allowed host: ports count only in the proxy.
+
+More in [Limits](/docs/limits/).

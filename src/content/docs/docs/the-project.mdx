@@ -43,3 +43,16 @@ A project that is your home folder, or a folder above it, would let the agent ed
 ## Monorepos
 
 Start the agent anywhere in the repository: the project is the whole repository, so the agent can work across packages without any setting. To keep it to one package, start it in a copy or worktree of just that package, or add a rule of your own with `openmoat edit`.
+
+## Rules that come with the project
+
+A repository can commit its own `.moat/policy.yaml`. Its deny and ask rules apply to everyone who works in it at once (as `repo:<id>`); its allow rules only once you trust that file with `openmoat trust`, or, with `require_signed_repo_policy: true`, when a key you trusted signed it. See [Team rules](/docs/team-rules/).
+
+## Beyond one project
+
+| You need | See |
+|---|---|
+| A sibling repository, a shared library, a notes folder | [Work across several repos](/docs/work-across-repos/): `openmoat allow --dir <folder>` |
+| The same rules for the whole team | [Team rules](/docs/team-rules/) |
+| An agent in CI or with auto-approve | [Auto-approve and CI](/docs/auto-approve-and-ci/) |
+| Check what a call in another folder gets | `openmoat policy check "<command>" --cwd <dir>` |

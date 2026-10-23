@@ -1,8 +1,8 @@
 ---
-title: "MCP servers"
+title: "MCP pinning and the MCP proxy"
 description: "OpenMoat pins each MCP server's definition, and on request each tool's description, so a changed or new server or tool waits until you accept it."
 sidebar:
-  label: "MCP servers"
+  label: "MCP pinning and proxy"
   order: 6
 ---
 
@@ -14,7 +14,23 @@ An MCP server's tools are denied with `mcp-server-changed`, you added a server, 
 
 </Aside>
 
+**Protects against** an MCP server nobody reviewed (one a cloned repository's `.mcp.json` adds, or a definition a `git pull` changes), a tool whose description changes after you accepted it, and MCP calls that read secrets or reach unlisted hosts.
+
+## What it does
+
 An MCP server runs outside every sandbox, with your permissions, whatever its definition says. A postinstall script, a `git pull` or a cloned repository can change a definition or add one, and a server you accepted can later change what a tool's description tells the model. OpenMoat checks every MCP tool call against your policy, and also holds back servers and tools that nobody has reviewed.
+
+MCP calls are checked by tool name **and** by what their arguments name: `mcp__filesystem__read_file {path: ~/.aws/credentials}` is denied by `secrets-paths` although `safe-mcp` allows the tool, and a `url` argument is checked like any host.
+
+## Example
+
+A cloned repository's `.mcp.json` adds a server. Its tool calls are denied, and the reason ends with what to run:
+
+```text
+moat: deny [mcp-server-changed] — …; a person must review it: run `openmoat mcp accept <server>` in a terminal
+```
+
+`openmoat doctor` shows the same: ``mcp servers      ✗ …; `openmoat mcp accept` shows it and asks``.
 
 ## Server definitions are pinned
 
@@ -112,4 +128,31 @@ A lock from before 0.5.7 has no MCP pins, so nothing is held back until `openmoa
 
 </Aside>
 
-The design and its limits: [ADR-026](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-026-mcp-server-and-tool-pinning.md).
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat mcp accept [<server>]` | Show a changed or new server, or the tools the proxy holds, key by key, and ask. Terminal only | `openmoat mcp accept github` |
+| `openmoat mcp wrap [<server>…] [--sandbox] [--dry-run]` | Run stdio servers through `openmoat mcp proxy`, which pins each tool. Terminal only | `openmoat mcp wrap github --dry-run` |
+| `openmoat mcp unwrap [<server>…]` | Point them back at their own command. Terminal only | `openmoat mcp unwrap github` |
+| `openmoat init --mcp-proxy` | Wrap every stdio server at setup | `openmoat init --mcp-proxy` |
+| `openmoat policy check "<tool>" --kind mcp` | The verdict for an MCP tool name | `openmoat policy check "mcp__github__create_issue" --kind mcp` |
+| `openmoat mcp proxy --server <name> [--sandbox] -- <command>` | The wrapper `openmoat mcp wrap` writes; the agent starts it, you do not | |
+
+## Settings
+
+```yaml
+allow:
+  - id: my-mcp-reads
+    mcp: ["mcp__docs__search*"]       # tool names, as mcp__<server>__<tool>
+mcp:
+  trust_first_sight: false            # default: the proxy holds a new server's tools until you accept them
+```
+
+## Limits
+
+- **A changed server still starts**, when the agent starts its session; only its tool calls are refused.
+- **Not pinned:** prompts, resources and tool results. **Not covered by the proxy:** remote (HTTP) servers, Claude Code plugin servers and managed MCP settings.
+- **An MCP server runs outside every sandbox** unless you wrap it with `--sandbox` or run the agent under `openmoat run`.
+
+More in [Limits](/docs/limits/). The design and its limits: [ADR-026](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-026-mcp-server-and-tool-pinning.md).

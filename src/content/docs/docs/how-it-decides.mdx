@@ -109,9 +109,9 @@ OpenMoat denies what must never happen and stays quiet about the rest. A call no
 
 <CardGrid>
   <LinkCard title="Agent hook" href="/docs/agents/" description="Checks each call before it runs. Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi and Gemini CLI call openmoat guard for every tool use." />
-  <LinkCard title="OS sandbox" href="/docs/limits/" description="The same policy configures each agent's own sandbox (Claude Code, Codex, Cursor), so code inside an allowed command (a test script) cannot reach your keys either. openmoat run does this for any agent." />
+  <LinkCard title="OS sandbox" href="/docs/sandboxes/" description="The same policy configures each agent's own sandbox (Claude Code, Codex, Cursor), so code inside an allowed command (a test script) cannot reach your keys either. openmoat run does this for any agent." />
   <LinkCard title="Audit log" href="/docs/see-what-happened/" description="Every decision in a local SQLite file that detects tampering." />
-  <LinkCard title="Self-protection" href="/docs/blocked/" description="The agent cannot edit the policy, read the audit log, approve itself or switch OpenMoat off. A policy changed behind OpenMoat's back blocks everything until you review it." />
+  <LinkCard title="Self-protection" href="/docs/self-protection/" description="The agent cannot edit the policy, read the audit log, approve itself or switch OpenMoat off. A policy changed behind OpenMoat's back blocks everything until you review it." />
 </CardGrid>
 
 <Aside type="note" title="Deny always wins">

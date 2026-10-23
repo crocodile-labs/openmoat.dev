@@ -14,6 +14,73 @@ Something about OpenMoat itself is not working.
 
 </Aside>
 
+## Messages in the agent
+
+A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`. The reason is the rule's own, from the default policy. Run the fix in your own terminal; agents are denied every one of these commands.
+
+| Message starts with | Means | Run |
+|---|---|---|
+| `moat: deny [secrets-paths] — secret material` | A key, token file, `.env` or a command that prints a stored token | Nothing; to give the agent a token, [`openmoat secret add`](/docs/keep-tokens-safe/) |
+| `moat: deny [build-credentials] — build tool credentials` | `~/.m2/settings.xml` or `~/.gradle/gradle.properties` | Nothing; `mvn` and `gradle` still read them in the sandbox |
+| `moat: deny [env-secrets] — secret environment variable` | A variable named like a secret (`*_TOKEN`, `*_KEY`, `AWS_*`, …) | Nothing; see [.env and variables](/docs/env-files/) |
+| `moat: deny [env-dump] — prints every environment variable, secrets included` | `env`, `printenv`, `export -p`, `/proc/self/environ`, inline code printing the environment | Print the one variable you need, if its name is not a secret's |
+| `moat: deny [env-poison] — changes how later commands resolve or load code` | Setting `PATH`, `LD_PRELOAD`, `NODE_OPTIONS`, `GIT_*`, `MOAT_*` and the like | Set it yourself before you start the agent |
+| `moat: deny [pipe-to-shell] — executes remote or decoded content` | `curl … \| sh`, `base64 -d \| sh`, `eval` | Download the script, read it, run it yourself |
+| `moat: deny [destructive] — irreversible damage` | `git push --force`, `git reset --hard`, `rm -rf ~`, `sudo`, … | Run it yourself if you mean it |
+| `moat: deny [kernel-self] — OpenMoat protects its own policy, hooks and binary` | The agent touched OpenMoat's files or ran a person-only `openmoat` command | Nothing; run the command yourself ([Self-protection](/docs/self-protection/)) |
+| `moat: deny [agent-folders] — renaming or removing this folder moves agent settings OpenMoat protects` | `mv .github …`, `rm -r .github` | Rename it yourself |
+| `moat: deny [shell-rc] — edits persist into every future shell session` | A write to `~/.zshrc`, `~/.bashrc`, `~/.curlrc`, … | Edit the file yourself |
+| `moat: deny [cloud-metadata] — instance metadata and link-local services hand out cloud credentials` | `169.254.169.254`, `metadata.google.internal` | Nothing |
+| `moat: deny [token-egress] — sends a known kind of token to a host that is not its service's` | A GitHub, OpenAI, AWS, … token on its way to another host | Nothing; see [tokens sent to the wrong host](/docs/keep-tokens-safe/#tokens-sent-to-the-wrong-host) |
+| `moat: deny [placeholder-egress] — sends a brokered secret's placeholder to a host the proxy does not put that secret in` | A brokered placeholder sent elsewhere | Nothing |
+| `moat: deny [default.net] — no rule matched net <host>` | A host the policy does not list, for a command that can send data | `openmoat allow --site <host>` ([Network allowlist](/docs/allow-a-site/)) |
+| `moat: deny [push-secret]` | A commit the push would publish adds a token | Remove it from the commits ([GitHub](/docs/github/#what-a-push-would-publish)) |
+| `moat: deny [mcp-server-changed]`, ending in ``a person must review it: run `openmoat mcp accept <server>` in a terminal`` | The server's definition changed or is new | `openmoat mcp accept <server>` ([MCP](/docs/mcp-servers/)) |
+| `moat: deny [kernel-integrity] — … was modified` | A pinned file changed | `openmoat` ([below](#every-call-is-denied-with-kernel-integrity)) |
+| `moat: deny [project-settings]` | A project's `.claude/settings.json` turns hooks off or sets a command | Look at the file ([Something was blocked](/docs/blocked/#project-settings-that-turn-hooks-off)) |
+| `moat: deny [executables]` | The command's program resolves somewhere other than its pin | If you installed it there, `openmoat doctor --accept` |
+| `moat: deny [kernel-error]` | OpenMoat could not decide at all: missing state, unreadable policy, a repository policy that does not parse | `openmoat doctor` |
+| `moat: ask [git-internals] — git runs what its config, hooks and refs name, later and outside any sandbox` | A write into `.git`, `git config`, `git remote` | Approve, or `openmoat allow --last` |
+| `moat: ask [runs-later] — CI, commit hooks, the editor or the agent host run this later, outside any sandbox` | A CI workflow, commit hook, agent hook, skill or MCP setting | Approve, or `openmoat allow --last` |
+| `moat: ask [persistence] — runs again later, outside this session` | `~/Library/LaunchAgents`, `~/.gitconfig`, `crontab`, `at` | Approve, or `openmoat allow --last` |
+| `moat: ask [stops-openmoat]` | `pkill` or `killall` naming `moat` | Approve only if you mean it |
+| `moat: ask [home-sweep] — reads the whole home folder, secrets included` | `grep -r … ~`, `find ~` | Ask the agent to search a narrower folder |
+| `moat: ask [secret-names]`, `[other-home]`, `[opaque-code]` | A secret's file name behind an unknown variable, another user's home, a program OpenMoat cannot read | Approve if it is what you expect |
+| `moat: ask [package-near-miss] — looks like a typo of a popular package's name` | The name is one typo from a popular package | Check the name ([Install and publish](/docs/packages/#a-name-close-to-a-popular-package)) |
+| `moat: ask [docker-secrets] — hands secrets, the SSH agent or the host to a build` | `docker build --secret`, `--ssh`, `--network`, … | Approve if the build needs it |
+| `moat: ask [session-taint]` | The session read a secret or untrusted content earlier | [Session taint](/docs/session-taint/) |
+| `moat: ask [push-runs-later]`, `[push-unchecked]` | A tainted session's push changes a CI or hook file; a push OpenMoat could not check in 10 s | Push from your own terminal |
+| `moat: ask [unchecked]`, `[unparseable]` | OpenMoat sees only part of the call, or cannot read part of it | Approve if it is what you expect |
+| A deny whose message says to run `openmoat allow --last` | An ask on an agent that cannot show one (Codex, Claude Code in `bypassPermissions`, …) | `openmoat allow --last`, then ask the agent to retry |
+| `no decision within 30 s` | OpenMoat could not decide in time | Retry ([below](#a-call-is-denied-with-no-decision-within-30-s)) |
+
+## Messages from openmoat
+
+Errors from `openmoat` itself start with `moat:`.
+
+| Message | Means | Run |
+|---|---|---|
+| ``moat: `openmoat allow` must be run by a person in a terminal, not from a hook or script`` (the same for `edit`, `trust`, `uninstall`, `secret add`, `sandbox sync`, `doctor --accept`, `audit anchor`, `mcp …`, `proxy uninstall`) | There is no terminal: a script, a hook or an agent's shell ran it | Run it in a terminal of your own |
+| ``moat: `openmoat allow` must be run by a person, not by an agent: it was started from `<agent>`. Run it in a terminal of your own`` | An agent is among the programs that started it, a terminal wrapper included | Run it in a terminal of your own, not one inside the agent or the Cursor editor |
+| `moat: refusing to <do this> while the policy lock shows drift (kernel-integrity):` | A pinned file changed; OpenMoat changes nothing over it | `openmoat doctor`, then `openmoat doctor --accept` |
+| ``<agent>  hook missing; run `openmoat init` `` (`openmoat doctor`), ``✗ hook missing (run `openmoat init`)`` (`openmoat status`) | The agent's hook is not installed | `openmoat init` |
+| ``hook entry for … is out of date (written by an older OpenMoat); run `openmoat init` `` | The hook was written by an earlier release | `openmoat init`, then restart the agent |
+| ``differs from the policy; run `openmoat sandbox sync` `` | The agent's sandbox settings do not match the policy | `openmoat sandbox sync`, then a new agent session |
+| `Codex … open Codex and trust OpenMoat's hook in /hooks; Codex runs a changed hook only then` | Codex has the hook but does not run it yet | Open `/hooks` in Codex and trust OpenMoat's |
+| ``mcp servers      ✗ …; `openmoat mcp accept` shows it and asks`` | An MCP server changed or is new | `openmoat mcp accept <server>` |
+| `not signed by a trusted key: tightening only, allow rules ignored (…)` | `require_signed_repo_policy: true`, and the repository policy has no signature by a key you trusted | [below](#a-repositorys-allow-rules-stopped-applying-after-openmoat-trust) |
+| `the edited policy does not lint:` | `openmoat edit` found an error; nothing was written | `y` at `Edit again? [y/N]` |
+| `duplicate rule id …`, `rule … has no patterns`, `bad glob …`, `bad shell pattern … (unbalanced quotes?)`, `unsupported policy version …` | `openmoat policy lint` found an error | Fix the rule it names ([The policy file](/docs/policy-file/)) |
+| `moat proxy: … (proxy-port)` | An allowed host on a port no rule names | Add `host:port` ([below](#a-connection-to-a-port-other-than-443-or-80-is-refused)) |
+| `moat proxy: … the proxy cannot ask, so a host the hook would ask for or leave to the agent is refused (…)` | A host the policy does not allow | `openmoat allow --site <host>` |
+| `moat proxy: … is a cloud metadata service (proxy-address)` | Refused whatever the policy says | Nothing |
+| ``moat: `openmoat run` needs macOS 13 or later; this Mac has macOS …, whose `sandbox-exec` cannot read the sandbox profile. The agent was not started.`` | macOS 12 or earlier | Start the agent without `openmoat run`; the hooks still apply |
+| ``moat: `openmoat run` needs an operating-system sandbox OpenMoat can generate (Seatbelt on macOS, Landlock on Linux); there is none on windows.`` | Windows | Use WSL2, or the agent's own sandbox |
+| ``moat: `openmoat run` confines the agent to a project: start it in the project, not in your home directory, one of its ancestors or a filesystem root`` | Started in `~` or `/` | Start it in the project folder |
+| ``moat: `openmoat run --netns=require`: the agent cannot get a network of its own here, so it does not start.`` | Linux without a usable bubblewrap | Install bubblewrap and allow unprivileged user namespaces |
+| ``moat: bubblewrap cannot create its namespaces here, so `openmoat run --isolate` refuses: …`` | Linux, `--isolate`, no user namespaces (Ubuntu 24.04 AppArmor, for one) | Allow unprivileged user namespaces for `bwrap` |
+| ``moat: `openmoat run --isolate` runs on Linux only (bubblewrap); there is no Isolated tier on …`` | `--isolate` on Windows (on macOS it refuses and names what is missing) | Use plain `openmoat run` |
+
 ## Every call is denied with `kernel-integrity`
 
 ```text

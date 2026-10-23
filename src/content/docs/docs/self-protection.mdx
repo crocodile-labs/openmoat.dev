@@ -1,0 +1,68 @@
+---
+title: "Self-protection and the policy lock"
+description: "The agent cannot edit the policy, approve its own blocked call, read the audit log or switch OpenMoat off, and a pinned file changed behind OpenMoat's back blocks every call until you look."
+sidebar:
+  label: "Self-protection and lock"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Protects against** an agent, or a prompt injection steering it, turning OpenMoat off or loosening it: editing the policy or a hook, approving its own blocked call, reading the audit log, stopping the proxy.
+
+## What it does
+
+- **`kernel-self` (deny).** The agent may not write `~/.moat`, any `.moat/` folder, the agents' hook and settings files, or the `openmoat` binary, and may not read OpenMoat's state beside the policy: `audit.db`, `policy.lock`, `hosts.json`, `approvals.json`, `trust.json`, `allowed_signers` and `mcp/`. `~/.moat/policy.yaml` stays readable, so the agent can explain a deny. The commands that change what agents may do are denied to it too, by either name (`openmoat`, `moat`), by absolute path, through a link, and under terminal wrappers (`script`, `expect`, `unbuffer`, `tmux`, `screen`, `osascript`, Python's `pty.spawn`).
+- **Person-only commands.** Those commands also refuse to run when an agent started them, even through a terminal wrapper, and read your answer from the terminal itself, not from their input.
+- **The policy lock (`kernel-integrity`).** `openmoat init` records the SHA-256 of the policy, every hook file it installed and the agents' settings in `~/.moat/policy.lock`. Every call checks them; a pinned file changed, removed or replaced by a symlink without a person accepting it denies every call until you re-pin.
+- **Pinned programs (`executables`).** `openmoat init` records where common programs (`git`, `npm`, `node`, `python3`, `cargo`, `curl`, `ssh`, `sudo`, …) resolve. A command whose program now resolves elsewhere (a `git` planted in `node_modules/.bin`) is denied.
+- **It fails closed.** If its own check errors or hangs, OpenMoat blocks the call (`kernel-error`, or `no decision within 30 s`).
+
+## Example
+
+| The agent runs | Verdict | Rule |
+|---|---|---|
+| `openmoat allow --last` | deny | `kernel-self` |
+| `cat ~/.moat/audit.db`, `sqlite3 -readonly ~/.moat/audit.db` | deny | `kernel-self` |
+| `echo x >> ~/.moat/policy.yaml` | deny | `kernel-self` |
+| `systemctl --user stop moat-proxy` | deny | `kernel-self` |
+| `pkill -f 'openmoat proxy'` | ask | `stops-openmoat` |
+
+When anything edits a pinned file behind OpenMoat's back, every call gets:
+
+```text
+moat: deny [kernel-integrity] — /Users/you/.moat/policy.yaml was modified;
+      run `openmoat doctor` to inspect; `openmoat doctor --accept` or `openmoat init` to re-pin
+```
+
+`openmoat doctor` lists what drifted. If it was not you, you caught what this exists for: look before you accept.
+
+A person-only command started by an agent refuses before it does anything:
+
+```text
+moat: `openmoat allow` must be run by a person, not by an agent: it was started from `<agent>`. Run it in a terminal of your own
+```
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat` | Shows a changed pinned file first, with `Accept these changes? [y/N]` | `openmoat` |
+| `openmoat doctor` | What drifted, and every other check of the installation | `openmoat doctor` |
+| `openmoat doctor --accept` | Accept the current files and re-pin. Terminal only | `openmoat doctor --accept` |
+| `openmoat init` | Re-pin, keeping the hook files already in the lock | `openmoat init` |
+| `openmoat status` | Each agent's protection level, and pinned files that changed | `openmoat status --format json` |
+
+Commands that only a person in a terminal may run (refused without a terminal, refused when an agent started them, and denied to agents by `kernel-self`): `openmoat` (its questions), `openmoat init` over an existing lock, `uninstall`, `allow`, `edit`, `secret add`, `trust`, `doctor --accept`, `doctor --bundle`, `sandbox sync`, `policy upgrade` (except `--dry-run`), `policy install`, `policy trust-key`, `policy remove`, `mcp accept`, `mcp wrap`, `mcp unwrap`, `audit anchor`, `proxy install` and `proxy uninstall`. The full list: [Commands](/docs/commands/).
+
+## Settings
+
+Self-protection has no switch. `executables:` adds pins of your own ([Shell command checks](/docs/shell-commands/#settings)). After installing a tool in a new place, run `openmoat init` or `openmoat doctor --accept` so the snapshot follows it.
+
+## Limits
+
+- **The lock is a list of digests, with no key.** A program that runs as you outside any sandbox can change the policy and write new digests. Only an OS sandbox stops that, so hook-only agents (OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, and Claude Code and Cursor on native Windows) do not have this protection.
+- **Agent settings can turn hooks off** (`disableAllHooks`, `[features] hooks = false`, pi's `--no-extensions`), and a repository's `.claude/settings.json` is loaded at session start, before any hook runs ([Keep Claude Code's hooks on for everyone](/docs/team-rules/#keep-claude-codes-hooks-on-for-everyone)).
+- **Some agents run a call when the hook fails**: Codex, and Claude Code before 2.1.295, if `openmoat` is missing or crashes.
+- **A root user or a replaced `openmoat` binary** is out of scope.
+
+[What the lock is not](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#what-the-lock-is-not). More in [Limits](/docs/limits/).

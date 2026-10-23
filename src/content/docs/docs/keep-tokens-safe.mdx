@@ -1,8 +1,8 @@
 ---
-title: "Keep a token from the agent"
+title: "Token broker"
 description: "The agent holds a placeholder; the real token goes only to the one host it belongs to. Here is exactly what the agent can and cannot see."
 sidebar:
-  label: "Keep a token from the agent"
+  label: "Token broker"
   order: 5
 ---
 
@@ -15,9 +15,15 @@ Your agent needs an API token (GitHub, Stripe, an internal API) and you do not w
 
 </Aside>
 
+**Protects against** the agent reading, printing or leaking an API token it needs to use.
+
+## What it does
+
 An agent that can read a token can send it anywhere a prompt injection tells it to. A **brokered secret** stays with OpenMoat: programs the agent runs hold a placeholder such as `moat-secret:gh:placeholder`, and the real value is put into requests to one host only.
 
-## GitHub in one command
+## Example
+
+### GitHub in one command
 
 <Steps>
 
@@ -44,7 +50,7 @@ An agent that can read a token can send it anywhere a prompt injection tells it 
 
 </Steps>
 
-## Can the agent read the token?
+### Can the agent read the token?
 
 | The agent tries | With `openmoat secret add gh` |
 |---|---|
@@ -135,3 +141,36 @@ A `plain_http: true` secret goes only to port 80 of its host, or to the port its
 `openmoat secret list` shows each brokered secret's host, header and source (never the value), and whether a deny rule covers that source. A `keychain` source, set with `openmoat edit` ([POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#21-brokered-secrets-secrets)), works through `openmoat proxy` only, on macOS and Linux.
 
 <Impact opens={["Programs the agent runs can call the API with your token"]} keeps={["The agent itself never holds the value, and cannot print or read it", "A request carrying the placeholder or the value to any other host is refused", "Its source is denied too: `openmoat secret add` adds the rule when none covers it"]} think={["The API host can still be told to do anything the token allows: give the token the smallest scope that works"]} />
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat secret add gh` | Broker `GITHUB_TOKEN` for `api.github.com`; shows the diff and asks. Terminal only | `openmoat secret add gh` |
+| `openmoat secret add <id> --host <host> (--env <NAME> \| --file <path>) [--header <name>]` | Broker another token for one host | `openmoat secret add stripe --host api.stripe.com --env STRIPE_API_KEY` |
+| `openmoat secret list [--format json]` | Each secret's host, header and source, never the value, and whether a deny rule covers the source | `openmoat secret list` |
+| `openmoat proxy` | Prints each secret's id, host, header and placeholder at start, and injects plain-HTTP secrets | `openmoat proxy` |
+| `openmoat sandbox show` | What Claude Code's broker does with each secret | `openmoat sandbox show` |
+
+## Settings
+
+`openmoat secret add gh` adds exactly this entry:
+
+```yaml
+secrets:
+  - id: gh                          # lowercase letters, digits, `-`; unique
+    host: api.github.com            # one host, exact: lowercase DNS name or IPv4, no pattern or port
+    header: Authorization           # the request header the value goes in
+    source: { env: GITHUB_TOKEN }   # or { file: ~/.config/moat/gh } or { keychain: { service: moat, account: gh } }
+    plain_http: false               # optional; true also injects into plain-HTTP (clear-text) requests
+```
+
+A secret opens no host: its host still needs a `net` or `fetch` allow rule. `openmoat policy lint` warns when none names it, and when no deny rule covers the source. The rest: [POLICY.md §2.1](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#21-brokered-secrets-secrets).
+
+## Limits
+
+- **HTTPS injection works through Claude Code's own sandbox broker only.** Through `openmoat proxy` (Codex, Cursor, `openmoat run`) a request over HTTPS keeps the placeholder, and the server rejects it ([above](#where-it-works-today)).
+- **`token-egress` sees only prefixed token formats where the hook sees them**: not a token in an uploaded file, a here-document, a variable not on the command line, or an encoded or split token.
+- **A variable you export before starting the agent** is still passed to the programs it runs, unless it is brokered under `openmoat run`.
+
+More in [Limits](/docs/limits/).

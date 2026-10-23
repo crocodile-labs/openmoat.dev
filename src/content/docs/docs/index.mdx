@@ -6,43 +6,139 @@ sidebar:
   order: 0
 ---
 
-import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { Aside, CardGrid, LinkCard, Steps, TabItem, Tabs } from '@astrojs/starlight/components';
 
 OpenMoat runs on your machine, next to Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi or Gemini CLI. Before the agent runs a command, reads or writes a file, opens a web page or calls an MCP tool, OpenMoat checks it against one policy that you control. Normal work goes on as before; reading your keys, sending them out, destructive commands and switching OpenMoat off are blocked.
 
-## Start here
+## How it works
+
+```text
+agent wants to run a tool call
+  │
+  ▼
+the agent's hook ──► openmoat guard ──► policy lock check ──► policy
+                                                                │
+          ┌─────────────────┬──────────────────┬────────────────┤
+          ▼                 ▼                  ▼                ▼
+        allow             defer               ask              deny
+     the call runs   the agent's own    you decide, with   blocked, with the
+                     prompt decides     the reason shown   rule and the reason
+          │                 │                  │                │
+          └─────────────────┴────────┬─────────┴────────────────┘
+                                     ▼
+                       audit log (local, hash-chained)
+```
+
+The same policy is written into the agents' own OS sandboxes (Claude Code, Codex, Cursor), so code inside an allowed command cannot reach your keys either; `openmoat run` does this for any agent. More in [How it decides](/docs/how-it-decides/).
+
+## Quick start
+
+<Steps>
+
+1. **Install**
+
+   <Tabs>
+   <TabItem label="Homebrew">
+
+   ```bash
+   brew install crocodile-labs/tap/openmoat
+   ```
+
+   </TabItem>
+   <TabItem label="Shell installer">
+
+   ```bash
+   curl --proto '=https' --tlsv1.2 -LsSf https://github.com/crocodile-labs/openmoat/releases/latest/download/openmoat-installer.sh | sh
+   ```
+
+   </TabItem>
+   <TabItem label="PowerShell">
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -c "irm https://github.com/crocodile-labs/openmoat/releases/latest/download/openmoat-installer.ps1 | iex"
+   ```
+
+   </TabItem>
+   <TabItem label="Cargo">
+
+   ```bash
+   cargo install openmoat --locked
+   ```
+
+   </TabItem>
+   </Tabs>
+
+2. **Set it up for your agents**
+
+   ```bash
+   openmoat init
+   ```
+
+   It writes the default policy to `~/.moat/policy.yaml`, lists the agents it finds and asks before it sets up each one. Then start your agent in a new session.
+
+3. **See a verdict**
+
+   ```bash
+   openmoat policy check "cat ~/.ssh/id_rsa"
+   ```
+
+   ```text
+   ⛔ deny
+      rules : secrets-paths
+      reason: secret material: read /Users/you/.ssh/id_rsa
+      also  : shell "cat ~/.ssh/id_rsa"
+   ```
+
+</Steps>
+
+Every step, and what to expect from each agent: [Quick start](/docs/quickstart/).
+
+## Features
 
 <CardGrid>
-  <LinkCard title="Quick start" href="/docs/quickstart/" description="Install, set it up for your agents and see your first block, in about a minute." />
-  <LinkCard title="Supported agents" href="/docs/agents/" description="How well each agent is protected, where you answer its questions, and what it does not cover." />
-  <LinkCard title="How it decides" href="/docs/how-it-decides/" description="The four answers (allow, defer, ask, deny) and the layers behind them." />
+  <LinkCard title="Shell command checks" href="/docs/shell-commands/" description="Parses variables, globs, base64 and nested commands; stops curl | sh, git push --force and rm -rf ~." />
+  <LinkCard title="Secrets and .env files" href="/docs/env-files/" description="Denies reading ~/.ssh, cloud credentials, .env files and secret variables such as $GITHUB_TOKEN." />
+  <LinkCard title="Network allowlist" href="/docs/allow-a-site/" description="Stops a command sending data to a host the policy does not list; openmoat allow --site adds one." />
+  <LinkCard title="Token broker" href="/docs/keep-tokens-safe/" description="The agent holds a placeholder; the token goes to one host only, and never to another." />
+  <LinkCard title="MCP pinning and the MCP proxy" href="/docs/mcp-servers/" description="Holds a new or changed MCP server, or tool description, until you accept it." />
+  <LinkCard title="OS sandboxes and openmoat run" href="/docs/sandboxes/" description="Stops a test or install script reading your keys or writing outside the project." />
+  <LinkCard title="Egress proxy" href="/docs/egress-proxy/" description="Refuses unlisted hosts, cloud metadata and private addresses for sandboxed commands." />
+  <LinkCard title="Self-protection and the policy lock" href="/docs/self-protection/" description="Stops the agent editing the policy, approving itself or switching OpenMoat off." />
+  <LinkCard title="Session taint" href="/docs/session-taint/" description="After a web page or MCP result, writes to CI, build and agent files ask." />
+  <LinkCard title="Audit log" href="/docs/see-what-happened/" description="Every decision in a local, hash-chained log: openmoat show, replay and report." />
+  <LinkCard title="Team rules and signed policy packs" href="/docs/team-rules/" description="A repository's rules for everyone in it, and signed packs for every project." />
+</CardGrid>
+
+## Policy
+
+<CardGrid>
+  <LinkCard title="The policy file" href="/docs/policy-file/" description="Where it lives, how a rule is written, the four verdicts and how a repository's rules combine with yours." />
+  <LinkCard title="Change the rules" href="/docs/change-the-rules/" description="openmoat edit: linted, diffed, confirmed and undoable; openmoat policy upgrade." />
+</CardGrid>
+
+## Guides
+
+<CardGrid>
   <LinkCard title="Something was blocked" href="/docs/blocked/" description="What each message means and the one command that fixes it." />
-  <LinkCard title="Commands" href="/docs/commands/" description="Every openmoat command on one page." />
-</CardGrid>
-
-## Everyday use
-
-Each guide starts from a situation you will meet, shows what you see, and gives one command for it.
-
-<CardGrid>
-  <LinkCard title="Work across several repos" href="/docs/work-across-repos/" description="Let the agent read and edit folders outside the project with openmoat allow --dir." />
-  <LinkCard title="Let the agent use a site" href="/docs/allow-a-site/" description="Docs, an API or a registry the policy does not list yet: openmoat allow --site." />
-  <LinkCard title="Keep a token from the agent" href="/docs/keep-tokens-safe/" description="The agent holds a placeholder; OpenMoat sends the real token to one host only." />
-  <LinkCard title="See what the agent did" href="/docs/see-what-happened/" description="Today's decisions, one session as a timeline, a weekly report." />
   <LinkCard title="Check a command first" href="/docs/check-a-command/" description="The verdict for any command, without running it." />
-  <LinkCard title="Change the rules" href="/docs/change-the-rules/" description="Edit the policy safely: checked, diffed, and undoable." />
-</CardGrid>
-
-## Common setups
-
-<CardGrid>
+  <LinkCard title="Work across several repos" href="/docs/work-across-repos/" description="Let the agent read and edit folders outside the project with openmoat allow --dir." />
   <LinkCard title="The project folder" href="/docs/the-project/" description="What the agent may do freely, and how monorepos, worktrees and submodules count." />
-  <LinkCard title=".env and variables" href="/docs/env-files/" description="Which secrets in files and variables are denied, and how to add your own." />
   <LinkCard title="GitHub and gh" href="/docs/github/" description="Commits, pushes, pull requests and the gh token." />
-  <LinkCard title="MCP servers" href="/docs/mcp-servers/" description="A changed or new MCP server, or tool, waits until you accept it." />
   <LinkCard title="Local services" href="/docs/local-services/" description="Dev servers, databases and Docker." />
   <LinkCard title="Cloud CLIs and SSH" href="/docs/cloud-clis/" description="Why aws, kubectl and ssh cannot use your credentials from the agent." />
   <LinkCard title="Install and publish" href="/docs/packages/" description="Installs, install scripts and publishing." />
+  <LinkCard title="Auto-approve and CI" href="/docs/auto-approve-and-ci/" description="What still stops a call when nobody is asked." />
+  <LinkCard title="Upgrade" href="/docs/upgrade/" description="The steps after each new release." />
+  <LinkCard title="Turn it off" href="/docs/turn-off/" description="Take OpenMoat out of one agent or all of them." />
+</CardGrid>
+
+## Reference
+
+<CardGrid>
+  <LinkCard title="Commands" href="/docs/commands/" description="Every openmoat command, grouped by purpose, with an example." />
+  <LinkCard title="Every allow and what it opens" href="/docs/allow-reference/" description="What each openmoat allow covers, how long it lasts and what stays protected." />
+  <LinkCard title="Troubleshooting" href="/docs/troubleshooting/" description="Each message, what it means and the command that fixes it." />
+  <LinkCard title="Limits" href="/docs/limits/" description="What OpenMoat does not stop." />
 </CardGrid>
 
 <Aside type="tip" title="Before you allow anything">

@@ -1,0 +1,66 @@
+---
+title: "Session taint"
+description: "What a session read earlier makes its later calls stricter: after a secret, network and MCP calls ask; after web or MCP content, writes to CI, build and agent files ask."
+sidebar:
+  label: "Session taint"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Protects against** a session that read a secret sending it out, and a session that read a web page or an MCP result (where a prompt injection lives) planting what it read in files that run later.
+
+## What it does
+
+A call can be decided more strictly because of what the same agent session did before. Taint only adds asks, with rule `session-taint`: an allowed call becomes an ask, and a deny stays a deny.
+
+| Once the session has read | These calls ask |
+|---|---|
+| A secret (only when your policy lets secret reads run; the default denies them) | Network to any host but the secret's own, every MCP call, web search and unmapped tool |
+| Untrusted content: a web page, a web search, a `curl -q` download, an MCP tool's result | Writes to CI workflows, git hooks, build files (`package.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, `Dockerfile`, …) and agent instructions and settings (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json`, …) |
+
+Taint follows files too. When a tainted session writes a file, the audit log records it; a later session that reads or runs that file (`cat`, `source run.sh`, `./run.sh`, `python x.py`) is tainted as well.
+
+A push from a tainted session that changes a file `runs-later` names asks (`push-runs-later`). Under `openmoat run`, the run's proxy cannot ask, so after a secret read it refuses requests to every other host, registries included; a new run starts clean.
+
+## Example
+
+In a clean session, an edit of `package.json` in the project is allowed (`project-fs`). After the same session fetched a web page, the same edit asks:
+
+```text
+moat: ask [session-taint] — …
+```
+
+When the taint came from a file, the reason names it and the session that wrote it:
+
+```text
+read /p/run.sh, which session a wrote after it read untrusted content (fetch crates.io)
+```
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat allow --last` | Grant that one file until the session reads untrusted content again. A secret's ask is never answered this way | `openmoat allow --last` |
+| `openmoat replay --session <id>` | The session as a timeline: which read tainted it | `openmoat replay --session 4f2a…` |
+| `openmoat show --session <id>` | Every event of that session | `openmoat show --session 4f2a…` |
+
+At the `openmoat allow --last` question, `s` instead of `y` approves every protected write of the session, until it reads untrusted content again.
+
+## Settings
+
+```yaml
+taint:
+  protected_writes: ["**/deploy/**"]   # more paths a tainted session must ask to write
+  provenance: true                     # default; false stops following written files
+```
+
+`protected_writes` only extends the built-in list; `openmoat policy lint` rejects a `!` exclusion. The built-in list is in [POLICY.md §4.1](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#41-session-taint).
+
+## Limits
+
+- **Taint is per session.** A new session starts clean, except for the files a tainted session wrote.
+- **Not followed:** a file copied or renamed, files a build or script writes, and files a search tool (`Grep`, `Glob`) reads.
+- **Shell network to an allowed host** (`git fetch`, `gh pr view`) is not untrusted content.
+- **Codex turns an ask into a deny**, so under Codex an ask never taints; the standalone `openmoat proxy` has no sessions, so taint does not apply there.
+
+More in [How it decides](/docs/how-it-decides/#what-the-session-read-earlier) and [Limits](/docs/limits/).

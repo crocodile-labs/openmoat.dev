@@ -58,6 +58,28 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
 
    Lines you changed are never touched.
 
+3. **Check the installation**
+
+   ```bash
+   openmoat --version    # prints (OpenMoat) after the version number
+   openmoat status       # each agent: hook + OS sandbox, hook only, or not protected
+   openmoat doctor       # drift, out-of-date hooks and sandboxes, and what to run for each
+   ```
+
+   A hook written by an older release shows as ``hook entry for … is out of date (written by an older OpenMoat); run `openmoat init` ``: run `openmoat init`. The version notes below say when a release needs it.
+
+4. **Bring the sandboxes up to date**
+
+   ```bash
+   openmoat sandbox sync
+   ```
+
+   It rewrites the agents' sandbox settings from the current policy and re-pins them. `openmoat status` shows ``differs from the policy; run `openmoat sandbox sync` `` until you do.
+
+5. **Restart your agents**
+
+   An agent keeps the hook and sandbox it read when its session started. Start a new session; restart OpenClaw's Gateway and pi. After `openmoat init` rewrote Codex's hook entry, trust it again in Codex's `/hooks`.
+
 </Steps>
 
 ## Upgrading from 0.7 or earlier

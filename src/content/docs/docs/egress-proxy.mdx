@@ -1,0 +1,82 @@
+---
+title: "Egress proxy"
+description: "openmoat proxy: a default-deny proxy that lets sandboxed commands reach only the hosts the policy allows, refuses metadata and private addresses, and records every connection."
+sidebar:
+  label: "Egress proxy"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Protects against** a command sending data to a host the policy does not allow, reaching a cloud metadata service or a machine on your network, or carrying a brokered secret to the wrong host.
+
+## What it does
+
+`openmoat proxy` is an HTTP proxy on a loopback port. It decides each connection's host with the same policy as a fetch tool's URL (`net` and `fetch` rules, deny first), records every connection in the audit log, and puts brokered secrets into the plain-HTTP requests that may carry them. `openmoat run` starts one for each run; for the agents' own sandboxes it is opt-in, with `sandbox.proxy_port`.
+
+Where it differs from the hook:
+
+- **It cannot ask.** Only an allow lets a connection through: a host the hook would ask about, or leave to your agent's prompt, is refused. Open a host with `openmoat allow --site <host>`.
+- **Ports count.** A host allowed without a port is reached on 443 and 80 only; a rule `host:port` opens another port (`proxy-port`).
+- **Loopback, link-local, cloud metadata** (`169.254.169.254`, `metadata.google.internal`, …) and non-unicast destinations are refused whatever the policy allows, by the name and by every address it resolves to (`proxy-address`).
+- **Private addresses** (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, `fc00::/7`, …) are refused unless a rule names the address: `10.0.0.5`, or a glob that starts with a digit (`192.168.1.*`). There is no CIDR syntax.
+- **Encrypted server names** (ECH, ESNI) are refused (`proxy-sni`), so an allowed host on the same provider cannot front for another site that way.
+- **A brokered secret going to another host** is refused when the request carries its placeholder or its value (`proxy-secret`).
+- **Under `openmoat run`**, every request carries the run's credential (without it, `407`), and once a session of the run has read a secret, requests to any other host are refused (`session-taint`).
+
+## Example
+
+A project script, started as `npm test`, under `openmoat run` or an agent's sandbox:
+
+```bash
+curl -fsS -o /dev/null -m 30 http://evil.example/
+```
+
+The proxy answers `403 Forbidden`, in every layer CI checks ([EVIDENCE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/EVIDENCE.md)). The body names the reason and the rule:
+
+```text
+moat proxy: … the proxy cannot ask, so a host the hook would ask for or leave to the agent is refused (…)
+```
+
+An allowed host on another port:
+
+```text
+moat proxy: example.com is allowed on ports 443 and 80 only, not 8443; a `net` rule `example.com:8443` allows this port (proxy-port)
+```
+
+Every refusal is a row in the audit log: `openmoat show --since today`.
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat proxy [--listen 127.0.0.1:<port>]` | Run the proxy in this terminal. Without `--listen`: `127.0.0.1` and `sandbox.proxy_port`, else `127.0.0.1:18080` | `openmoat proxy` |
+| `openmoat proxy install` | Run it as a user service that starts at login and restarts on failure: a launchd agent (`~/Library/LaunchAgents/dev.openmoat.proxy.plist`) or a systemd user unit (`~/.config/systemd/user/moat-proxy.service`). Terminal only | `openmoat proxy install` |
+| `openmoat proxy status [--format json]` | `not installed`, `stopped`, `running`, `drift-blocked` or `crashlooping`; exits 64 for any state but running or not installed | `openmoat proxy status` |
+| `openmoat proxy uninstall` | Stop and remove the service. Terminal only | `openmoat proxy uninstall` |
+| `openmoat sandbox sync` | Point the agents' sandboxes at the proxy after you set `sandbox.proxy_port`; restarts the service so it reads the new policy | `openmoat sandbox sync` |
+
+The agent cannot stop the service: `systemctl --user stop moat-proxy`, `launchctl bootout …/dev.openmoat.proxy` and the like are denied (`kernel-self`), and `pkill` or `killall` naming `moat` asks (`stops-openmoat`).
+
+## Settings
+
+Send the agents' sandboxed commands through the proxy, and open one port of one host:
+
+```yaml
+sandbox:
+  proxy_port: 18080
+allow:
+  - id: example-8443
+    reason: the staging API listens on 8443
+    net: ["example.com", "example.com:8443"]
+```
+
+Keep the bare host in the rule: the hook decides by host alone, and a `host:port` pattern matches nothing there. With `proxy_port` set, keep the proxy running (`openmoat proxy install`): while it is stopped, Claude Code's sandboxed commands have no network, and `openmoat doctor` and `openmoat status` warn. Codex passes its traffic on to the proxy only when started with `HTTP_PROXY` and `HTTPS_PROXY` set to `http://127.0.0.1:18080`, and its API hosts then need an allow rule. `sandbox.proxy_allow_ech: true` lets encrypted server names through; `openmoat policy lint` warns about it.
+
+## Limits
+
+- **It checks the host, not what is sent inside HTTPS.** An allowed host can receive whatever a command sends it, and the proxy does not see the HTTP `Host` header inside the tunnel.
+- **Brokered secrets go into plain-HTTP requests only.** HTTPS is not decrypted, so a request there keeps the placeholder ([Token broker](/docs/keep-tokens-safe/#where-it-works-today)).
+- **The standalone `openmoat proxy` takes no credential:** any local process may use it, and session taint does not apply there. `openmoat run`'s own proxy serves only its run.
+- **No user service on Windows yet:** `openmoat proxy install` and `status` refuse; run `openmoat proxy` in a terminal.
+
+More in [Limits](/docs/limits/).

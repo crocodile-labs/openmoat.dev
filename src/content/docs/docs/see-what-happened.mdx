@@ -1,8 +1,8 @@
 ---
-title: "See what the agent did"
+title: "Audit log"
 description: "Every decision is in a local log. Read it as a one-line summary, a session timeline or a weekly report."
 sidebar:
-  label: "See what the agent did"
+  label: "Audit log"
   order: 9
 ---
 
@@ -14,7 +14,15 @@ You want to know what an agent ran, what was blocked, or whether OpenMoat is get
 
 </Aside>
 
-## Today at a glance
+**Protects against** not knowing what an agent did, and a record of it being changed afterwards without anyone noticing.
+
+## What it does
+
+Every decision (allow, defer, ask, deny), every connection `openmoat proxy` decides and every tool call through `openmoat mcp proxy` goes into a local SQLite file in `~/.moat`, each event hash-chained to the one before. Credentials are redacted before anything is stored. The agent can neither read nor change it (`kernel-self`).
+
+## Example
+
+### Today at a glance
 
 ```bash
 openmoat
@@ -90,3 +98,30 @@ An anchor holds the newest event's id, its hash and the time. Nothing is pushed 
 The log is a SQLite file in `~/.moat`. Credentials are redacted before anything is stored, and nothing leaves your machine unless you export or anchor it somewhere that does. The agent's own reads and writes of the log file are denied (`kernel-self`).
 
 </Aside>
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat` | One line of today's decisions, then anything that needs you | `openmoat` |
+| `openmoat show [id] [--session <id>] [--since <when>] [--recent N]` | Recent events, one session, or one event in full | `openmoat show --since today` |
+| `openmoat replay [--since <when>] [--session <id>]` | Each agent session as a tree of calls, verdicts and rules | `openmoat replay --since today` |
+| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts reached, top rules, asks per active hour | `openmoat report --since 7d` |
+| `openmoat audit export [--since …] [--host …] [--session …]` | Events as JSON Lines, with their chain hashes | `openmoat audit export --since 7d > week.jsonl` |
+| `openmoat audit verify <file> [--anchor <hash>] [--require-anchor]` | Check an export without the database | `openmoat audit verify week.jsonl` |
+| `openmoat audit verify --against <repo or file>` | Check the log against every anchor recorded there | `openmoat audit verify --against ~/notes` |
+| `openmoat audit anchor --git <repo>` · `--file <path>` | Record the log's head outside it. Terminal only | `openmoat audit anchor --git ~/notes` |
+| `openmoat audit report <file>…` | One report over verified exports from several machines | `openmoat audit report alice.jsonl bob.jsonl` |
+
+`--since` takes `all`, `today`, `yesterday`, `12h`, `7d`, `2w` or a date (`2026-10-15`, UTC). Most commands take `--format json`.
+
+## Settings
+
+None: every decision is recorded. Where you keep anchors is up to you ([above](#keep-a-record-outside-the-log)).
+
+## Limits
+
+- **Tamper-evident, not tamper-proof.** Whoever can write the log file can delete its newest events and leave a log that still checks out; `openmoat audit verify --against` catches that only up to your last anchor.
+- **Only what the hooks and the proxy see is recorded.** A call a hook never reports (Codex web search, hosted tools) is not in the log.
+
+More in [Limits](/docs/limits/).

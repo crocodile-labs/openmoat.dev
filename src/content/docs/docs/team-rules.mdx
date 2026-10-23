@@ -1,8 +1,8 @@
 ---
-title: "Share rules with your team"
+title: "Team rules and signed policy packs"
 description: "Commit rules to a repository so everyone who works there, with any agent, gets them, or install a signed policy pack for every project."
 sidebar:
-  label: "Share rules with your team"
+  label: "Team rules and packs"
   order: 1
 ---
 
@@ -13,6 +13,14 @@ import { Aside, Steps } from '@astrojs/starlight/components';
 Your team wants the same guard rails in a repository or in every project, or a repository needs an allow everyone shares.
 
 </Aside>
+
+**Protects against** each person's agent following different rules in the same codebase, and a repository, a pull request or a tampered pack loosening your own policy.
+
+## What it does
+
+A repository's committed `.moat/policy.yaml` adds `deny` and `ask` rules for everyone who works in it, whatever agent they use; its `allow` rules apply only for a person who trusted that exact file, or where a key they trusted signed it. A signed policy pack carries a team's rules into every project. Neither can weaken your own deny rules. How the two combine with your policy: [The policy file](/docs/policy-file/#how-your-policy-and-a-repositorys-combine).
+
+## Example: a repository policy
 
 <Steps>
 
@@ -54,6 +62,20 @@ Your team wants the same guard rails in a repository or in every project, or a r
 Any later change to the file drops it back to deny and ask only, until you trust it again. A file that does not parse denies every call in the project until it is fixed. Repository rules apply in the hook, not in the agents' OS sandboxes. Under `openmoat run`, the proxy also refuses the hosts a repository policy denies.
 
 </Aside>
+
+### Review a change to it
+
+A pull request that edits `.moat/policy.yaml` drops the file back to deny and ask only, for everyone who trusted it, until each trusts it again. To review it:
+
+```bash
+git diff origin/main -- .moat/policy.yaml   # what the change adds
+openmoat status                             # in the project: whether its allow rules apply
+openmoat trust                              # shows the file, its digest and every rule it adds, then asks
+```
+
+`openmoat trust` asks `Trust this file? [y/N]` before it trusts anything; `openmoat allowed` lists the repositories you trusted, and `openmoat trust --revoke` takes it back. Under `require_signed_repo_policy: true` (below), `openmoat status` says `trusted: signed by alice@example.com`, or `not signed by a trusted key: tightening only, allow rules ignored (…)`.
+
+To check a rule before you commit it: `openmoat policy check "<command>" --cwd <repo>` decides with the repository's policy as `openmoat guard` does.
 
 ## Signed policy packs
 
@@ -123,3 +145,22 @@ Earlier releases signed packs and repository policies in one namespace, `openmoa
 A repository's `.claude/settings.json` can set `"disableAllHooks": true`, which turns every user-level hook off, OpenMoat's included. Claude Code loads it when a session starts, before any hook runs. OpenMoat blocks such a change made during a session (`project-settings`), and `openmoat doctor` and `openmoat status` warn when the current project has one, but neither can stop it at session start.
 
 Claude Code's [managed settings](https://code.claude.com/docs/en/managed-settings), which an administrator deploys and the user cannot edit, can: a `disableAllHooks` outside them does not turn off a hook set in them. Copy the `PreToolUse` and `ConfigChange` entries `openmoat init` wrote to `~/.claude/settings.json` into the managed settings file, and keep them in the user file too, which `openmoat doctor` checks. OpenMoat does not write or pin managed settings, so update them after an upgrade that changes the hook entries.
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat trust [<repo>] [--revoke]` | Let a repository's `.moat/policy.yaml` allow, until the file changes. Terminal only | `openmoat trust` |
+| `openmoat allowed` | The repositories you trusted, with how to take each back | `openmoat allowed` |
+| `openmoat policy trust-key <key.pub> --name <who>` | Trust an SSH key to sign packs and repository policies. Terminal only | `openmoat policy trust-key alice.pub --name alice@example.com` |
+| `openmoat policy install <pack.yaml> [--sig <file>] [--name <name>]` | Install a pack once its signature verifies. Terminal only | `openmoat policy install team.yaml` |
+| `openmoat policy remove <name>` | Take a pack out. Terminal only | `openmoat policy remove team` |
+| `ssh-keygen -Y sign -f <key> -n openmoat-pack <file>` | Sign a pack (`-n openmoat-repo-policy` for a repository policy) | `ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n openmoat-pack team.yaml` |
+
+## Limits
+
+- **Repository rules apply in the hook only**, not in the agents' OS sandboxes; a pack's deny and allow rules reach the sandboxes at the next `openmoat sandbox sync`.
+- **A signature proves who signed, not that the rules are good.** A stolen signing key signs packs you will install.
+- **A repository's `.claude/settings.json` loads before any hook runs** ([above](#keep-claude-codes-hooks-on-for-everyone)).
+
+More in [Limits](/docs/limits/).

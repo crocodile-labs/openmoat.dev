@@ -31,6 +31,34 @@ openmoat edit
 
 It opens the policy in `$VISUAL` or `$EDITOR`. When you close the editor it checks the policy, shows the diff and asks `Apply? [y/N]`. A policy with errors is never written, and the previous version is kept in `~/.moat/policy.yaml.bak`.
 
+What you see at each step:
+
+| After you close the editor | `openmoat edit` prints |
+|---|---|
+| Nothing changed | `no changes; the policy was not touched` |
+| The policy does not lint | `the edited policy does not lint:` and the error, then `Edit again? [y/N]`; anything but `y` leaves it as it was: `the policy was not changed` |
+| It lints | a `warning:` line for each rule that can never match, the diff, then `Apply? [y/N]` |
+| You answer `y` | `✔ /Users/you/.moat/policy.yaml updated`, `✔ lock re-pinned (N files)` and the undo line |
+
+Then run `openmoat sandbox sync`, so the agents' OS sandboxes follow the new rules, and start a new agent session.
+
+### Undo an edit
+
+```text
+  undo: the previous policy is in /Users/you/.moat/policy.yaml.bak; copy it back and run `openmoat doctor --accept`
+```
+
+A rule added by `openmoat allow` comes out with `openmoat allow --remove <id>`; `openmoat allowed` lists them with their ids.
+
+### Test a rule before you apply it
+
+Write the rule into a copy, then decide a command against it:
+
+```bash
+openmoat policy lint ./policy.yaml
+openmoat policy check "npm run deploy:prod" --policy ./policy.yaml
+```
+
 ### Example: read-only access to every repo under a folder
 
 ```yaml
@@ -65,4 +93,16 @@ OpenMoat pins the policy. A change no person accepted looks like tampering, so e
 
 </Aside>
 
-The full policy language and the default policy are in [POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md).
+## New default rules after an upgrade
+
+`openmoat init` keeps your policy, so a rule a new release's default gained is offered, not forced. `openmoat`, `openmoat init` and `openmoat doctor` say "policy update available: N changes".
+
+```bash
+openmoat policy upgrade --dry-run   # what the new default adds, as a diff; changes nothing, needs no terminal
+openmoat policy upgrade             # shows the diff, asks, keeps a backup and re-pins
+openmoat policy upgrade --undo      # put the previous policy back, byte for byte
+```
+
+`--dry-run` starts with `Policy update available: N changes from the OpenMoat <version> default`, or says `The policy has every change of the OpenMoat <version> default.` Lines you changed are never touched: a change that would overlap them is listed under `Not applied: you changed the policy at line N; the default now has:`, for you to make with `openmoat edit` if you want it. After applying, it prints `✔ … upgraded (N changes)`, `✔ lock re-pinned (N files)` and a reminder to run `openmoat sandbox sync`. Run it after each upgrade of the binary ([Upgrade](/docs/upgrade/)).
+
+The syntax of a rule: [The policy file](/docs/policy-file/). The full policy language and the default policy are in [POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md).

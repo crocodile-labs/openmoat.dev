@@ -1,8 +1,8 @@
 ---
-title: ".env files and environment variables"
+title: "Secrets and .env files"
 description: "Which secrets in files and variables the agent can never read, which it can, and how to protect your own."
 sidebar:
-  label: ".env and variables"
+  label: "Secrets and .env files"
   order: 4
 ---
 
@@ -13,6 +13,27 @@ import { Aside } from '@astrojs/starlight/components';
 Your project uses .env files, or secrets live in environment variables.
 
 </Aside>
+
+**Protects against** the agent reading your keys, credential files, `.env` files and secret environment variables, and so against it sending them anywhere.
+
+## What it does
+
+`secrets-paths` denies reading and writing key and credential files (`~/.ssh`, `~/.aws`, `~/.config/gh`, `~/.kube`, `~/.npmrc`, `.env`, `.envrc`, keychains and more) and the commands that print a stored token (`gh auth token`, `aws configure export-credentials`, `kubectl config view --raw`, …). `env-secrets` denies reading a variable whose name looks like a secret, and `env-dump` denies printing the whole environment. The hook checks the agent's file tools, shell commands and MCP arguments; the agents' OS sandboxes carry the same denies, so a script the agent runs cannot read them either.
+
+## Example
+
+```bash
+openmoat policy check "cat ~/.ssh/id_rsa"
+```
+
+```text
+⛔ deny
+   rules : secrets-paths
+   reason: secret material: read /Users/you/.ssh/id_rsa
+   also  : shell "cat ~/.ssh/id_rsa"
+```
+
+`cat .env`, `source .env`, `cat .e*`, `cat .en?` and `cat .{env,x}` are denied by `secrets-paths` the same way ([Shell command checks](/docs/shell-commands/)).
 
 ## What is denied
 
@@ -31,7 +52,18 @@ Variable names that are denied: anything ending in `_KEY`, `_TOKEN`, `_SECRET`, 
 
 Inline code run with `python -c`, `node -e`, `ruby -e`, `perl -e`, `php -r` and similar is read too: a variable it reads by name is checked like `echo $NAME`, and code that prints the whole environment, or reads a variable whose name is chosen at run time, is denied by `env-dump`.
 
-## Protect a variable with another name
+## Commands
+
+| Command | Example |
+|---|---|
+| `openmoat policy check "<command>"`: is it denied? | `openmoat policy check 'echo $SENTRY_URL'` |
+| `openmoat policy check "<path>" --kind fs-read`: a file tool's read | `openmoat policy check "~/.aws/credentials" --kind fs-read` |
+| `openmoat secret add`: give the agent a token it cannot read | `openmoat secret add gh` ([Token broker](/docs/keep-tokens-safe/)) |
+| `openmoat edit`: deny a file or variable of your own | see below |
+
+## Settings
+
+### Protect a variable with another name
 
 Some variables hold a password although their names do not say so, such as `SENTRY_URL` or `AMQP_URL`. Deny them yourself with `openmoat edit`:
 
@@ -42,7 +74,18 @@ deny:
     env.read: ["SENTRY_URL", "AMQP_URL"]
 ```
 
-## What this means for your tests
+A file is denied the same way, with `fs.read` (and `fs.write`) patterns:
+
+```yaml
+deny:
+  - id: example-token
+    reason: brokered secret source
+    fs.read: ["~/.config/example/token"]
+```
+
+## Limits
+
+### What this means for your tests
 
 <Aside type="caution" title="Programs the agent starts cannot read .env either">
 
@@ -58,6 +101,13 @@ Ways to handle it:
 - Run tests that need real secrets yourself, outside the agent.
 - Give the agent a token through the broker instead: [Keep a token from the agent](/docs/keep-tokens-safe/).
 
-## Variables you export
+### Variables you export
 
 A variable set in the shell you start the agent from is still passed to the programs it runs. The agent cannot print a denied name, but a program it runs (a CLI, a test) can use the value and send it to an allowed host. Do not export production secrets in the shell you run an agent from, or broker them.
+
+### Other gaps
+
+- Only the names listed above count as secrets: a password in `SENTRY_URL` is read unless you deny it.
+- An alias of the environment in inline code (`e = os.environ`) is not followed.
+
+More in [Limits](/docs/limits/).
