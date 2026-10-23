@@ -25,7 +25,7 @@ A pinned file (the policy, a hook, an agent's settings) changed without you acce
 
 <Aside type="note" title="Claude Code's own settings do not block">
 
-A change to one of Claude Code's own settings, such as a permission list or mode, `permissions.blockReadsOutsideWorkingDirectories`, the model or a display setting, does not deny every call. Calls are decided by the policy as usual, the change is recorded once per session, and `openmoat doctor` and `openmoat status` report it until you run `openmoat doctor --accept`. A change to hooks, `env`, `apiKeyHelper`, plugins, MCP servers or `sandbox`, removing a deny rule OpenMoat wrote, an unknown key, or a file that no longer parses still blocks every call. Under a lock written before 0.5.7, a change to `permissions` also blocks until you re-pin.
+A change to one of Claude Code's own settings, such as a permission list, `permissions.blockReadsOutsideWorkingDirectories`, the model or a display setting, does not deny every call. Calls are decided by the policy as usual, the change is recorded once per session, and `openmoat doctor` and `openmoat status` report it until you run `openmoat doctor --accept`. A change to hooks, `env`, `apiKeyHelper`, plugins, MCP servers or `sandbox`, removing a deny rule OpenMoat wrote, an unknown key, or a file that no longer parses still blocks every call. So, since 0.9.0, does `permissions.defaultMode` set to a mode that runs calls without asking (`acceptEdits`, `auto`, `bypassPermissions`), any change to `permissions.additionalDirectories`, and a change to `autoMode`. Under a lock written before 0.5.7, a change to `permissions` also blocks until you re-pin.
 
 </Aside>
 

@@ -38,7 +38,7 @@ A project that is your home folder, or a folder above it, would let the agent ed
 
 ## What the project gives the agent
 
-<Impact opens={["Read and edit every file in the project", "Builds, tests and everyday git commands there (`dev-shell`)"]} keeps={["`.env`, `.envrc` and keys in the project stay denied", "Writes into `.git` (hooks, config) ask first: git runs them later, outside any sandbox", "Writes to CI workflows, `.husky/`, `.pre-commit-config.yaml` and `.vscode/tasks.json` ask first (`runs-later`): CI or a commit runs them later", "`.moat`, `.claude` and other agent settings stay denied"]} think={["A folder next to the project is outside it: see [Work across several repos](/docs/work-across-repos/)"]} />
+<Impact opens={["Read and edit every file in the project", "Builds, tests and everyday git commands there (`dev-shell`)"]} keeps={["`.env`, `.envrc` and keys in the project stay denied", "Writes into `.git` (hooks, config) ask first: git runs them later, outside any sandbox", "Writes to CI workflows, `.husky/`, `.pre-commit-config.yaml` and `.vscode/tasks.json` ask first (`runs-later`): CI or a commit runs them later", "`.moat` and agent settings (`.claude/settings.json` and the like) stay denied", "An agent's hooks, skills, subagents, commands and MCP settings in the project (`.claude/hooks/`, `.claude/skills/`, `.mcp.json`, …) ask first (`runs-later`): the agent loads them next session"]} think={["A folder next to the project is outside it: see [Work across several repos](/docs/work-across-repos/)"]} />
 
 ## Monorepos
 

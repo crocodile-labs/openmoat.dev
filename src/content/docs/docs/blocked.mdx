@@ -18,7 +18,7 @@ Find the message you saw, then run the command next to it **in your own terminal
 
 | You saw | It means | Run |
 |---|---|---|
-| `moat: deny [default.net] — no rule matched net docs.rs` | A host the policy does not list, for a command that can send data there (a body, a header, `curl -L`). | `openmoat allow --site docs.rs` |
+| `moat: deny [default.net] — no rule matched net docs.rs` | A host the policy does not list, for a command that can send data there (a body, a header, `curl -L`, a `curl` without `-q` first). | `openmoat allow --site docs.rs` |
 | `moat: ask [git-internals] — …` or `[runs-later]` | A call whose effect outlives the session: a git hook, a CI workflow, an agent's skills, hooks or MCP settings that load next session. | Approve it in the prompt, or `openmoat allow --last` |
 | `moat: ask [unchecked] — …` | OpenMoat sees the call but cannot check all of it: a search pattern that may climb out of its folder, a search of every workspace folder, text typed into a running shell. | Approve it if it is what you expect, or ask the agent to name the folder or run the command in one call |
 | Your agent's own prompt, for a file outside the project | OpenMoat has no rule for it and left it to your agent. | `openmoat allow --dir <folder>`, see [Work across several repos](/docs/work-across-repos/) |

@@ -21,7 +21,7 @@ Outbound network access from shell commands that can send data is denied by defa
 moat: deny [default.net] — no rule matched net docs.rs
 ```
 
-A plain download is not: a `curl` or `wget` that provably sends nothing but its URL (`curl https://docs.rs/serde`, `curl -sS https://example.com/f.txt -o f.txt`) is decided like a web fetch, so it goes to your agent's own prompt. A body, form, upload, header, another method, credentials or following redirects (`curl -L`) keeps it denied.
+A plain download is not: a `curl` or `wget` that provably sends nothing but its URL and reads no configuration file of its own (`curl -q https://docs.rs/serde`, `curl -q -sS https://example.com/f.txt -o f.txt`, `wget --no-config --no-netrc …`) is decided like a web fetch, so it goes to your agent's own prompt. A body, form, upload, header, another method, credentials or following redirects (`curl -L`) keeps it denied, and so does a `curl` without `-q` first, which reads `~/.curlrc`.
 
 <Steps>
 
@@ -54,9 +54,9 @@ A plain download is not: a `curl` or `wget` that provably sends nothing but its 
 | The agent uses | Before | After |
 |---|---|---|
 | A web fetch tool (Claude Code `WebFetch`) on `docs.rs` | your agent's prompt | **allowed**, no prompt |
-| `curl https://docs.rs/serde` (sends nothing) | your agent's prompt | not denied |
-| `curl -L https://docs.rs/` or `curl -d @notes.txt https://docs.rs/` | denied | not denied: your agent's prompt, like any command the policy does not list |
-| `curl https://www.docs.rs/` | your agent's prompt | unchanged: another host |
+| `curl -q https://docs.rs/serde` (sends nothing) | your agent's prompt | not denied |
+| `curl https://docs.rs/serde`, `curl -L https://docs.rs/` or `curl -d @notes.txt https://docs.rs/` | denied | not denied: your agent's prompt, like any command the policy does not list |
+| `curl -q https://www.docs.rs/` | your agent's prompt | unchanged: another host |
 
 <Impact opens={["Requests to exactly `docs.rs`, from fetch tools and from shell commands", "Sandboxed commands may connect to it"]} keeps={["Every other host stays denied, subdomains included", "Secrets are still denied, so the agent cannot read a key to send there"]} think={["The host can receive whatever the agent sends it. Never allow paste sites, webhook catchers or file-sharing hosts", "OpenMoat checks the host, not the data inside HTTPS"]} />
 

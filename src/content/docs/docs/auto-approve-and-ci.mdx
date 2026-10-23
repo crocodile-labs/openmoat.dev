@@ -23,7 +23,7 @@ OpenMoat leaves calls it has no rule for (**defer**) to your agent's own prompt.
 | ask | you are asked | stopped |
 | deny | blocked | blocked |
 
-Everything the default policy denies stays denied: secrets, unknown hosts, `curl … | sh`, destructive commands, changes to OpenMoat. What changes is that installs, pushes and other unlisted commands run without a question. So does a plain download from an unlisted host (a `curl` or `wget` that sends nothing but its URL), which is decided like a web fetch and defers.
+Everything the default policy denies stays denied: secrets, unknown hosts, `curl … | sh`, destructive commands, changes to OpenMoat. What changes is that installs, pushes and other unlisted commands run without a question. So does a plain download from an unlisted host (a `curl -q` or `wget --no-config --no-netrc` that sends nothing but its URL), which is decided like a web fetch and defers.
 
 ## Run a whole agent in a sandbox
 

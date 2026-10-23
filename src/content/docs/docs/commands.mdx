@@ -82,8 +82,9 @@ Host ids for `--hosts` and `--host`: `claude-code`, `codex`, `cursor`, `openclaw
 | Command | What it does |
 |---|---|
 | `openmoat run [--isolate] [--write <path>]… [--netns require] -- <agent>` | Run a whole agent in a sandbox generated from the policy; on Linux its network goes only through OpenMoat's proxy where bubblewrap can run (`--netns require` refuses to start where it cannot). `--write` grants a path ([Auto-approve and CI](/docs/auto-approve-and-ci/#run-a-whole-agent-in-a-sandbox)) |
-| `openmoat proxy` · `openmoat proxy install` | The egress proxy, on its own or as a user service (not on Windows yet) |
-| `openmoat bench` | Score OpenMoat, or any hook, against the bundled attack scenarios |
+| `openmoat proxy` · `openmoat proxy install` · `uninstall` · `status` | The egress proxy, on its own or as a user service (not on Windows yet); an allowed host is reached on ports 443 and 80 unless a rule names `host:port` |
+| `openmoat mcp proxy --server <name> [--sandbox] -- <command>` | The wrapper `openmoat mcp wrap` writes into the agent's configuration: the agent starts it, you do not ([MCP servers](/docs/mcp-servers/#pin-tool-descriptions-too)) |
+| `openmoat bench [--hook <command> --host <id>]` | Score OpenMoat, or any hook, against the bundled attack scenarios; the scenarios' commands never run |
 | `openmoat guard --host <id>` | The hook entry point: agents call it, you do not |
 
 ## Exit codes

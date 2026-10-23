@@ -75,6 +75,8 @@ Every hooked agent sends OpenMoat its shell commands, file reads and writes, and
 
 ### pi
 
+The pi coding agent (`@earendil-works/pi-coding-agent`).
+
 - **Checked:** every tool, through OpenMoat's extension (`~/.pi/agent/extensions/openmoat.js`) on pi's `tool_call` event, including the calls a `codemode` script makes and the tools of other extensions.
 - **Asks:** a pi dialog. In print and JSON mode, which have no screen, an ask is a deny until you run `openmoat allow --last`.
 - **Deferred calls run.** pi has no approval step of its own, so a call OpenMoat has no rule for runs without a question.
