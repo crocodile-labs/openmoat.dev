@@ -14,11 +14,13 @@ coverResult: "one tree per session · every call, verdict and rule"
 coverTone: ok
 ---
 
+We built OpenMoat so you can see exactly what your coding agent did while you weren't watching 🐊
+
 You let an agent work through a long task, or you ran one in the background overnight. In the morning there is a diff and a summary. The summary says it ran the tests and fixed two files.
 
 What it does not tell you: which commands it ran to get there, which files it read, which hosts it tried to reach, and which of those were stopped. The terminal scrollback is gone or a thousand lines long. And the summary is written by the agent itself, the same agent that may have read a web page or an issue telling it to do something else.
 
-I build OpenMoat, which checks each action an AI coding agent takes on your computer and stops the dangerous ones before they run. Every one of those decisions is written to a local log. This post shows how to read it, and what it can and can't prove.
+OpenMoat checks each action an AI coding agent takes on your computer and stops the dangerous ones before they run. Every one of those decisions is written to a local log. This post shows how to read it, and what it can and can't prove.
 
 ## What gets recorded
 
