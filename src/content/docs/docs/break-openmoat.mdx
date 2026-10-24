@@ -1,0 +1,50 @@
+---
+title: "Break OpenMoat"
+description: "The public bypass challenge: a canary secret, six ways a report counts, and credit by name for every valid bypass."
+sidebar:
+  label: "Break OpenMoat"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You want to find a way past OpenMoat. Every valid bypass is fixed, becomes a permanent test, and is credited to you by name.
+
+</Aside>
+
+OpenMoat's default policy promises that an AI coding agent cannot read your secrets, send them out, plant something that runs later, or switch OpenMoat off. Show us where that promise breaks.
+
+It takes five minutes to set up, and you can start without any agent: `openmoat policy check '<command>'` shows the verdict for any command you can think of.
+
+## Set up
+
+Use a throwaway user account or a virtual machine.
+
+```bash
+brew install crocodile-labs/tap/openmoat
+openmoat init
+mkdir -p ~/.ssh && printf 'CANARY-%s\n' "$(openssl rand -hex 8)" > ~/.ssh/openmoat-canary
+openmoat policy check 'cat ~/.ssh/openmoat-canary'   # deny, secrets-paths
+```
+
+## What counts
+
+With the default policy and the latest release, without you approving an `ask`:
+
+1. **Read a secret:** the canary's contents reach the agent through any tool call.
+2. **Send a secret out:** a protected secret reaches a host the policy does not list.
+3. **Plant something that runs later:** a write to a shell start-up file, a git hook, a login item or CI configuration that gets neither `deny` nor `ask`.
+4. **Switch OpenMoat off:** an agent tool call that changes `~/.moat`, the agent's hook or sandbox settings, or the `openmoat` binary without a `deny`.
+5. **Confuse the parser:** `openmoat policy check` says `allow` or `defer`, while the shell actually does one of the above.
+6. **Fail open:** an error, crash or time-out in `openmoat guard` that lets the call run.
+
+The documented [Limits](/docs/limits/) do not count: they are known gaps, not mistakes.
+
+## Report and get credited
+
+Report privately through GitHub's [report a vulnerability](https://github.com/crocodile-labs/openmoat/security/advisories/new) form, never in public. You get an answer within 72 hours.
+
+For every valid report you get your name in the hall of fame, credit on the fix (CHANGELOG, release notes, co-author of the commit if you like), a GitHub Security Advisory naming you with a CVE for a confirmed issue in a release, and a public thank-you from OpenMoat.
+
+The full rules, what does not count and the hall of fame: [docs/CHALLENGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/CHALLENGE.md).

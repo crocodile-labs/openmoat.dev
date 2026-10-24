@@ -12,24 +12,24 @@ OpenMoat runs on your machine, next to Claude Code, Codex, Cursor, OpenClaw, Git
 
 ## How it works
 
-```text
-agent wants to run a tool call
-  │
-  ▼
-the agent's hook ──► openmoat guard ──► policy lock check ──► policy
-                                                                │
-          ┌─────────────────┬──────────────────┬────────────────┤
-          ▼                 ▼                  ▼                ▼
-        allow             defer               ask              deny
-     the call runs   the agent's own    you decide, with   blocked, with the
-                     prompt decides     the reason shown   rule and the reason
-          │                 │                  │                │
-          └─────────────────┴────────┬─────────┴────────────────┘
-                                     ▼
-                       audit log (local, hash-chained)
-```
+<img class="om-diagram light" src="/assets/how-it-works-light.svg" alt="An AI coding agent wants to run a tool call. Through the agent's own hook, OpenMoat checks it against one local policy before it runs: npm test is allowed, a call with no rule is left to the agent's own prompt, a git hook write asks you, and reading ~/.ssh/id_rsa is denied. Allowed code still runs inside the OS sandbox and the egress proxy, and every decision goes into a local hash-chained audit log." />
+<img class="om-diagram dark" src="/assets/how-it-works-dark.svg" alt="" aria-hidden="true" />
 
 The same policy is written into the agents' own OS sandboxes (Claude Code, Codex, Cursor), so code inside an allowed command cannot reach your keys either; `openmoat run` does this for any agent. More in [How it decides](/docs/how-it-decides/).
+
+## Supported agents
+
+| Agent | Protection | Details |
+|---|---|---|
+| Claude Code | hook + OS sandbox (hook only on native Windows) | [Claude Code](/docs/agents/#claude-code) |
+| Codex | hook + OS sandbox | [Codex](/docs/agents/#codex) |
+| Cursor | hook + OS sandbox on macOS and Linux (hook only on Windows) | [Cursor](/docs/agents/#cursor) |
+| OpenClaw | hook only (a `before_tool_call` plugin) | [OpenClaw](/docs/agents/#openclaw) |
+| GitHub Copilot CLI | hook only | [GitHub Copilot CLI](/docs/agents/#github-copilot-cli) |
+| pi | hook only (an extension) | [pi](/docs/agents/#pi) |
+| Gemini CLI | hook only | [Gemini CLI](/docs/agents/#gemini-cli) |
+
+`openmoat init` finds the ones you have and asks before setting up each; `openmoat status` shows the level each one has right now. What each agent's hook sees, where you answer its questions and what it does not cover: [Supported agents](/docs/agents/).
 
 ## Quick start
 
@@ -143,6 +143,7 @@ Already have projects? Every project you open with a protected agent is covered 
   <LinkCard title="Every allow and what it opens" href="/docs/allow-reference/" description="What each openmoat allow covers, how long it lasts and what stays protected." />
   <LinkCard title="Troubleshooting" href="/docs/troubleshooting/" description="Each message, what it means and the command that fixes it." />
   <LinkCard title="Limits" href="/docs/limits/" description="What OpenMoat does not stop." />
+  <LinkCard title="Break OpenMoat" href="/docs/break-openmoat/" description="The public bypass challenge: a canary secret, six ways to win, credit by name." />
   <LinkCard title="Glossary" href="/docs/glossary/" description="Every OpenMoat term in a sentence or two." />
   <LinkCard title="Releases" href="/docs/releases/" description="What each release changed, and what to run after upgrading." />
 </CardGrid>

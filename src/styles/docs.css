@@ -29,3 +29,16 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+/* the how-it-works diagram: one image per theme */
+.om-diagram {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  margin: 1rem auto;
+  border-radius: 12px;
+}
+:root[data-theme='dark'] .om-diagram.light,
+:root[data-theme='light'] .om-diagram.dark {
+  display: none;
+}

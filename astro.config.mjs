@@ -55,11 +55,11 @@ export default defineConfig({
           sub('Commands', 'commands', ['setup', 'allow', 'policy', 'sandboxes', 'mcp-and-secrets', 'audit-and-diagnostics']),
           'allow-reference',
           sub('Troubleshooting', 'troubleshooting', ['agent-messages', 'openmoat-messages', 'hooks-and-lock', 'policies-and-network']),
-          'limits', 'glossary']),
+          'limits', 'break-openmoat', 'glossary']),
         {
           label: 'Releases',
           collapsed: true,
-          items: ['docs/releases', ...['v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
+          items: ['docs/releases', ...['v0-10-1', 'v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
             .map((v) => `docs/releases/${v}`)],
         },
       ],

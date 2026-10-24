@@ -16,6 +16,9 @@ You want to know why a call ran, went to your agent's prompt, asked or was block
 
 Before the agent runs a command, reads or writes a file, opens a web page or calls an MCP tool, OpenMoat checks it against your policy (`~/.moat/policy.yaml`) and gives one of four answers.
 
+<img class="om-diagram light" src="/assets/how-it-works-light.svg" alt="An AI coding agent wants to run a tool call. Through the agent's own hook, OpenMoat checks it against one local policy before it runs: npm test is allowed, a call with no rule is left to the agent's own prompt, a git hook write asks you, and reading ~/.ssh/id_rsa is denied. Allowed code still runs inside the OS sandbox and the egress proxy, and every decision goes into a local hash-chained audit log." />
+<img class="om-diagram dark" src="/assets/how-it-works-dark.svg" alt="" aria-hidden="true" />
+
 | Answer | When | What you see |
 |---|---|---|
 | **Allow** | Normal development work: builds, tests, reading and editing the project, everyday git. | Nothing. The call runs and is recorded. |
