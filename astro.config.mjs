@@ -46,7 +46,7 @@ export default defineConfig({
           sub('MCP pinning and proxy', 'mcp-servers', ['tool-pinning']),
           sub('OS sandboxes and run', 'sandboxes', ['openmoat-run']),
           'egress-proxy', 'self-protection', 'session-taint', 'see-what-happened',
-          sub('Team rules and packs', 'team-rules', ['repository-policy', 'policy-packs'])]),
+          sub('Team rules and packs', 'team-rules', ['repository-policy', 'policy-packs']), 'openmoat-bar']),
         group('Policy', [sub('The policy file', 'policy-file', ['verdicts', 'patterns', 'other-keys', 'repositories']),
           'change-the-rules']),
         group('Guides', ['blocked', 'check-a-command', 'work-across-repos', 'the-project', 'github', 'local-services',

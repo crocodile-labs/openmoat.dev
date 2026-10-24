@@ -1,0 +1,89 @@
+---
+title: "OpenMoat Bar"
+description: "A read-only companion app for the menu bar (macOS) and the tray (Linux, Windows): which agents are protected, what was blocked and why, and what needs you."
+sidebar:
+  label: "OpenMoat Bar"
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+**What it does:** shows what OpenMoat decides, without opening a terminal. It reads only what
+`openmoat` prints, never allows anything or changes a rule, and every fix is a command you copy.
+
+![The OpenMoat Bar menu on macOS](/assets/openmoat-bar/menu-macos.png)
+
+## What it shows
+
+- **A croc in the menu bar:** plain when every agent is protected, a dot for new blocks, amber when
+  a check needs a look, red the moment an agent stops being protected, faded when `openmoat` isn't
+  installed or can't be read.
+- **A tab per agent** with its protection level (hook + OS sandbox, hook only, not set up).
+- **Today's calls** in four groups (blocked, asked, left to your agent, allowed). Each call opens
+  in full: what ran, the rule, what the agent was told and why, with
+  `openmoat policy check '<call>'` to copy.
+- **Notices:** a policy update, a changed pinned file, MCP servers waiting for
+  `openmoat mcp accept`, a project settings file that could switch OpenMoat off.
+- **The Details window:** what you allowed (rules, session grants with their project and end time,
+  trusted repositories), brokered secrets (never their values) and every `openmoat doctor` check.
+- **The Activity window:** today, 7 or 30 days, filtered by agent, verdict and rule.
+- **Notifications:** always when an agent stops being protected; blocked calls only if you turn them
+  on, naming the rule and the agent, never the command.
+
+## Install
+
+OpenMoat must be installed first ([Quick start](/docs/quickstart/)).
+
+<Tabs>
+<TabItem label="macOS and Linux">
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/crocodile-labs/openmoat-bar/releases/latest/download/openmoat-bar-installer.sh | sh
+```
+
+</TabItem>
+<TabItem label="Windows">
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/crocodile-labs/openmoat-bar/releases/latest/download/openmoat-bar-installer.ps1 | iex"
+```
+
+</TabItem>
+</Tabs>
+
+The installer checks the download against the release's `SHA256SUMS` and installs for your user:
+`~/Applications/OpenMoat Bar.app` on macOS, `~/.local/share/openmoat-bar` and `openmoat-bar` in
+`~/.local/bin` on Linux, `%LOCALAPPDATA%\Programs\OpenMoat Bar` on Windows. To build it yourself,
+see the [README](https://github.com/crocodile-labs/openmoat-bar#build-from-source).
+
+## How it stays read-only
+
+It runs only these commands, each with `--format json`, and matches whole command lines, so a
+command that changes anything (`openmoat doctor --accept`, `openmoat secret add`) can never run:
+
+- `openmoat status`, `openmoat show`, `openmoat report`, `openmoat proxy status`, `openmoat --version`
+- `openmoat allowed`, `openmoat secret list`, `openmoat doctor`
+
+It re-reads when the audit log changes (within 2 seconds), every minute and when you open the menu.
+It writes nothing to `~/.moat` and makes no network requests.
+
+## Platforms
+
+| Platform | App |
+| --- | --- |
+| macOS 12 or later | Native menu bar app |
+| Linux | Tray app (Qt 6); without a tray (GNOME without the AppIndicator extension) it opens as a window |
+| Windows | Tray app (Qt 6) |
+
+<Aside type="note" title="Linux and Windows">
+
+The Linux and Windows apps are built, tested and drawn in CI on Ubuntu and Windows.
+
+</Aside>
+
+![OpenMoat Bar on Linux](/assets/openmoat-bar/quick-view-linux.png)
+
+## Limits
+
+- It shows what `openmoat` reports; it adds no protection of its own.
+- Session taint and audit anchors appear only as the `openmoat doctor` lines that mention them.
+- Source and issues: [crocodile-labs/openmoat-bar](https://github.com/crocodile-labs/openmoat-bar).
