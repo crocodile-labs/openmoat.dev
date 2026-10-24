@@ -1,0 +1,32 @@
+---
+title: "OpenMoat 0.10.1"
+description: "Symlink chains followed to their end, the proxy re-reads taint, a short summary before openmoat init asks, one not found line in status."
+sidebar:
+  label: "0.10.1"
+  order: 1
+---
+
+import { Aside, Badge } from '@astrojs/starlight/components';
+
+Released 2026-10-24. [GitHub release v0.10.1](https://github.com/crocodile-labs/openmoat/releases/tag/v0.10.1).
+
+<Aside type="caution" title="Upgrading">
+
+- **Nothing to run.** `brew upgrade` (or your install method) is enough; the policy format, the commands and the lock are unchanged.
+- **Fixes you get:** a write through a long chain of symlinks into `~/.ssh` is checked where it lands, a grant for a file that no longer resolves is asked about again, and the egress proxy looks a session's taint up again while it cannot read the audit log's newest event.
+- **What looks different:** `openmoat init` sums up each file it would change before it asks (`Protect …? [Y/n/d]`; `d` shows the full diff), and `openmoat status` lists agents with no folder on one `not found` line.
+
+Every step after an upgrade: [Upgrade](/docs/upgrade/).
+
+</Aside>
+
+## Security
+- The hook follows a chain of dangling symlinks to its end up to 64 links, past every operating system's own limit, so a write through a 9-link chain into `~/.ssh` is checked where it lands; a session grant for a file that no longer resolves (a link loop, a longer chain) no longer holds and the call is asked again ([#658](https://github.com/crocodile-labs/openmoat/pull/658)).
+- The egress proxy looks a session's taint up again on every recheck while it cannot read the audit log's newest event, instead of reusing the taint it last saw for up to the recheck age; a lookup that then fails still refuses the connection ([#658](https://github.com/crocodile-labs/openmoat/pull/658)).
+
+## Changed
+- `openmoat init` sums up each file it would change for an agent (new or edited, lines added and removed, the top-level settings it sets) instead of printing the whole diff before asking; answer `d` at `Protect …? [Y/n/d]` to see the full diff ([#663](https://github.com/crocodile-labs/openmoat/pull/663)).
+- `openmoat status` lists the agents it finds no folder for on one `not found` line instead of one line each; `openmoat doctor` keeps one line per agent ([#663](https://github.com/crocodile-labs/openmoat/pull/663)).
+
+## Fixed
+- Rules naming `~` match when the home directory is spelled with a doubled or trailing slash (`HOME=/Users//me/`): `openmoat demo`, which resolves no symlinks, showed a key read under such a home as `defer` instead of `deny` ([#663](https://github.com/crocodile-labs/openmoat/pull/663)).
