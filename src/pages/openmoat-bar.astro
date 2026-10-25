@@ -1,0 +1,251 @@
+---
+// OpenMoat Bar's own page. Every claim comes from the openmoat-bar README
+// (github.com/crocodile-labs/openmoat-bar); the screenshots are its sample-data renders.
+import Page from '../layouts/Page.astro';
+import LogoRow from '../components/LogoRow.astro';
+import AgentName from '../components/AgentName.astro';
+import { platforms } from '../data/logos';
+
+const title = 'OpenMoat Bar: your agents\' protection, in the menu bar';
+const description = 'A small, read-only companion app for OpenMoat on macOS, Linux and Windows: which coding agents are protected, what was blocked and why, and what needs you.';
+const repo = 'https://github.com/crocodile-labs/openmoat-bar';
+
+const agents = [
+  { name: 'Claude Code', level: 'Hook + OS sandbox' },
+  { name: 'Codex', level: 'Hook + OS sandbox' },
+  { name: 'Cursor', level: 'Hook + OS sandbox' },
+  { name: 'OpenClaw', level: 'Hook' },
+  { name: 'GitHub Copilot CLI', level: 'Hook' },
+  { name: 'pi', level: 'Hook' },
+  { name: 'Gemini CLI', level: 'Hook' },
+];
+
+const crocs = [
+  { icon: 'Plain', meaning: 'All protected, nothing new', act: 'Nothing to do.' },
+  { icon: 'Dot', meaning: 'New blocks since you last looked', act: 'Open the menu to see what was stopped and why.' },
+  { icon: 'Amber', meaning: 'A security check needs a look', act: 'Open the check; it names the file or setting and the command to fix it.' },
+  { icon: 'Red', meaning: 'An agent stopped being protected', act: 'Open the agent\'s tab; it says why (hook missing, hooks turned off) and what to run.' },
+  { icon: 'Faded', meaning: 'OpenMoat isn\'t installed or can\'t be read', act: 'Install OpenMoat, or run openmoat doctor.' },
+];
+---
+<Page title={title} description={description}>
+<main class="bar">
+
+  <section class="hero">
+    <div class="hero-text">
+      <p class="eyebrow">OPENMOAT BAR</p>
+      <h1>Your agents' protection, in the menu bar 🐊</h1>
+      <p class="lead">OpenMoat Bar shows which of your coding agents are protected, what OpenMoat blocked today and why, and tells you when protection drops. It is read-only: it never allows anything or changes a rule, and every fix is a command you copy into your terminal.</p>
+      <div class="platforms"><LogoRow items={platforms} size={14} /></div>
+      <p class="cta"><a class="button" href="#install">Install</a> <a class="button ghost" href={repo}>GitHub</a></p>
+      <p class="note">Needs OpenMoat installed first: <a href="/docs/quickstart/">quick start</a>.</p>
+    </div>
+    <div class="hero-shot">
+      <img src="/assets/openmoat-bar/menu-macos.jpg" alt="The OpenMoat Bar menu on macOS: every agent's protection, today's blocked calls and one decision in full" width="1400" height="1324" />
+    </div>
+  </section>
+
+  <section id="how">
+    <p class="eyebrow">HOW IT WORKS</p>
+    <h2>OpenMoat decides. OpenMoat Bar shows you.</h2>
+    <ol class="flow">
+      <li><strong>Your agent makes a call</strong><span>Claude Code, Codex, Cursor or another agent runs a command, opens a file or calls an MCP tool.</span></li>
+      <li><strong>OpenMoat decides and records it</strong><span>Allow, defer, ask or deny, written to its local, hash-chained audit log.</span></li>
+      <li><strong>OpenMoat Bar reads and shows it</strong><span>It runs OpenMoat's read-only commands and updates within 2 seconds of a new decision, every minute, and when you open the menu.</span></li>
+    </ol>
+    <p class="small">The only commands it runs are <code>openmoat status</code>, <code>show</code>, <code>report</code>, <code>proxy status</code> and <code>--version</code>, and for the Details window <code>allowed</code>, <code>secret list</code> and <code>doctor</code>, each with <code>--format json</code>. It matches whole command lines, so a command that changes something, such as <code>openmoat doctor --accept</code>, can never run. It writes nothing to <code>~/.moat</code>.</p>
+  </section>
+
+  <section id="see">
+    <p class="eyebrow">WHAT YOU SEE</p>
+    <h2>Every agent, every block, everything that needs you</h2>
+    <div class="split">
+      <div>
+        <h3>The menu</h3>
+        <ul>
+          <li>A tab per agent, with its icon and its protection level.</li>
+          <li>Today's calls per hour, with blocks in red.</li>
+          <li>Blocked, Asked, Left to your agent and Allowed, with counts. Hover one for its calls, and a call for the whole story: what ran, the rule, what the agent was told and why, with an <code>openmoat policy check</code> command to copy.</li>
+          <li>Security checks for each agent, the network proxy and OpenMoat itself. When an agent's own settings turn OpenMoat's hook off, the check names that file.</li>
+        </ul>
+        <h3>Notices</h3>
+        <ul>
+          <li><strong>Policy update available:</strong> copy <code>openmoat policy upgrade</code>.</li>
+          <li><strong>OpenMoat's files changed:</strong> a pinned file was changed or removed; copy <code>openmoat doctor</code>.</li>
+          <li><strong>MCP server changes wait for you:</strong> OpenMoat holds a changed server's tool calls; copy <code>openmoat mcp accept &lt;server&gt;</code>.</li>
+          <li><strong>Project settings need a look:</strong> a project file that could switch OpenMoat off or run a program, such as a <code>.claude/settings.json</code> with <code>hooks</code>, listed with what it sets.</li>
+        </ul>
+        <p class="small">Every decision also says in one line why its rule exists, for every rule in the default policy, policy packs and a repository's own policy.</p>
+      </div>
+      <figure class="tall"><img src="/assets/openmoat-bar/agent-tab.jpg" alt="One agent's tab: protection level, today's calls per hour, and counts of blocked, asked, deferred and allowed calls" width="620" height="1327" loading="lazy" /><figcaption>One agent's tab (sample data)</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="croc">
+    <p class="eyebrow">THE CROC</p>
+    <h2>One icon tells you if anything needs you</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Icon</th><th>Meaning</th><th>What to do</th></tr></thead>
+        <tbody>
+          {crocs.map((c) => <tr><td><strong>{c.icon}</strong></td><td>{c.meaning}</td><td>{c.act}</td></tr>)}
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Notifications: always when an agent stops being protected; blocked calls only if you turn them on in Settings, naming the rule and the agent, never the command; never for calls your agent already asks you about.</p>
+  </section>
+
+  <section id="windows">
+    <p class="eyebrow">MORE WINDOWS</p>
+    <h2>Details and Activity</h2>
+    <div class="grid2">
+      <figure><img src="/assets/openmoat-bar/activity.jpg" alt="The Activity window: blocked calls with their rule, agent and time, and one call in full" width="1400" height="807" loading="lazy" /><figcaption><strong>Activity</strong> (⌘A): today, 7 or 30 days; filter by agent, verdict and rule; open one call; export as JSON lines.</figcaption></figure>
+      <figure><img src="/assets/openmoat-bar/details-checks.jpg" alt="The Details window's Checks screen: every openmoat doctor check, grouped and explained" width="900" height="1045" loading="lazy" /><figcaption><strong>Details:</strong> what you allowed (each with the command that takes it back), brokered secrets (never a value) and every <code>openmoat doctor</code> check, explained.</figcaption></figure>
+    </div>
+    <p class="small">Screenshots use sample data. On Linux and Windows the same features run as a tray app.</p>
+  </section>
+
+  <section id="agents">
+    <p class="eyebrow">SUPPORTED AGENTS</p>
+    <h2>Every agent OpenMoat protects, each with its own tab</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Agent</th><th>Protection by OpenMoat</th></tr></thead>
+        <tbody>
+          {agents.map((a) => <tr><td><AgentName name={a.name} /></td><td>{a.level}</td></tr>)}
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Each tab shows the level <code>openmoat status</code> reports on your machine. On Windows, OpenMoat has no OS sandbox, so agents there show hook only. Calls from the Continue CLI, which runs Claude Code's hook, are named too.</p>
+  </section>
+
+  <section id="install">
+    <p class="eyebrow">INSTALL</p>
+    <h2>Install it after OpenMoat</h2>
+    <p>OpenMoat must be installed first (<a href="/docs/quickstart/">quick start</a>). Then:</p>
+    <div class="term">
+      <span class="c"># macOS, with Homebrew</span>
+      <span><span class="p">$</span> brew install --cask crocodile-labs/tap/openmoat-bar</span>
+      <span class="c gap"># macOS and Linux, with the installer</span>
+      <span><span class="p">$</span> curl --proto '=https' --tlsv1.2 -LsSf https://github.com/crocodile-labs/openmoat-bar/releases/latest/download/openmoat-bar-installer.sh | sh</span>
+      <span class="c gap"># Windows (PowerShell)</span>
+      <span><span class="p">&gt;</span> powershell -ExecutionPolicy Bypass -c "irm https://github.com/crocodile-labs/openmoat-bar/releases/latest/download/openmoat-bar-installer.ps1 | iex"</span>
+    </div>
+    <p class="small">The app is not signed by Apple: after the Homebrew install, open it the first time from Finder with right-click &gt; Open. The installer needs no extra step; it checks the download against the release's <code>SHA256SUMS</code> and installs for your user.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>System</th><th>Where it goes</th><th>Remove it</th></tr></thead>
+        <tbody>
+          <tr><td>macOS 12 or later (Apple silicon and Intel)</td><td><code>~/Applications/OpenMoat Bar.app</code></td><td><code>rm -rf ~/Applications/OpenMoat\ Bar.app</code></td></tr>
+          <tr><td>Linux x86_64</td><td><code>~/.local/share/openmoat-bar</code>, <code>openmoat-bar</code> in <code>~/.local/bin</code>, an app menu entry</td><td>Delete those and <code>~/.local/share/applications/dev.openmoat.bar.desktop</code></td></tr>
+          <tr><td>Windows x64</td><td><code>%LOCALAPPDATA%\Programs\OpenMoat Bar</code> and a Start menu entry</td><td>Delete that folder and the Start menu entry</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">On GNOME without tray support, install the "AppIndicator and KStatusNotifierItem Support" extension; without it OpenMoat Bar opens as a window from the app menu. To build it yourself: <a href={`${repo}#build-from-source`}>build from source</a>.</p>
+  </section>
+
+  <section id="first-run">
+    <p class="eyebrow">FIRST RUN</p>
+    <div class="split">
+      <div>
+        <h2>What happens when you open it</h2>
+        <ol class="steps">
+          <li>A welcome window says what it shows and that it is read-only. Click <strong>Open the menu</strong>.</li>
+          <li>The croc appears in your menu bar (or tray). Click it for every agent's tab.</li>
+          <li>Pick an agent's tab to see its protection level and today's decisions.</li>
+          <li>If the croc turns amber or red, open the menu: the check names the problem and the command that fixes it.</li>
+        </ol>
+      </div>
+      <figure><img src="/assets/openmoat-bar/welcome.jpg" alt="The welcome window: what was blocked and why, whether each agent is protected, read-only" width="700" height="651" loading="lazy" /></figure>
+    </div>
+  </section>
+
+  <section id="privacy">
+    <p class="eyebrow">PRIVACY AND SECURITY</p>
+    <h2>Nothing leaves your machine</h2>
+    <ul>
+      <li>OpenMoat Bar makes no network requests and sends nothing anywhere. It reads only what the <code>openmoat</code> commands above print, on your machine; links to the docs open in your browser when you click them.</li>
+      <li>It never allows a call, changes a rule or shows a secret's value.</li>
+      <li>A way to make it write state, approve a call, run a command or show a secret is a vulnerability: report it privately as its <a href={`${repo}/blob/main/SECURITY.md`}>SECURITY.md</a> describes.</li>
+    </ul>
+  </section>
+
+  <section id="faq">
+    <p class="eyebrow">QUESTIONS</p>
+    <h2>Questions people ask</h2>
+    <dl>
+      <dt>Do I need OpenMoat?</dt>
+      <dd>Yes. OpenMoat Bar only shows what OpenMoat decides; on its own it protects nothing. Without OpenMoat the croc is faded.</dd>
+      <dt>Does it change my settings or OpenMoat's policy?</dt>
+      <dd>No. It is read-only. Every fix is a command you copy and run yourself.</dd>
+      <dt>Why does Windows show "hook only"?</dt>
+      <dd>On native Windows, OpenMoat has no OS sandbox, so agents there are checked by their hooks only. The app shows exactly what <code>openmoat status</code> reports.</dd>
+      <dt>Does it slow my agent down?</dt>
+      <dd>No. It is not in the path of any call; it only reads OpenMoat's output.</dd>
+      <dt>Is it open source?</dt>
+      <dd>Yes, MIT or Apache-2.0, at your option: <a href={repo}>github.com/crocodile-labs/openmoat-bar</a>.</dd>
+    </dl>
+  </section>
+
+  <section class="end">
+    <h2>Install OpenMoat, then OpenMoat Bar</h2>
+    <p class="cta"><a class="button" href="/docs/quickstart/">OpenMoat quick start</a> <a class="button ghost" href="#install">Install OpenMoat Bar</a></p>
+    <p class="small"><a href="/docs/openmoat-bar/">OpenMoat Bar in the docs</a> · <a href={repo}>GitHub</a> · <a href={`${repo}/blob/main/CHANGELOG.md`}>Changelog</a></p>
+  </section>
+
+</main>
+</Page>
+
+<style>
+  .bar { max-width: 1100px; margin: 0 auto; padding: 0 24px 48px; color: var(--fg); font-family: 'Geist Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.6; }
+  .bar section { border-top: 1px solid var(--line); padding: 56px 0; }
+  .bar section.hero { border-top: 0; padding-top: 48px; display: flex; flex-wrap: wrap; gap: 40px; align-items: center; }
+  .hero-text { flex: 1 1 420px; min-width: 0; }
+  .hero-shot { flex: 1 1 380px; min-width: 0; }
+  .hero-shot img, .bar figure img { width: 100%; height: auto; border: 1px solid var(--line-2); border-radius: 8px; display: block; }
+  .eyebrow { margin: 0 0 12px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.14em; color: var(--accent); font-weight: 600; }
+  .bar h1 { margin: 0 0 12px; font-size: 44px; line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; }
+  .bar h2 { margin: 0 0 16px; font-size: 32px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; }
+  .bar h3 { margin: 24px 0 8px; font-size: 18px; font-weight: 600; }
+  .lead { color: var(--muted); font-size: 18px; margin: 0 0 20px; }
+  .platforms { margin: 0 0 20px; }
+  .note, .small { color: var(--muted); font-size: 14px; }
+  .bar ul, .bar ol { color: var(--muted); padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .bar strong { color: var(--fg); }
+  .bar code { font-family: 'Geist Mono', monospace; font-size: 0.9em; color: var(--fg-2); }
+  .bar a { color: var(--accent); }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 12px; }
+  .button { display: inline-block; padding: 10px 18px; border-radius: 8px; background: var(--accent); color: var(--on-accent) !important; font-weight: 600; text-decoration: none; }
+  .button.ghost { background: transparent; color: var(--fg) !important; border: 1px solid var(--line-2); }
+  .flow { list-style: none; padding: 0 !important; display: grid !important; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px !important; counter-reset: step; }
+  .flow li { border: 1px solid var(--line-2); border-radius: 12px; padding: 20px; background: var(--panel); display: flex; flex-direction: column; gap: 6px; counter-increment: step; }
+  .flow li::before { content: counter(step); font-family: 'Geist Mono', monospace; color: var(--accent); font-weight: 600; }
+  .flow li span { color: var(--muted); font-size: 15px; }
+  .split { display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start; }
+  .split > div { flex: 1 1 420px; min-width: 0; }
+  .split > figure { flex: 0 1 340px; margin: 0; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .bar figure { margin: 0; }
+  .bar figcaption { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 12px; }
+  .bar table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .bar th, .bar td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+  .bar th { color: var(--muted); font-weight: 500; font-size: 13px; }
+  .term { border: 1px solid var(--line-2); border-radius: 8px; background: var(--term); padding: 16px 18px; font-family: 'Geist Mono', monospace; font-size: 12.5px; display: flex; flex-direction: column; gap: 6px; overflow-x: auto; margin: 0 0 12px; }
+  .term span { white-space: nowrap; }
+  .term .c { color: var(--muted-2); }
+  .term .gap { margin-top: 6px; }
+  .term .p { color: var(--accent); }
+  .steps li { padding-left: 4px; }
+  .bar dl { display: flex; flex-direction: column; gap: 4px; }
+  .bar dt { font-weight: 600; margin-top: 12px; }
+  .bar dd { margin: 0; color: var(--muted); }
+  .end { text-align: center; }
+  .end .cta { justify-content: center; }
+  @media (max-width: 640px) {
+    .bar { padding: 0 16px 32px; }
+    .bar h1 { font-size: 34px; }
+    .bar h2 { font-size: 26px; }
+  }
+</style>
