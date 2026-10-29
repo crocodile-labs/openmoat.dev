@@ -1,0 +1,93 @@
+---
+title: "Code the agent wrote"
+description: "Where no OS sandbox from OpenMoat holds the command, running a file the same agent session wrote asks first (session-written-code)."
+sidebar:
+  label: "Overview"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+Your agent asked before running a script it had just written, with rule `session-written-code`, or you use an agent with no OS sandbox from OpenMoat.
+
+</Aside>
+
+**Protects against** an agent writing a script and running it, so that the script does what the hook cannot see: build the path of `~/.ssh/id_rsa` from pieces, read the key and send it to an allowed host. Nothing on the command line names the key, so no deny rule can match.
+
+## What it does
+
+When the agent runs a file the same agent session wrote, and no OS sandbox from OpenMoat holds the command, the call asks with rule `session-written-code`. The reason names the file:
+
+```text
+moat: ask [session-written-code] — runs code this session wrote, with no OS sandbox below the hook: /p/x.py
+```
+
+| Where | What happens |
+|---|---|
+| OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent | Asks. OpenCode 1 cannot ask, so it denies with the `openmoat allow --last` hint |
+| Claude Code and Cursor on native Windows, or with their sandbox not in place | Asks |
+| Claude Code, Codex and Cursor with their sandbox in place on macOS and Linux | Unchanged: the OS sandbox stops the script's read of the key |
+| Any agent inside `openmoat run` | Unchanged: the run's sandbox holds the whole agent |
+
+"Sandbox in place" is what `openmoat status` reports as `hook + OS sandbox`.
+
+What counts as running the file:
+
+- an interpreter given the file: `python3 x.py`, `python3 -u x.py`, `python -m tool`, `node x.js`, `node -r ./x.js`, `deno run`, `bun`, `ruby x.rb`, `perl x.pl`, `php -f`, `pwsh -File`, `npx tsx`, `go run x.go`;
+- a shell given the file: `bash x.sh`, `sh < x.sh`, `source x`;
+- a program named by a path: `./x`, `bin/x`;
+- inline code importing a module the session wrote: `python3 -c 'import tool'`;
+- all of these through `env`, `time`, `bash -c` and the other wrappers OpenMoat reads.
+
+A file counts as written by the session when the session wrote it by a path OpenMoat can see: the agent's file tools, `apply_patch`, an MCP tool's file argument, a shell write (`echo … > x.sh`, `tee`, `cp`, `mv`), or a one-liner that writes it.
+
+## Example
+
+The agent writes `x.py` with its file tool, then runs it:
+
+```bash
+python3 x.py
+```
+
+On Gemini CLI the second call asks, with the message above. Before 0.11.0 it was allowed. The same holds for a script the shell writes, in one command line or two:
+
+```bash
+echo … > x.sh; bash x.sh
+cat > y.sh <<EOF … EOF; sh y.sh
+```
+
+Not affected, because the session did not write the file or the command runs the project's code by design:
+
+```bash
+python manage.py    # a file the session did not write
+pytest              # test runners, build tools, package scripts
+npm test
+cargo test
+```
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat policy upgrade` | Takes the `session-written-code` rule into a policy written before 0.11.0 | `openmoat policy upgrade` |
+| `openmoat allow --last` | Look at the script, then approve the command for the session. It holds until the agent writes the file again | `openmoat allow --last` |
+| `openmoat status` | Shows whether each agent has `hook + OS sandbox` (no ask) or `hook only` (asks) | `openmoat status` |
+| `openmoat run -- <agent>` | Puts the whole agent in one sandbox, so the ask does not apply | `openmoat run --write ~/.claude --write ~/.claude.json -- claude` |
+
+`openmoat allow --last --always` refuses this ask: a permanent rule cannot vouch for code the agent may rewrite.
+
+## What OpenMoat records
+
+To know which files a session wrote, the audit log (schema 5 from 0.11.0) keeps, per agent session, each file it wrote by a literal path. The record keeps 30 days and the newest 100 000 files; a file whose row is gone counts as one the session did not write. An older OpenMoat refuses a schema-5 log, so keep one OpenMoat installed.
+
+## Limits
+
+- **Test runners, build tools and package scripts** (`pytest`, `npm test`, `cargo test`, `make`, `go run .`) running files the session wrote do not ask.
+- **Files another session or a person wrote** do not ask.
+- **Files written where the hook cannot see it** do not ask: the files `tar x` or `unzip` extract, a build's or a package manager's output, what a script the agent wrote writes in turn, a download saved under a name the command does not show, a copy made inside a script.
+- **Code a program loads on its own** (`import helper` of a written `helper.py`, `require('./lib')`, a `conftest.py`, a git hook) is not seen, nor a program named through a variable whose value the line does not show.
+- **Shells OpenMoat does not parse** (PowerShell, `cmd`) defer to the agent.
+- **A flag that turns a sandbox off at start** (Codex's `--sandbox danger-full-access`) is not seen: the sandbox state is read from the agents' settings, as `openmoat status` reads it.
+
+Inline code that builds the names it opens has its own rule: [Inline code with built names](/docs/session-written-code/opaque-code/). The full list: [Limits](/docs/limits/) and [THREAT_MODEL.md §5](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md#5-known-limitations).

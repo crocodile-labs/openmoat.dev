@@ -60,7 +60,7 @@ Hooks are read when a session starts. Start a new agent session after `openmoat 
 
 ## The `openmoat` binary is missing or broken
 
-Codex, and Claude Code before 2.1.295, then run calls without the check; Cursor, OpenClaw, GitHub Copilot CLI, pi and Gemini CLI block them. With Claude Code 2.1.295 or later, `openmoat init` sets `"onFailure": "block"` on OpenMoat's hook, so a call is blocked when `openmoat` cannot start, crashes or times out. It writes the key only when the `claude` on your `PATH` reports that version, and `openmoat doctor` warns when Claude Code is older or not found. Reinstall it (`brew reinstall crocodile-labs/tap/openmoat`, or the installer), then run `openmoat status`.
+Codex, and Claude Code before 2.1.295, then run calls without the check; Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode and Hermes Agent block them. With Claude Code 2.1.295 or later, `openmoat init` sets `"onFailure": "block"` on OpenMoat's hook, so a call is blocked when `openmoat` cannot start, crashes or times out. It writes the key only when the `claude` on your `PATH` reports that version, and `openmoat doctor` warns when Claude Code is older or not found. Reinstall it (`brew reinstall crocodile-labs/tap/openmoat`, or the installer), then run `openmoat status`.
 
 ## A call is denied with `no decision within 30 s`
 

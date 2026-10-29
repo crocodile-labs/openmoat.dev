@@ -40,8 +40,11 @@ export default defineConfig({
         './src/styles/docs.css',
       ],
       sidebar: [
-        group('Get started', ['index', 'quickstart', 'your-projects', 'agents', 'how-it-decides']),
-        group('Features', ['shell-commands', 'env-files', 'allow-a-site',
+        group('Get started', ['index', 'quickstart', 'your-projects',
+          sub('Supported agents', 'agents', ['plugin-loading', 'openclaw', 'opencode']), 'how-it-decides']),
+        group('Features', ['shell-commands',
+          sub('Secrets and .env files', 'env-files', ['agent-credentials', 'protected-contents']), 'allow-a-site',
+          sub('Code the agent wrote', 'session-written-code', ['opaque-code']),
           sub('Token broker', 'keep-tokens-safe', ['token-egress', 'another-service', 'where-it-works']),
           sub('MCP pinning and proxy', 'mcp-servers', ['tool-pinning']),
           sub('OS sandboxes and run', 'sandboxes', ['openmoat-run']),
@@ -59,7 +62,7 @@ export default defineConfig({
         {
           label: 'Releases',
           collapsed: true,
-          items: ['docs/releases', ...['v0-10-1', 'v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
+          items: ['docs/releases', ...['v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
             .map((v) => `docs/releases/${v}`)],
         },
       ],

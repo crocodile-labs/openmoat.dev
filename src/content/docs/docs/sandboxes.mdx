@@ -19,7 +19,7 @@ The hook decides each call, but an allowed `npm test` can run any code. So OpenM
 | `openmoat run` (Lightweight) | `openmoat run -- <agent>` | The whole agent and everything it starts, in one sandbox, with network only through OpenMoat's proxy | Seatbelt on macOS 13 or later; Landlock and seccomp on Linux 6.7 or later |
 | `openmoat run --isolate` (Isolated) | `openmoat run --isolate -- <agent>` | As above; the agent sees only the project, the read roots, the `--write` paths and an empty temp directory | Linux, with bubblewrap |
 
-What `openmoat init` writes: the `sandbox` block and `permissions.blockReadsOutsideWorkingDirectories` in Claude Code's `settings.json`; a `[permissions.moat]` profile, `default_permissions = "moat"` and `features.network_proxy = true` in Codex's `config.toml`; `sandbox.json` next to Cursor's `hooks.json`. Each file is backed up to `<file>.moat-sandbox-backup` first, and `openmoat uninstall` takes the settings out again. OpenClaw, GitHub Copilot CLI, pi and Gemini CLI have no sandbox OpenMoat can configure: use `openmoat run` for them.
+What `openmoat init` writes: the `sandbox` block and `permissions.blockReadsOutsideWorkingDirectories` in Claude Code's `settings.json`; a `[permissions.moat]` profile, `default_permissions = "moat"` and `features.network_proxy = true` in Codex's `config.toml`; `sandbox.json` next to Cursor's `hooks.json`. Each file is backed up to `<file>.moat-sandbox-backup` first, and `openmoat uninstall` takes the settings out again. OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode and Hermes Agent have no sandbox OpenMoat can configure: use `openmoat run` for them. Without it, running a script the session wrote asks first ([Code the agent wrote](/docs/session-written-code/)).
 
 ## Example
 

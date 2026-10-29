@@ -41,16 +41,21 @@ openmoat policy check "cat ~/.ssh/id_rsa"
 |---|---|
 | `cat .env`, `source .env`, `cat .env.test`, `cat config/.env.local` | deny: `secrets-paths` (any `.env` or `.env.*`, at any depth) |
 | `cat .envrc` | deny |
-| `cat .env.example`, `.env.sample`, `.env.template` | allow: committed templates carry no values |
+| `cat .env.example`, `.env.sample`, `.env.template`, `.env.dist`, `.env.test.example` | allow: committed templates carry no values |
 | `echo $OPENAI_API_KEY`, `$GITHUB_TOKEN`, `$AWS_SECRET_ACCESS_KEY` | deny: `env-secrets` |
 | `printenv`, `env`, `export -p`, `cat /proc/self/environ` | deny: `env-dump` |
 | `python -c "import os; print(os.environ['GITHUB_TOKEN'])"`, `node -e "console.log(process.env.GITHUB_TOKEN)"` | deny: `env-secrets`, a read of that variable |
-| `python -c "import os; print(os.environ)"` | deny: `env-dump`, the whole environment |
+| `python -c "import os; print(os.environ)"`, `python3 -c 'print(__import__("os").environ)'` | deny: `env-dump`, the whole environment |
 | `echo $SENTRY_URL` | **defer**: the name does not look like a secret |
 
 Variable names that are denied: anything ending in `_KEY`, `_TOKEN`, `_SECRET`, `_PASSWORD`, `_PASS`, `_PASSWD`, `_PWD`, `_CREDENTIALS` or `_DSN`, anything starting with `AWS_`, the connection strings `DATABASE_URL`, `*_DATABASE_URL`, `REDIS_URL`, `MONGODB_URI` and `MONGO_URL`, and `GITHUB_TOKEN`, `NPM_TOKEN`, `PGPASSWORD`. Other `*_URL` variables are not.
 
 Inline code run with `python -c`, `node -e`, `ruby -e`, `perl -e`, `php -r` and similar is read too: a variable it reads by name is checked like `echo $NAME`, and code that prints the whole environment, or reads a variable whose name is chosen at run time, is denied by `env-dump`.
+
+## Agent logins and the folders around secrets
+
+- **Every supported agent's login, provider keys and OAuth tokens** are denied to the agent's tools by `agent-credentials`: [Agent logins and keys](/docs/env-files/agent-credentials/).
+- **A folder that holds denied files** (`cp -r ~/.codex x`, `tar czf a.tgz ~/.hermes`) asks, with `protected-contents`: [Folders that hold denied files](/docs/env-files/protected-contents/).
 
 ## Commands
 

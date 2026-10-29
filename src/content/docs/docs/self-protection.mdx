@@ -60,7 +60,7 @@ Self-protection has no switch. `executables:` adds pins of your own ([Shell comm
 
 ## Limits
 
-- **The lock is a list of digests, with no key.** A program that runs as you outside any sandbox can change the policy and write new digests. Only an OS sandbox stops that, so hook-only agents (OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, and Claude Code and Cursor on native Windows) do not have this protection.
+- **The lock is a list of digests, with no key.** A program that runs as you outside any sandbox can change the policy and write new digests. Only an OS sandbox stops that, so hook-only agents (OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, and Claude Code and Cursor on native Windows) do not have this protection.
 - **Agent settings can turn hooks off** (`disableAllHooks`, `[features] hooks = false`, pi's `--no-extensions`), and a repository's `.claude/settings.json` is loaded at session start, before any hook runs ([Keep Claude Code's hooks on for everyone](/docs/team-rules/#keep-claude-codes-hooks-on-for-everyone)).
 - **Some agents run a call when the hook fails**: Codex, and Claude Code before 2.1.295, if `openmoat` is missing or crashes.
 - **A root user or a replaced `openmoat` binary** is out of scope.
