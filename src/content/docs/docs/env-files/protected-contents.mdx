@@ -1,0 +1,61 @@
+---
+title: "Folders that hold denied files"
+description: "Reading, copying or writing into a folder that holds files a deny rule names asks (protected-contents)."
+sidebar:
+  label: "Folders that hold denied files"
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+`cp -r`, `tar`, `grep -r` or `ls` of a folder such as `~/.codex` asked with rule `protected-contents`.
+
+</Aside>
+
+**Protects against** taking a secret by taking its folder. `cat ~/.codex/auth.json` is denied, but `cp -r ~/.codex /tmp/c` is one read of the folder, which no deny rule named, so before 0.11.0 it deferred to the agent's prompt.
+
+## What it does
+
+Every deny rule's paths now protect the folders they lie in. Reading such a folder, copying or archiving it, or writing into it asks, with rule `protected-contents`. It holds in every spelling of the folder: a moved agent directory, and another letter case on macOS and Windows. Agents that cannot ask deny it with the `openmoat allow --last` hint.
+
+| Command | Verdict | Rule |
+|---|---|---|
+| `cp -r ~/.codex /tmp/c`, `ls ~/.gemini` | ask | `protected-contents` |
+| `grep -r token ~/.gemini`, `tar czf a.tgz ~/.hermes`, `rsync -a ~/.local/share/opencode x`, `zip -r a.zip ~/.copilot`, `cp -r ~/.docker x` | ask | `protected-contents` |
+| `ls ~/.codex`, `ls ~/Library` | ask | `protected-contents` |
+| `ls /` | unchanged | the home folder and the folders above it are left to `home-sweep` and `destructive` |
+| `grep -r TODO .` | allow | folders inside a project are unchanged |
+
+## Example
+
+```bash
+openmoat policy check "cp -r ~/.codex /tmp/c"
+```
+
+The first line of the output is `❓ ask`, and the rule is `protected-contents`: the folder holds files a deny rule names (`agent-credentials`).
+
+### Extracting into a folder
+
+From 0.11.0 an extraction is a write of the folder it extracts into: `tar -x … -C DIR` (`--directory`, also `gtar` and `bsdtar`) and `unzip … -d DIR`, or the working directory without one.
+
+| Command | Verdict | Rule |
+|---|---|---|
+| `tar xf e.tar -C ~/.claude`, `unzip e.zip -d ~/.moat` | deny | `kernel-self` |
+| `tar xf e.tar -C ~` | deny | `destructive` |
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat policy upgrade` | Takes the `protected-contents` rule into a policy written before 0.11.0 | `openmoat policy upgrade` |
+| `openmoat policy check "<command>"` | Shows the verdict and rule; nothing runs | `openmoat policy check "ls ~/.gemini"` |
+| `openmoat allow --last` | Approves the folder read you were asked about, for this session | `openmoat allow --last` |
+
+## Limits
+
+- **Once you approve the read, the copy holds the files.** Look at what is being copied before you answer.
+- **The files inside an extracted archive are not listed.** The destination folder is checked as a write; the files written into it are not, so running one later does not count as running a file the session wrote.
+
+The full list: [Limits](/docs/limits/) and [THREAT_MODEL.md §5](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md#5-known-limitations).

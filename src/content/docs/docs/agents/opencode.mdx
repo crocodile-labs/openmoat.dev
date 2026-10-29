@@ -1,0 +1,74 @@
+---
+title: "OpenCode 1 and 2"
+description: "One OpenMoat plugin for OpenCode 1 (1.3.4 and later) and OpenCode 2: asks in OpenCode 2's own prompt, and the call that runs is the call that was checked."
+sidebar:
+  label: "OpenCode 1 and 2"
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You use OpenCode, upgrade it from 1 to 2, or `openmoat status` reports OpenCode as not protected.
+
+</Aside>
+
+**Protects against** OpenCode running a tool call nobody checked. OpenCode has no command hook, so OpenMoat runs in it as a plugin that calls `openmoat guard` before every tool call.
+
+## What it does
+
+`openmoat init --hosts opencode` writes one plugin, `plugins/openmoat.js`, in `~/.config/opencode` (`$XDG_CONFIG_HOME/opencode` when that is set, `$OPENCODE_CONFIG_DIR` when that is). The same file serves both versions:
+
+| | OpenCode 1 (`opencode-ai`, 1.3.4 and later) | OpenCode 2 (`@opencode/cli`) |
+|---|---|---|
+| Hook the plugin runs on | `tool.execute.before` | `execute.before` |
+| An `ask` | A deny that says how to approve the call: run `openmoat` or `openmoat allow --last`, then retry | OpenCode's own permission prompt, for the action `openmoat`, with OpenMoat's reason |
+| A call OpenMoat defers | Left to OpenCode's own permission rules | Left to OpenCode's own permission rules |
+| A later plugin that rewrites the call | Makes the call fail: the plugin freezes the arguments | Makes the call fail: the plugin replaces `tool` and `input` with what it checked, frozen |
+
+An upgrade from OpenCode 1 to 2 needs no new `openmoat init`. `openmoat status` names the hook the `opencode` on your search path runs, for example `opencode 2.2.0: OpenCode 2's execute.before`.
+
+On OpenCode 2 the plugin also pins the shell command it checked when OpenCode starts the shell, so a shell hook registered after OpenMoat's cannot change it. It reads OpenCode 2's tools (`shell`, `read`/`write`/`edit` with `path`, `patch`, `opencode_worktree_remove`, …), its `~` expansion and its `mcp.servers`.
+
+The default policy denies the agent setting `OPENCODE_CONFIG_DIR`, `OPENCODE_CONFIG` or `OPENCODE_CONFIG_CONTENT`, writing OpenCode 2's `service*.json`, and running `opencode plugin add|remove|update` or `opencode service set|unset`. It also denies changing the plugin and the files that load plugins, `opencode --pure`, setting `OPENCODE_PURE`, `opencode upgrade --major` and `opencode plugin --global`, and asks before the agent writes other plugins, custom tools, commands or a project's `opencode.json`.
+
+## Example
+
+```bash
+openmoat init --hosts opencode
+opencode service restart      # OpenCode 2; start OpenCode 1 again instead
+openmoat status
+```
+
+`openmoat status` shows OpenCode as `hook only`, names the hook it runs, and says "plugin not loaded yet" until OpenCode has loaded the plugin ([Plugin loading](/docs/agents/plugin-loading/)).
+
+On OpenCode 2, an ask such as `git config core.hooksPath .h` (`git-internals`) appears as OpenCode's own permission prompt. On OpenCode 1 the agent gets a deny; run `openmoat allow --last` in your terminal and ask OpenCode to retry.
+
+## When OpenCode is not protected
+
+`openmoat status` and `openmoat doctor` report OpenCode as **not protected** when:
+
+- your own `opencode.json` or `opencode.jsonc` has `-openmoat` (or `-*`) in `plugins`, or a `policies` entry denies OpenMoat's plugin;
+- the `opencode` on the search path is older than 1.3.4, which loads no object plugin: upgrade it.
+
+They warn when a project's configuration does the same, since OpenCode 2 sessions started there run unchecked.
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat init --hosts opencode` | Writes the plugin; run it with the variables OpenCode runs with | `openmoat init --hosts opencode` |
+| `opencode service restart` | OpenCode 2: loads the plugin | `opencode service restart` |
+| `openmoat status` | The protection level, the hook OpenCode runs, the plugin loading line | `openmoat status` |
+| `openmoat allow --last` | Approves the call OpenCode 1 was denied on an ask | `openmoat allow --last` |
+
+## Limits
+
+- **`--auto` approves OpenMoat's asks.** OpenCode 2's `--auto` (`--yolo`, `--dangerously-skip-permissions`) approves them as it approves OpenCode's own, and the plugin cannot tell.
+- **Calls run unchecked when OpenCode does not load the plugin:** OpenCode 1's `--pure` or `OPENCODE_PURE`, OpenCode 2's `-openmoat` in a project's `plugins`, or an error while the plugin loads, which OpenCode logs and goes on.
+- **Other plugins share OpenCode's process.** OpenCode loads other plugins and a project's `.opencode/plugins/` at start, with no prompt. A plugin can still replace a tool's implementation, advertise a tool under another name, or change a shell's working directory or environment.
+- **Your own `!` shell commands** are not checked.
+- **No OS sandbox from OpenMoat.** Run OpenCode under `openmoat run` for one.
+
+All of OpenCode's gaps, with the reasons: [THREAT_MODEL.md §5](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md#5-known-limitations).

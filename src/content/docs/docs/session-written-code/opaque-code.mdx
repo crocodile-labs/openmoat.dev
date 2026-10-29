@@ -1,0 +1,76 @@
+---
+title: "Inline code with built names"
+description: "Inline interpreter code that opens files, connects, reads the environment or runs programs with text it builds at run time asks (opaque-code)."
+sidebar:
+  label: "Inline code with built names"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+A `python3 -c`, `node -e` or `perl -e` one-liner asked with rule `opaque-code`.
+
+</Aside>
+
+**Protects against** a one-liner that hides the file it reads by building its name from pieces, so that no path rule can match: `"~/.s" + "sh/id_rsa"` names `~/.ssh/id_rsa` only when the code runs.
+
+## What it does
+
+OpenMoat scans inline interpreter code (`-c`, `-e`, and a here-document fed to an interpreter) for the paths, hosts and variables it names. When the code uses a file, network, environment or process API and hands it text it builds at run time (strings joined, interpolated, decoded or formatted, or a variable), the scan cannot know what the code will open, so the call asks with rule `opaque-code`. This applies on every agent, with or without an OS sandbox.
+
+Code that hands those APIs literal text keeps its verdict, because the scan reads the literal names and checks them like any other path.
+
+## Example
+
+These deferred before 0.11.0 and now ask:
+
+```bash
+python3 -c 'print(open(os.path.expanduser("~/.s"+"sh/id_rsa")).read())'
+node -e "require('fs').readFileSync(process.env.HOME+'/.ss'+'h/id_rsa')"
+perl -e 'open F,"$ENV{HOME}/.s"."sh/id_rsa";print <F>'
+```
+
+Check one without running it:
+
+```bash
+openmoat policy check "python3 -c \"print(open('~/.s'+'sh/id_rsa').read())\""
+```
+
+The first line of the output is `❓ ask`, and the rule is `opaque-code`.
+
+These keep their verdict:
+
+```bash
+python3 -c 'print(1+1)'
+node -e 'console.log(2)'
+```
+
+### Inline code that writes
+
+From 0.11.0, inline code that writes a file counts as writing every file name it shows, so the write rules apply to it:
+
+| One-liner | Verdict | Rule |
+|---|---|---|
+| `python3 -c 'open("/Users/me/.zshrc","a").write("x")'` (and its Node, Ruby, Perl, PHP, Deno and Lua equivalents) | deny | `shell-rc` |
+| the same, writing `~/.claude/settings.json` | deny | `kernel-self` |
+| the same, writing a CI workflow | ask | `runs-later` |
+
+A script written by a one-liner counts as written by the session, so running it afterwards asks where no OS sandbox holds the command ([Code the agent wrote](/docs/session-written-code/)).
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat policy upgrade` | Takes the `opaque-code` rule into a policy written before 0.11.0 | `openmoat policy upgrade` |
+| `openmoat policy check "<command>"` | Shows the verdict and rule for a one-liner; nothing runs | `openmoat policy check "node -e 'console.log(2)'"` |
+| `openmoat allow --last` | Approves the one-liner you were asked about, for this session | `openmoat allow --last` |
+
+## Limits
+
+- **The code is scanned, not parsed.** An API or a way of building text that is not on the scan's lists is not recognised as built, and the call keeps its verdict.
+- **Environment reads through an alias** (`e = os.environ; print(e)`, `g = getattr`) are not followed.
+- **Code that writes only through a name it builds** asks as `opaque-code`; it is not checked as a write of a particular file.
+
+The full list: [Limits](/docs/limits/) and [THREAT_MODEL.md §5](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md#5-known-limitations).

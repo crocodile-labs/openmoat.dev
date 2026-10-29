@@ -1,6 +1,6 @@
 ---
 title: "Supported agents"
-description: "The seven agents OpenMoat checks (and the Continue CLI, not yet), how well each one is protected, where you answer its questions, and what each one does not cover."
+description: "The nine agents OpenMoat checks (and the Continue CLI, not yet), how well each one is protected, where you answer its questions, and what each one does not cover."
 sidebar:
   label: "Supported agents"
   order: 2
@@ -16,7 +16,7 @@ You want to know how much OpenMoat can do for the agent you use, or `openmoat st
 
 Each agent calls `openmoat guard` from its own **hook** before every tool call. `openmoat init` finds the agents installed on your machine and asks before setting up each one.
 
-For an agent with an **OS sandbox**, `openmoat init` also writes the sandbox settings from the same policy, so a script inside an allowed `npm test` cannot read your keys either. For the others, the hook is the only check.
+For an agent with an **OS sandbox**, `openmoat init` also writes the sandbox settings from the same policy, so a script inside an allowed `npm test` cannot read your keys either. For the others, the hook is the only check; there, running a script the same session wrote asks first ([Code the agent wrote](/docs/session-written-code/)).
 
 ## At a glance
 
@@ -29,11 +29,15 @@ For an agent with an **OS sandbox**, `openmoat init` also writes the sandbox set
 | [GitHub Copilot CLI](#github-copilot-cli) | hook only | Copilot's own prompt | `copilot-cli` |
 | [pi](#pi) | hook only | a pi dialog | `pi` |
 | [Gemini CLI](#gemini-cli) | hook only | Gemini CLI's own confirmation | `gemini-cli` |
+| [OpenCode](#opencode) (1 and 2) | hook only | OpenCode 2's own permission prompt; on OpenCode 1 the call is denied, run `openmoat allow --last` | `opencode` |
+| [Hermes Agent](#hermes-agent) | hook only | Hermes's own approval prompt | `hermes` |
 | [Continue CLI](#continue-cli) | not checked yet | none: use `openmoat run` | none |
 
-`openmoat status` prints the level each agent has right now. It says **not protected** when the hook is missing or out of date, or when the agent's own settings turn hooks off; the line names the file and the setting.
+`openmoat status` prints the level each agent has right now. It says **not protected** when the hook is missing or out of date, when the agent's own settings turn hooks off, when OpenMoat's entry lacks the agent's fail-closed key (`failClosed: true` for Cursor, `fail_closed: true` for Hermes Agent), when Hermes Agent's `shell-hooks-allowlist.json` does not approve the hook, when the agent ran without loading OpenMoat's plugin, or when the agent's version does not load OpenMoat's hook (OpenCode before 1.3.4); the line names the file and the setting. When the agent's installed version has a published security advisory that a later version fixes, `openmoat status` and `openmoat doctor` add a warning line naming the version to upgrade to.
 
 For any agent, `openmoat run -- <agent>` starts the whole agent inside one sandbox made from your policy, with network only through OpenMoat's proxy (macOS 13 or later, Linux). It answers nothing command by command; that is the hook's job. See [Auto-approve and CI](/docs/auto-approve-and-ci/#run-a-whole-agent-in-a-sandbox).
+
+Each week CI installs every agent's latest release and sets it up with `openmoat init`; where the agent runs without an account, CI checks that the real agent loads OpenMoat's hook ([what is checked per agent](https://github.com/crocodile-labs/openmoat/blob/main/scripts/ci/latest-agents/README.md)).
 
 ## What each agent's hook sees
 
@@ -42,7 +46,7 @@ Every hooked agent sends OpenMoat its shell commands, file reads and writes, and
 ### Claude Code
 
 - **Checked:** `Bash`, `Monitor`, `PowerShell` (not parsed, so it goes to your agent's prompt), file tools (`Read`, `Edit`, `Write`, `MultiEdit`, `NotebookEdit`, `Glob`, `Grep`, `LSP`), `WebFetch`, `WebSearch`, `SendFile`, the local files `Artifact` and `ArtifactData` upload or save, and MCP tools. A second hook, `ConfigChange`, sees settings files change during a session.
-- **Sandbox:** Claude Code's sandbox covers `Bash`, `PowerShell` and `Monitor`. File tools, `WebFetch` and MCP servers run outside it and are checked by the hook only. On native Windows `openmoat init` leaves the sandbox off, because Claude Code would not start with it; run Claude Code and `openmoat` inside WSL2 for it.
+- **Sandbox:** Claude Code's sandbox covers `Bash`, `PowerShell` and `Monitor`. File tools, `WebFetch` and MCP servers run outside it and are checked by the hook only. On native Windows `openmoat init` leaves the sandbox off, because Claude Code would not start with it; run Claude Code and `openmoat` inside WSL2 for it. Where the sandbox is not in place, running a script the session wrote asks.
 - **If the hook fails:** with Claude Code 2.1.295 or later, `openmoat init` sets `onFailure: "block"`, so the call is blocked when `openmoat` cannot start, crashes or times out. Earlier versions run the call unchecked.
 - **Turned off by:** `disableAllHooks` in a `settings.json`. A project's `.claude/settings.json` is loaded when the session starts, before any hook runs; see [Project settings that turn hooks off](/docs/blocked/#project-settings-that-turn-hooks-off).
 
@@ -56,15 +60,17 @@ Every hooked agent sends OpenMoat its shell commands, file reads and writes, and
 
 ### Cursor
 
-- **Checked:** shell commands, MCP calls, file reads, and the agent's file, search and web tools. The hooks are installed with `failClosed`, so a hook that fails blocks the call.
+- **Checked:** shell commands, MCP calls, file reads, and the agent's file, search and web tools. The hooks are installed with `failClosed`, so a hook that fails blocks the call; an entry without `failClosed: true` is reported as not protected.
 - **Asks:** Cursor shows its own prompt only for shell and MCP calls. An ask about a file tool is sent as a deny that says to run `openmoat allow --last`.
-- **Sandbox:** `openmoat init` writes Cursor's `sandbox.json` on macOS and Linux. Cursor still runs some commands outside it: one its Auto-review approves, everything in Run Everything mode, and the Cursor CLI without `--sandbox enabled`. Inside the workspace its sandbox cannot deny `.env` or `.git`. Cursor documents no sandbox on Windows, so there it is hook only.
+- **Sandbox:** `openmoat init` writes Cursor's `sandbox.json` on macOS and Linux. Cursor still runs some commands outside it: one its Auto-review approves, everything in Run Everything mode, and the Cursor CLI without `--sandbox enabled`. Inside the workspace its sandbox cannot deny `.env` or `.git`. Cursor documents no sandbox on Windows, so there it is hook only, and running a script the session wrote asks.
 
 ### OpenClaw
 
 - **Checked:** every tool, through OpenMoat's plugin on OpenClaw's `before_tool_call` hook: `exec`, file tools, `apply_patch`, `web_fetch`, `web_search`, browser navigation and uploads, MCP tools, plugin changes, and cron jobs (which ask).
-- **Setup:** restart the Gateway after `openmoat init`. `openmoat init` refuses an `openclaw.json` that has comments, because writing it back would drop them: move them out first.
-- **If the hook fails:** a plugin that throws or takes over 60 seconds blocks the call. If the Gateway does not load the plugin at all, calls run unchecked.
+- **The call that runs is the one checked.** The plugin decides at the highest priority and returns the parameters it checked at the lowest, so another plugin's rewrite of the call is undone ([OpenClaw runs the call OpenMoat checked](/docs/agents/openclaw/)). A plugin that changes the call and asks for approval in the same answer keeps its change once you approve it.
+- **Setup:** restart the Gateway after `openmoat init` (`openclaw gateway restart`). `openmoat init` refuses an `openclaw.json` that has comments, because writing it back would drop them: move them out first.
+- **If the hook fails:** a plugin that throws or takes over 60 seconds blocks the call. If the Gateway does not load the plugin at all, calls run unchecked; `openmoat status` says "plugin not loaded yet" until the plugin has reported loading ([Plugin loading](/docs/agents/plugin-loading/)).
+- **Not checked:** OpenClaw's process input to a running `exec` session; `code_execution`, which runs at the model provider. Running a script the session wrote asks.
 
 ### GitHub Copilot CLI
 
@@ -81,7 +87,8 @@ The pi coding agent (`@earendil-works/pi-coding-agent`).
 - **Asks:** a pi dialog. In print and JSON mode, which have no screen, an ask is a deny until you run `openmoat allow --last`.
 - **Deferred calls run.** pi has no approval step of its own, so a call OpenMoat has no rule for runs without a question.
 - **Setup:** restart pi after `openmoat init`; it loads extensions when it starts.
-- **If the hook fails:** an extension that throws, or an answer that takes over 45 seconds, blocks the call. `pi --no-extensions`, or a settings entry that leaves OpenMoat's extension out, runs calls unchecked; `openmoat status` reports such an entry.
+- **If the hook fails:** an extension that throws, or an answer that takes over 45 seconds, blocks the call. `pi --no-extensions`, or a settings entry that leaves OpenMoat's extension out, runs calls unchecked; `openmoat status` reports such an entry, and reports pi as not protected once pi wrote a session without the extension reporting that it loaded ([Plugin loading](/docs/agents/plugin-loading/)).
+- **Not checked:** an input change by an extension pi loads after OpenMoat's, and an extension that replaces a built-in tool.
 
 ### Gemini CLI
 
@@ -90,6 +97,25 @@ The pi coding agent (`@earendil-works/pi-coding-agent`).
 - **Trusted folders only.** In a folder Gemini CLI does not trust, it runs no hooks at all, and asks you before every tool instead.
 - **If the hook fails:** Gemini CLI has no setting to block on failure. A hook that times out, is killed or exits with code 1 lets the call run. A missing `openmoat` blocks it.
 - **Setup:** `openmoat init` refuses a `settings.json` with comments: move them out first. When Gemini CLI saves a new model, theme or display setting there, calls keep being checked and `openmoat doctor` reports the change.
+
+### OpenCode
+
+OpenCode 1 (`opencode-ai`, 1.3.4 and later) and OpenCode 2 (`@opencode/cli`), through one plugin ([OpenCode 1 and 2](/docs/agents/opencode/)).
+
+- **Checked:** every tool, through OpenMoat's plugin (`~/.config/opencode/plugins/openmoat.js`) on OpenCode 1's `tool.execute.before` or OpenCode 2's `execute.before`. The plugin pins the call it checked, so a later plugin that rewrites it makes the call fail.
+- **Asks:** on OpenCode 2, OpenCode's own permission prompt. OpenCode 1 gives a plugin no way to ask, so an ask is a deny that says to run `openmoat` or `openmoat allow --last`. A call OpenMoat defers is left to OpenCode's own permission rules.
+- **Setup:** start OpenCode again after `openmoat init` (OpenCode 2: `opencode service restart`). An upgrade from 1 to 2 needs no new `openmoat init`. OpenCode before 1.3.4 is not set up: `openmoat status` says to upgrade.
+- **If the hook fails:** a plugin that throws, or an answer that takes over 45 seconds, blocks the call. OpenCode runs calls unchecked when it does not load the plugin: OpenCode 1's `--pure` or `OPENCODE_PURE`, OpenCode 2's `-openmoat` in `plugins`, or an error loading it. `openmoat status` says "plugin not loaded yet" until the plugin has reported loading.
+- **Not checked:** your own `!` shell commands. OpenCode 2's `--auto` approves OpenMoat's asks, and the plugin cannot tell. Other plugins and custom tools run in OpenCode's process with the agent's rights, and a project's load at start with no prompt.
+
+### Hermes Agent
+
+- **Checked:** every tool, through one `pre_tool_call` shell hook in `~/.hermes/config.yaml` (`$HERMES_HOME/config.yaml` when that is set), with `fail_closed: true`. `openmoat init` edits the file as text, so your comments stay, and approves the hook's command in `shell-hooks-allowlist.json` beside it. Its `memory` and `skill_manage` tools are checked as writes of its `memories/` and `skills/`.
+- **Asks:** Hermes's own approval prompt. In YOLO mode or with `approvals.mode: off`, where Hermes would approve it unseen, an ask is a deny you approve with `openmoat allow --last`.
+- **Setup:** restart `hermes` and the gateway after `openmoat init` (a running gateway picks the hook up within about 30 seconds). Hermes saves `hermes model` and display choices in the same file without affecting OpenMoat; any other change there denies every call until you run `openmoat doctor --accept`.
+- **If the hook fails:** a hook that cannot start, times out, exits non-zero without a decision or prints something that is not JSON blocks the call, and so does `plugins.hook_callback_timeout` (30 seconds by default) running out. Hermes runs a call unchecked when its own hook dispatcher raises an error.
+- **Skipped hook:** Hermes's gateway, cron and ACP sessions skip a hook its `shell-hooks-allowlist.json` does not approve, as Hermes does under `HERMES_SAFE_MODE=1` or in a profile OpenMoat did not set up. `openmoat status` reports a hook the allowlist does not approve as not protected.
+- **Not checked:** what an `execute_code` script does itself (its tool calls are checked). Plugins, another hook's `modify` reply and tool middleware can rewrite a call's arguments after the check. The in-session `/yolo` toggle and `hermes -z` approve an ask unseen. Terminal commands on a remote backend (docker, ssh, modal, …) are checked as local ones.
 
 ### Continue CLI
 
@@ -118,7 +144,9 @@ An agent's own settings can turn its hooks off, and OpenMoat cannot override the
 | GitHub Copilot CLI | `disableAllHooks` in `settings.json` |
 | pi | an `extensions` entry that leaves OpenMoat's out, or `--no-extensions` |
 | Gemini CLI | `hooksConfig` in `settings.json`, or a folder Gemini CLI does not trust |
+| OpenCode | `-openmoat` (or `-*`) in `plugins`, or a `policies` entry denying OpenMoat's plugin, in `opencode.json[c]`; OpenCode 1's `--pure` or `OPENCODE_PURE` |
+| Hermes Agent | the hook's command not approved in `shell-hooks-allowlist.json`; `HERMES_SAFE_MODE=1`; a profile OpenMoat did not set up |
 
-The agent itself is denied writing these files, so only you, or a program running outside the agent, can change them.
+The agent itself is denied writing your own settings files of these, so only you, or a program running outside the agent, can change them.
 
 Every gap per agent, with the reasons: [THREAT_MODEL.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md#5-known-limitations). Every tool each hook sees: [INSTALL.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/INSTALL.md#set-up-with-openmoat-init).

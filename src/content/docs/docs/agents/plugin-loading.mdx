@@ -1,0 +1,59 @@
+---
+title: "Did the agent load the plugin?"
+description: "OpenClaw, pi and OpenCode report when they load OpenMoat's plugin; openmoat status says plugin not loaded yet until they have."
+sidebar:
+  label: "Plugin loading"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+`openmoat status` says "plugin not loaded yet" under OpenClaw, pi or OpenCode, or reports pi as not protected after it ran.
+
+</Aside>
+
+**Protects against** a plugin that is installed but never loaded looking protected. OpenClaw, pi and OpenCode run OpenMoat through a plugin they load. Each of them starts without a plugin it cannot load (a syntax error, an API the agent dropped, a broken Node), logs the error and then runs every call unchecked.
+
+## What it does
+
+OpenMoat's plugin runs `openmoat guard --heartbeat --host <id>` as the agent loads it. That records the time in `loaded/<id>.json` in OpenMoat's state directory: owner-only, holding the agent, the time and the OpenMoat release, nothing else. Under the agent's hook line, `openmoat status` and `openmoat doctor` then print one of:
+
+| Line | Means |
+|---|---|
+| `· plugin loaded: last report or call <time>` | The plugin reported, or sent a call the guard decided, after the last change that could have stopped it loading |
+| `· plugin not loaded yet since OpenMoat wrote it (<time>)` (or `since <agent> was updated`) | Neither has happened since `openmoat init` wrote the plugin, or since the agent's program on the search path changed, and the agent has not run since as far as OpenMoat can tell. A note, not a problem: a fresh `init` shows it. Start the agent, or restart it if it was running |
+| `! plugin has not reported loading since …, but <agent> has run since (last <time>): its tool calls may run unchecked` | The agent wrote a session since that change without the plugin reporting. The protection level is `not protected` until the plugin reports. Restart the agent; if the line stays, look for the plugin error in its log |
+
+"Has run" is known only for pi, which writes a file of its own for each session. OpenClaw and OpenCode keep their sessions in a database that commands loading no plugin write too, so for them the line stays a note.
+
+## Example
+
+Right after the upgrade to 0.11.0, before you restart pi:
+
+```bash
+openmoat init --hosts pi
+openmoat status
+```
+
+Under pi's hook line, `openmoat status` prints `· plugin not loaded yet since OpenMoat wrote it (<time>)`. Start pi again, and once it has loaded the extension the line becomes `· plugin loaded: last report or call <time>`.
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat status` | One line per agent, with the plugin line under OpenClaw, pi and OpenCode | `openmoat status` |
+| `openmoat status --format json` | The same under `plugins`: `host`, `state` (`reported`, `not-yet` or `missing`), `since` (`change`: `plugin-written` or `host-updated`, `at_ms`) and `at_ms` or `active_ms` | `openmoat status --format json` |
+| `openmoat doctor` | The same as a `note` or `warning` row | `openmoat doctor` |
+| Restart the agent | OpenClaw: `openclaw gateway restart`. pi: start it again. OpenCode: start it again (OpenCode 2: `opencode service restart`) | `openclaw gateway restart` |
+
+You never run `openmoat guard --heartbeat` yourself; the plugins do. The default policy denies an agent running it (`kernel-self`), so one agent cannot report another agent's plugin as loaded.
+
+## Limits
+
+- **The report is information, not a check.** Nothing is decided from it. An agent that already runs unchecked could forge one, which only hides the note.
+- **A plugin that loaded once and stops loading** without its file or the agent's program changing (a Node update) shows as "loaded" with an old time. The line says "last report or call" with the time so you can judge.
+- **Inside `openmoat run`** the plugin cannot write its report; the run's decisions for the agent count instead.
+
+More in [Supported agents](/docs/agents/) and [Limits](/docs/limits/).

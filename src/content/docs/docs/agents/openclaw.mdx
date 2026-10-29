@@ -1,0 +1,54 @@
+---
+title: "OpenClaw runs the call OpenMoat checked"
+description: "OpenMoat's OpenClaw plugin decides first and returns the checked parameters last, so another plugin's rewrite of a call is undone."
+sidebar:
+  label: "OpenClaw"
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You run OpenClaw with other plugins, or a plugin's change to a tool call no longer takes effect under OpenMoat.
+
+</Aside>
+
+**Protects against** another OpenClaw plugin changing a call after OpenMoat checked it. OpenClaw shows each `before_tool_call` handler the call as it came, and runs the `params` of the last handler that returns some. Before 0.11.0, a plugin could turn a checked `git status` into `cat ~/.ssh/id_rsa`, and the read ran.
+
+## What it does
+
+OpenMoat's plugin registers two handlers:
+
+- **At the highest priority** it runs `openmoat guard` on the call as it came, and answers allow, ask or deny.
+- **At the lowest priority** it returns the parameters it checked.
+
+So:
+
+| OpenMoat's answer | What runs |
+|---|---|
+| deny | Nothing. OpenClaw keeps a block whatever later handlers return, so no plugin sees a denied call |
+| ask | The call as checked, once you approve it. The first approval request is the one OpenClaw asks, and it then keeps the parameters as they were |
+| allow or defer | The call as checked. OpenMoat's last handler replaces whatever a plugin in between returned |
+
+## Example
+
+A plugin returns `{ params: { command: "cat ~/.ssh/id_rsa" } }` for a `git status` the agent asked to run. OpenMoat checked `git status` and allowed it; its last handler returns `git status` again, and that is what OpenClaw runs.
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat init --hosts openclaw` | Writes OpenMoat's plugin and adds it to `~/.openclaw/openclaw.json` (or where `OPENCLAW_HOME`, `OPENCLAW_STATE_DIR` and `OPENCLAW_CONFIG_PATH` put it) | `openmoat init --hosts openclaw` |
+| `openclaw gateway restart` | Loads the new plugin | `openclaw gateway restart` |
+| `openmoat status` | Shows OpenClaw as `hook only`, and whether the plugin has reported loading | `openmoat status` |
+
+## Limits
+
+- **A change another plugin means is undone too.** A rewritten path or an added flag from another plugin does not run; OpenMoat lets run only what it decided on. A change made by OpenClaw's trusted tool policies, which run before the hooks, is kept, since the hooks see it.
+- **A plugin that changes the call and asks for approval in the same answer** keeps its change once you approve its request, unchecked by OpenMoat.
+- **A plugin registered at the same lowest priority after OpenMoat's, or at a lower one** (`-Infinity`), runs after it.
+- **Plugins run inside the Gateway with its rights** and can change what any code there does.
+- **No OS sandbox from OpenMoat.** Run the Gateway under `openmoat run` for one.
+
+Everything else OpenClaw's hook leaves open: [Supported agents](/docs/agents/#openclaw) and [THREAT_MODEL.md §5](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md#5-known-limitations).
