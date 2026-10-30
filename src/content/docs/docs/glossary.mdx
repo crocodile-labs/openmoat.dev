@@ -69,6 +69,12 @@ A page or a message uses a word you have not met yet.
 | **provenance** | Taint that follows a file a tainted session wrote to the next session that reads or runs it. [How it decides](/docs/how-it-decides/#files-a-tainted-session-wrote) |
 | **MCP pin**, `mcp-server-changed` | The recorded definition of each MCP server; a changed or new one is held until `openmoat mcp accept`. [MCP pinning](/docs/mcp-servers/) |
 | **MCP proxy**, **wrap** | `openmoat mcp proxy`, which `openmoat mcp wrap` puts in front of a stdio server to pin each tool. [Tool pinning](/docs/mcp-servers/tool-pinning/) |
+| **MCP gateway**, `mcp-unattributed` | The same proxy passing a call only when the agent's hook decided exactly that call; a call nobody checked is refused. [The MCP gateway](/docs/mcp-servers/gateway/) |
+| **page open**, `browser_open` | A browser MCP call that only opens a page, checked like `WebFetch`; `mcp: { browser_open: net }` keeps it a connection. [Browser page opens](/docs/mcp-servers/browser-pages/) |
+| `encoded-egress` | Denies a URL carrying 80 or more characters of base64 or hex once the session read a secret. [Session taint](/docs/session-taint/) |
+| **session credential**, `proxy-session` | What each request to `openmoat proxy` must carry, issued to one agent session; a request without one gets `407`. [Agent sessions only](/docs/egress-proxy/sessions/) |
+| **TLS termination**, **proxy CA**, `proxy-secret-route` | `openmoat run`'s proxy decrypting HTTPS to a `tls: terminate` secret's host with its own certificate authority, and refusing requests the secret's `allow` rules do not name. [Secrets over HTTPS](/docs/keep-tokens-safe/https-injection/) |
+| **SDK** | `openmoat-sdk` and `@openmoat/sdk`: OpenMoat's decision engine as a library for your own agent. It decides; your code enforces. [The SDK](/docs/sdk/) |
 
 ## Records
 

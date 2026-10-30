@@ -13,8 +13,9 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 | `openmoat sandbox show` | The agents' sandbox settings the policy compiles to, and every place they are stricter or wider; writes nothing | `openmoat sandbox show` |
 | `openmoat sandbox sync` | Write them for the agents whose hook is installed, and re-pin. **Terminal** | `openmoat sandbox sync` |
 | `openmoat run [--isolate] [--write <path>]… [--netns auto\|require] [--verbose] -- <agent> [args]` | Run an agent and everything it starts in a sandbox made from the policy, network only through OpenMoat's proxy (macOS 13 or later, Linux). `--isolate`: Linux, bubblewrap; `--netns=require`: refuse where the agent cannot get a network namespace | `openmoat run --write ~/.claude --write ~/.claude.json -- claude` |
-| `openmoat proxy [--listen 127.0.0.1:<port>]` | The egress proxy, in this terminal; an allowed host is reached on ports 443 and 80 unless a rule names `host:port` | `openmoat proxy` |
+| `openmoat proxy [--listen 127.0.0.1:<port>]` | The egress proxy, in this terminal; it serves only requests with a session credential (Claude Code's sessions get one from their `SessionStart` hook) unless `sandbox.proxy_serve_without_credential` is set; an allowed host is reached on ports 443 and 80 unless a rule names `host:port` | `openmoat proxy` |
+| `openmoat proxy ca init` | Make the CA `openmoat run`'s proxy decrypts HTTPS with, for the hosts of `tls: terminate` secrets only; asks, then pins it. **Terminal** | `openmoat proxy ca init` |
 | `openmoat proxy install` · `uninstall` | Run it as a user service (launchd, systemd), or remove it; not on Windows yet. **Terminal** | `openmoat proxy install` |
 | `openmoat proxy status [--format json]` | `not installed`, `stopped`, `running`, `drift-blocked` or `crashlooping` | `openmoat proxy status` |
 
-See [OS sandboxes and openmoat run](/docs/sandboxes/) and [Egress proxy](/docs/egress-proxy/).
+See [OS sandboxes and openmoat run](/docs/sandboxes/), [Egress proxy](/docs/egress-proxy/) and [The proxy serves agent sessions only](/docs/egress-proxy/sessions/).

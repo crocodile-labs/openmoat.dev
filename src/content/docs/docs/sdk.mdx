@@ -1,0 +1,120 @@
+---
+title: "The SDK: OpenMoat's decisions in your own agent"
+description: "openmoat-sdk for Rust and @openmoat/sdk for JavaScript: compile a policy once, then decide each tool call before your agent loop runs it. The SDK decides; your code enforces."
+sidebar:
+  label: "The SDK"
+  order: 11
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You build your own agent product and want OpenMoat to decide, before each tool call runs, whether it may.
+
+</Aside>
+
+**Protects against** your agent running a tool call that OpenMoat's policy would deny or ask about, with the same decision `openmoat guard` makes for the same policy, from the same code (`openmoat-core`).
+
+## What it does
+
+The SDK is OpenMoat's decision engine as a library, new in 0.12.0 ([ADR-046](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-046-sdk-contract.md)). You compile a policy once, then pass it each tool call your agent wants to make: a shell command, a file read or write, a network host, a fetch, a web search, an MCP or unknown tool call. It answers `allow`, `defer`, `ask` or `deny`, with the rule ids and reasons that decided. Session taint, filesystem facts (program pins, symlinks, glob operands) and repository policies are passed in by you.
+
+It does no I/O and sends nothing anywhere: no network, no telemetry. The JavaScript package's WebAssembly module imports nothing from its host, so it cannot.
+
+| Package | Language | Where |
+|---|---|---|
+| `openmoat-sdk` | Rust | `crates/openmoat-sdk` in the OpenMoat repository; on crates.io from 0.12.0 |
+| `@openmoat/sdk` | JavaScript (Node 20 or later, or any runtime with WebAssembly; no dependencies) | `sdk/js` in the OpenMoat repository; the npm package follows once its publishing is set up |
+
+Both are released with the CLI, from the same commit and with the same version, and decide every conformance fixture exactly as `openmoat guard` of that version does.
+
+<Aside type="caution" title="The SDK decides; you enforce">
+
+It starts, stops and confines nothing; it is not a sandbox. A call it denies must not run, and a call it asks about must not run until a person approves that exact call. If your code runs a call anyway, nothing stops it. Where you need an operating-system boundary as well, run the agent under [`openmoat run`](/docs/sandboxes/openmoat-run/), a container or a VM.
+
+</Aside>
+
+## Example
+
+<Tabs>
+<TabItem label="Rust">
+
+```toml
+[dependencies]
+openmoat-sdk = { git = "https://github.com/crocodile-labs/openmoat" }   # on crates.io from 0.12.0
+```
+
+```rust
+use openmoat_sdk::{Action, Context, DEFAULT_POLICY, Engine, Facts, Policy, Session, Verdict};
+
+let context = Context::new("/home/me", "/home/me/app").project("/home/me/app");
+let engine = Engine::new(Policy::parse(DEFAULT_POLICY)?, &context)?;
+
+let action = Action::shell("cat ~/.ssh/id_rsa");
+let decision = engine.decide(&action);
+assert_eq!(decision.verdict, Verdict::Deny);
+assert_eq!(decision.rules, ["secrets-paths"]);
+println!("{}", decision.reason()); // secret material: read /home/me/.ssh/id_rsa
+```
+
+A full agent loop with tests is `crates/openmoat-sdk/examples/agent_loop.rs`:
+
+```bash
+cargo run -p openmoat-sdk --example agent_loop
+cargo test -p openmoat-sdk --example agent_loop
+```
+
+</TabItem>
+<TabItem label="JavaScript">
+
+```js
+import { load, Session } from "@openmoat/sdk";
+
+const openmoat = await load(); // in a browser: load({ wasm: bytes })
+const engine = openmoat.compile({
+  policy: openmoat.defaultPolicy,
+  context: { home: "/home/me", cwd: "/home/me/app", project: "/home/me/app" },
+});
+
+const d = engine.decide({ type: "shell", command: "cat ~/.ssh/id_rsa" });
+// { verdict: "deny", rules: ["secrets-paths"], reasons: [...], reason: "...", context: [], action: {...} }
+```
+
+A full agent loop that checks every call before it runs it, with real shell, file and fetch tools, is `sdk/js/examples/agent-loop.js`; its tests are `sdk/js/test/agent-loop.test.js`.
+
+</TabItem>
+</Tabs>
+
+## Handling a verdict
+
+| Verdict | What your loop does |
+|---|---|
+| `deny` | Does not run the call, and tells the model why (`reason`). Never offers it for approval: no person, setting or retry lifts a deny. |
+| `ask` | Shows a person the call and `reason`, and runs it only if they approve *this* call. A changed argument is a new call, decided again. |
+| `defer` | Runs its own permission flow. OpenMoat neither objects nor vouches. A product without one treats `defer` as `ask`. |
+| `allow` | Runs the call. |
+
+An approval is for one call; the SDK stores none. The approver must be a person: a model answering its own `ask` is no approval. A verdict your code does not know is a `deny`, and an error is never a verdict: a call you hold no decision for does not run.
+
+## Run what you decided
+
+A decision is about the exact action it was given. Run the decided value (in JavaScript, `decision.action`, a frozen copy of what was decided, never the model's object), run a shell command with `sh -c` in the context's `cwd` with `HOME` set to its `home`, resolve facts just before deciding and run just after, and record a call in the session only after it ran. Session taint only ever makes a decision stricter:
+
+```js
+const session = new Session();
+const d = engine.decide(action, { facts, session });
+// ... run d.action ...
+session.record(engine, d.action, facts);
+const saved = session.save();        // opaque text; new Session(saved) continues it
+```
+
+## What stays with the CLI
+
+The SDK is the decision only. The policy lock and drift checks, approvals (`openmoat allow`), the audit log, MCP server pins, host hooks, the OS sandboxes and the egress proxy stay with `openmoat`. A product that needs them runs `openmoat`.
+
+## Versions and stability
+
+`openmoat_sdk::VERSION` and `openmoat.version` carry the release; `POLICY_SCHEMA_VERSION` and `openmoat.policySchemaVersion` the policy schema the release reads. The decision API, the action and verdict shapes and the rule ids of the default policy are stable within a major version; reason wording, which verdict the default policy gives an action and a saved session's form are not. Before 1.0 a minor release may change the stable surface, with a CHANGELOG entry. The contract in full: [ADR-046](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-046-sdk-contract.md).
+
+Every action type, the context and facts fields, repository policies, and how to build and test both packages: [docs/SDK.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SDK.md).

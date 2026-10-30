@@ -80,6 +80,14 @@ The agent's own writes to these files ask first (`runs-later`), since the agent 
 
 Pinning a definition does not see a server that changes a tool's description later. For that, run a stdio server through `openmoat mcp proxy` (`openmoat mcp wrap <server>`, or `openmoat init --mcp-proxy` for every server): it pins each tool and holds a changed or new one until you run `openmoat mcp accept <server>`. `openmoat mcp wrap <server> --sandbox` also runs the server under `openmoat run`, and `openmoat mcp unwrap <server>` undoes it. Every step: [Tool pinning and the MCP proxy](/docs/mcp-servers/tool-pinning/).
 
+## The gateway
+
+From 0.12.0 the same `openmoat mcp proxy` is a gateway: a wrapped server receives a call only when the policy does not deny it as the server receives it and the agent's hook decided exactly that call, the same tool and arguments, within the hour. A call nobody checked, from a script or an agent without its hook, is refused with error -32001 and rule `mcp-unattributed`, and a server can no longer answer a call the proxy refused. Every step: [The MCP gateway](/docs/mcp-servers/gateway/).
+
+## Browser MCP servers
+
+A browser MCP call that only opens a page (Playwright `browser_navigate`, Chrome DevTools `navigate_page`, Puppeteer, Claude in Chrome, Browserbase) is checked like `WebFetch` from 0.12.0: it goes to your agent's own prompt instead of being denied for every unlisted host, a `file:` URL is a read of the file, and a long encoded value in a URL after the session read a secret is denied. Every verdict: [Browser page opens](/docs/mcp-servers/browser-pages/).
+
 ## Only you accept
 
 `openmoat mcp accept`, `openmoat mcp wrap` and `openmoat mcp unwrap` are denied to agents (`kernel-self`), terminal wrappers included, and refuse to run when an agent started them.
@@ -90,6 +98,7 @@ Pinning a definition does not see a server that changes a tool's description lat
 - **Not pinned:** prompts, resources and tool results.
 - **Upgrading to 0.9.0** pins more fields of each tool, so every tool a wrapped server listed is held once after the upgrade, even unchanged. Run `openmoat mcp accept` once.
 - **Not covered by the proxy:** remote (HTTP) servers, Claude Code plugin servers and managed MCP settings.
+- **A wrapped server answers agents only** from 0.12.0: a script that used it directly gets `mcp-unattributed` ([The MCP gateway](/docs/mcp-servers/gateway/)).
 - **One name, every project.** A changed server in one project of `~/.claude.json` also holds back a server with the same name in another project, until you accept it.
 
 <Aside type="note" title="Upgrading from 0.5.6 or earlier">
@@ -107,7 +116,7 @@ A lock from before 0.5.7 has no MCP pins, so nothing is held back until `openmoa
 | `openmoat mcp unwrap [<server>…]` | Point them back at their own command. Terminal only | `openmoat mcp unwrap github` |
 | `openmoat init --mcp-proxy` | Wrap every stdio server at setup | `openmoat init --mcp-proxy` |
 | `openmoat policy check "<tool>" --kind mcp` | The verdict for an MCP tool name | `openmoat policy check "mcp__github__create_issue" --kind mcp` |
-| `openmoat mcp proxy --server <name> [--sandbox] -- <command>` | The wrapper `openmoat mcp wrap` writes; the agent starts it, you do not | |
+| `openmoat mcp proxy --server <name> [--sandbox] -- <command>` | The wrapper `openmoat mcp wrap` writes; the agent starts it, you do not. From 0.12.0 it is also the gateway: it passes only calls the hook decided | |
 
 ## Settings
 
@@ -125,4 +134,4 @@ mcp:
 - **Not pinned:** prompts, resources and tool results. **Not covered by the proxy:** remote (HTTP) servers, Claude Code plugin servers and managed MCP settings.
 - **An MCP server runs outside every sandbox** unless you wrap it with `--sandbox` or run the agent under `openmoat run`.
 
-More in [Limits](/docs/limits/). The design and its limits: [ADR-026](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-026-mcp-server-and-tool-pinning.md).
+More in [Limits](/docs/limits/). The design and its limits: [ADR-026](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-026-mcp-server-and-tool-pinning.md), [ADR-045](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-045-mcp-gateway.md).

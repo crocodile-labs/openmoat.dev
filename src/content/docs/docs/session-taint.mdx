@@ -16,11 +16,21 @@ A call can be decided more strictly because of what the same agent session did b
 | Once the session has read | These calls ask |
 |---|---|
 | A secret (only when your policy lets secret reads run; the default denies them) | Network to any host but the secret's own, every MCP call, web search and unmapped tool |
-| Untrusted content: a web page, a web search, a `curl -q` download, an MCP tool's result | Writes to CI workflows, git hooks, build files (`package.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, `Dockerfile`, …) and agent instructions and settings (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json`, …) |
+| Untrusted content: a web page, a web search, a `curl` or `wget` download, a browser MCP call that opens a page, an MCP tool's result | Writes to CI workflows, git hooks, build files (`package.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, `Dockerfile`, …) and agent instructions and settings (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json`, …) |
 
 Taint follows files too. When a tainted session writes a file, the audit log records it; a later session that reads or runs that file (`cat`, `source run.sh`, `./run.sh`, `python x.py`) is tainted as well.
 
-A push from a tainted session that changes a file `runs-later` names asks (`push-runs-later`). Under `openmoat run`, the run's proxy cannot ask, so after a secret read it refuses requests to every other host, registries included; a new run starts clean.
+A push from a tainted session that changes a file `runs-later` names asks (`push-runs-later`). After a secret read, a URL a fetch, network or MCP tool opens that carries 80 or more characters of base64 or hex is denied (`encoded-egress`, new in 0.12.0): a person reading the ask can judge a short URL, not a few hundred characters of encoded text. Under `openmoat run`, the run's proxy cannot ask, so after a secret read it refuses requests to every other host, registries included; a new run starts clean. The standalone `openmoat proxy` does the same for Claude Code's sessions from 0.12.0, since each sends its own credential ([Agent sessions only](/docs/egress-proxy/sessions/)).
+
+## Your answer covers the file
+
+From 0.12.0 a `session-taint` ask is answered once per file. After you approve the agent's `Write`, `Edit` or `MultiEdit` of a protected file in a session that read untrusted content, later writes and edits of the same file in that session are allowed, until the session reads untrusted content again; then the file asks once more. The reason says so:
+
+```text
+an earlier write of <file> in this session was approved after the session last read untrusted content
+```
+
+The evidence is the file itself: it must hold what the approved call leaves (for an edit, the file with its replacements applied) and not what it held before. So a write you declined covers nothing, and a write of the file's own content, an edit Claude Code would refuse, a patch or a shell write (whose result the hook cannot see), another file or another session still ask. An ask that comes from a secret the session read is never answered this way ([ADR-048](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-048-taint-answer-covers-the-path.md)).
 
 ## Example
 
@@ -61,6 +71,6 @@ taint:
 - **Taint is per session.** A new session starts clean, except for the files a tainted session wrote.
 - **Not followed:** a file copied or renamed, files a build or script writes, and files a search tool (`Grep`, `Glob`) reads.
 - **Shell network to an allowed host** (`git fetch`, `gh pr view`) is not untrusted content.
-- **Codex turns an ask into a deny**, so under Codex an ask never taints; the standalone `openmoat proxy` has no sessions, so taint does not apply there.
+- **Codex turns an ask into a deny**, so under Codex an ask never taints. At the standalone `openmoat proxy`, taint applies to Claude Code's sessions, which send a credential; Codex's traffic carries none, so it is refused, or served without taint under `sandbox.proxy_serve_without_credential` ([Agent sessions only](/docs/egress-proxy/sessions/)).
 
 More in [How it decides](/docs/how-it-decides/#what-the-session-read-earlier) and [Limits](/docs/limits/).

@@ -30,6 +30,18 @@ Its definition changed, or it was added, since you last accepted the agents' MCP
 
 Since 0.9.0, `openmoat mcp proxy` pins more of each tool (its title, output schema, annotations and every other field), so every tool it pinned before is held once, even unchanged. `openmoat status` says so. Run `openmoat mcp accept` once.
 
+## A wrapped MCP server's calls fail with error -32001 (`mcp-unattributed`)
+
+From 0.12.0 `openmoat mcp proxy` is a gateway: it passes a call only when it finds the agent hook's decision for that exact call (the same tool and arguments, within the hour). The agent did not run OpenMoat's hook for it (`openmoat status` says whether each agent is set up), or something other than an agent is using the wrapped server. `openmoat mcp unwrap <server>` takes the gateway out of that server's path. With another rule in the message, the policy denies what the call's arguments name. See [The MCP gateway](/docs/mcp-servers/gateway/).
+
+## Sandboxed commands get `407 Proxy Authentication Required`
+
+From 0.12.0 `openmoat proxy` serves agent sessions only. Run `openmoat init` once so Claude Code gets its `SessionStart` hook, then start a new Claude Code session; until then its sandboxed commands get `407`. A Codex started with `HTTP_PROXY` pointing at `openmoat proxy` sends no credential: run it under `openmoat run -- codex`, or set `sandbox.proxy_serve_without_credential: true` (which `openmoat policy lint`, `doctor` and `status` warn about). See [The proxy serves agent sessions only](/docs/egress-proxy/sessions/).
+
+## A request to a brokered secret's host gets `403`
+
+The secret has `allow` rules and the request is not one they name; `openmoat show` lists it under `proxy-secret-route` with its method. Widen the rules with `openmoat edit` if the request is one you mean. A `502` under `proxy-tls` means the client could not complete the terminated tunnel: it ignores `SSL_CERT_FILE` and `NODE_EXTRA_CA_CERTS` (Go programs such as `gh` on macOS), pins certificates or speaks only HTTP/2. See [Secrets over HTTPS](/docs/keep-tokens-safe/https-injection/).
+
 ## A connection to a port other than 443 or 80 is refused
 
 Through `openmoat proxy` and `openmoat run`, a host allowed without a port is reached on ports 443 and 80 only, and any other port is refused (`proxy-port`). Add a rule that names the port with `openmoat edit`, and keep the bare host in it too, because the hook decides by host alone and a `host:port` pattern matches nothing there:
@@ -47,4 +59,4 @@ An event that an anchor recorded is no longer in the log, or has another hash: t
 
 ## An older OpenMoat cannot open the audit log
 
-The audit database now records file provenance (schema version 4), and builds before 0.6.0 cannot open it. Upgrade every `openmoat` (and any older `moat`) on the machine to the same release.
+Each release that adds to the audit database moves it to a new schema version the first time it writes (0.6.0: file provenance, schema 4; 0.11.0: the session's writes, schema 5; 0.12.0: the gateway's decisions and the taint answers, schemas 6 and 7), and an older `openmoat` then refuses to open it. Upgrade every `openmoat` (and any older `moat`) on the machine to the same release.

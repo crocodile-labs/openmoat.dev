@@ -1,0 +1,112 @@
+---
+title: "The MCP gateway"
+description: "openmoat mcp proxy passes a call to a stdio MCP server only when the policy does not deny it as the server receives it and the agent's hook decided exactly that call; a call nobody checked is refused with mcp-unattributed."
+sidebar:
+  label: "The MCP gateway"
+  order: 2
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+A wrapped MCP server's calls fail with error -32001 and rule `mcp-unattributed`, or you want a server to receive only the calls OpenMoat checked.
+
+</Aside>
+
+**Protects against** an MCP server receiving a call OpenMoat refused, or one no hook ever saw: a plugin or script that talks to the server directly, an agent whose hook was not run, arguments changed after the hook checked them, and a server that answers a call it was never asked or sends a tool listing nobody requested.
+
+## What it does
+
+The hook decides every MCP tool call an agent makes. From 0.12.0, `openmoat mcp proxy` also stands between the agent and a stdio MCP server and checks each call a second time, as the server receives it ([ADR-045](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-045-mcp-gateway.md)). It is opt-in per server, in your own terminal:
+
+```bash
+openmoat mcp wrap github          # or: openmoat init --mcp-proxy, for every stdio server
+openmoat mcp accept github        # after the agent first starts it: read each tool, accept
+```
+
+Through the gateway:
+
+- **The server never receives a call OpenMoat refused.** A tool nobody accepted, or one whose description, schemas or annotations changed, is left out of the agent's tool list and its calls are refused (error -32602, rule `mcp-tool-held`), the first time the server starts too ([Tool pinning](/docs/mcp-servers/tool-pinning/)). When the server says its tools changed (`notifications/tools/list_changed`), the gateway reads them again itself, so a changed tool is held even if the agent keeps its old list.
+- **A call passes only when the hook decided exactly that call.** The gateway matches each `tools/call` to the hook's decision for the same tool and arguments, made within the hour, and uses each decision once. A call the hook never saw, or one whose arguments changed after the hook checked them, is refused (error -32001, rule `mcp-unattributed`). So is a call the hook denied, or asked about where no person could answer.
+- **The policy decides the arguments the server receives.** Paths and URLs in a call's arguments are checked as the hook checks them (`fs.read`, `fs.write`, `net`), under the name `mcp__<server>__<tool>`, so a rule on that name holds at the gateway whatever name the agent gives the tool. `resources/read` is checked too: a `file:` URI as the file it names, an `https:` one as the host.
+- **Each call is tied to the session that made it.** The gateway's audit row (host `mcp-proxy`) carries the session and call id of the hook's decision, so the session's taint applies: after the session read a secret, its MCP calls ask, and the gateway passes one only after the person said yes.
+- **Only what it read goes through.** Every message the gateway sends, to the server or to the agent, is the one it parsed, written again by itself, so a key given twice, a `\r` inside a line or a line separator inside a string cannot carry an unchecked message past it. A line from the server it cannot read is dropped. A response from the server reaches the agent only when it answers a request the agent sent.
+
+## Example
+
+A script, or an agent whose hook is not set up, calls a wrapped server directly. The call never reaches the server; the error names the rule:
+
+```text
+OpenMoat refused this call [mcp-unattributed]: OpenMoat's hook made no decision on this exact call (the same tool and arguments, within the hour): the host did not run the hook for it, or sent other arguments than it checked, so it is not passed on
+```
+
+It comes back as JSON-RPC error -32001. Check that the agent is set up (`openmoat status`); if something other than an agent must use the server, `openmoat mcp unwrap <server>` takes the gateway out of its path. A call the policy denies at the gateway carries the policy's rule and reason instead, as the hook would give them.
+
+Both rows of a passed call, the hook's and the gateway's, are in the audit log under the same session and call id:
+
+```console
+$ openmoat audit export --session 9f2c…
+{…,"host":"claude-code","session_id":"9f2c…","call_id":"toolu_01…","tool":"mcp__github__get_issue",…,"verdict":"allow",…}
+{…,"host":"mcp-proxy","session_id":"9f2c…","call_id":"toolu_01…","tool":"mcp__github__get_issue",…,"verdict":"allow","rules":["mcp-proxy"],…}
+```
+
+## Turn it on and off
+
+<Steps>
+
+1. **Wrap the server, in your own terminal**
+
+   ```bash
+   openmoat mcp wrap github            # one server; --dry-run shows the change first
+   openmoat init --mcp-proxy           # every stdio server
+   ```
+
+   `openmoat mcp wrap` changes only that server's `command` and `args` in the agent's user configuration (`~/.claude.json`, Cursor's `mcp.json`, Codex's `config.toml`, Copilot CLI's `mcp-config.json`), backed up first, and never rewrites a project's file. With `--sandbox` the server itself runs under `openmoat run`.
+
+2. **Accept its tools once the agent has started it**
+
+   ```bash
+   openmoat mcp accept github
+   ```
+
+   It shows each tool's name, title, description, schemas and annotations, and asks.
+
+3. **Undo it**
+
+   ```bash
+   openmoat mcp unwrap github
+   ```
+
+   `openmoat uninstall` also puts every wrapped server back as it was.
+
+</Steps>
+
+`openmoat mcp accept`, `openmoat mcp wrap` and `openmoat mcp unwrap` are denied to agents (`kernel-self`) and refuse to run when an agent started them.
+
+## Settings
+
+A rule on the gateway's name for a tool holds whatever the agent calls it:
+
+```yaml
+deny:
+  - id: no-repository-deletes
+    mcp: ["mcp__github__delete_repo"]
+mcp:
+  trust_first_sight: false            # default: a new server's tools are held until you accept them
+```
+
+Under `mcp: { trust_first_sight: true }`, a call made before the server's first listing is refused.
+
+## Where it is recorded
+
+Every call through the gateway is an audit row with host `mcp-proxy`: `mcp-proxy` for a call passed to the server, `mcp-tool-held` and `mcp-unattributed` for refused ones, and `mcp-server-request` for a request the server sent the agent (`sampling/createMessage`, `elicitation/create`). `openmoat show --session <id>` lists them with the hook's rows; `openmoat audit export --session <id>` prints both as JSON Lines. The audit database moved to schema version 6 for this: it keeps the hook's decisions until the gateway uses each or it is an hour old.
+
+## Limits
+
+- **Stdio servers only.** A remote (HTTP) server is checked by the hook alone. Claude Code plugin servers and managed MCP settings are not covered.
+- **Tool results pass as the server sent them.** They mark the session as having read untrusted content ([Session taint](/docs/session-taint/)); the gateway does not read them.
+- **The server still starts** when the agent's session begins. Only `--sandbox` or `openmoat run` confines what it does at start.
+- **A call from a program with no OpenMoat hook is refused**, by design: a tool that used a wrapped server directly gets `mcp-unattributed`. Unwrap the server if that is what you need.
+
+More in [Limits](/docs/limits/). The design: [ADR-045](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-045-mcp-gateway.md); the day-to-day guide: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#mcp-servers-through-the-gateway).

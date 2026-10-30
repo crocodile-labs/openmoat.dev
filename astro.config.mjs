@@ -45,15 +45,15 @@ export default defineConfig({
         group('Features', ['shell-commands',
           sub('Secrets and .env files', 'env-files', ['agent-credentials', 'protected-contents']), 'allow-a-site',
           sub('Code the agent wrote', 'session-written-code', ['opaque-code']),
-          sub('Token broker', 'keep-tokens-safe', ['token-egress', 'another-service', 'where-it-works']),
-          sub('MCP pinning and proxy', 'mcp-servers', ['tool-pinning']),
+          sub('Token broker', 'keep-tokens-safe', ['token-egress', 'another-service', 'where-it-works', 'https-injection']),
+          sub('MCP pinning, gateway and browsers', 'mcp-servers', ['tool-pinning', 'gateway', 'browser-pages']),
           sub('OS sandboxes and run', 'sandboxes', ['openmoat-run']),
-          'egress-proxy', 'self-protection', 'session-taint', 'see-what-happened',
+          sub('Egress proxy', 'egress-proxy', ['sessions']), 'self-protection', 'session-taint', 'see-what-happened',
           sub('Team rules and packs', 'team-rules', ['repository-policy', 'policy-packs']), 'openmoat-bar']),
         group('Policy', [sub('The policy file', 'policy-file', ['verdicts', 'patterns', 'other-keys', 'repositories']),
           'change-the-rules']),
         group('Guides', ['blocked', 'check-a-command', 'work-across-repos', 'the-project', 'github', 'local-services',
-          'cloud-clis', 'packages', 'auto-approve-and-ci', 'upgrade', 'turn-off']),
+          'cloud-clis', 'packages', 'auto-approve-and-ci', 'sdk', 'upgrade', 'turn-off']),
         group('Reference', [
           sub('Commands', 'commands', ['setup', 'allow', 'policy', 'sandboxes', 'mcp-and-secrets', 'audit-and-diagnostics']),
           'allow-reference',
@@ -62,7 +62,7 @@ export default defineConfig({
         {
           label: 'Releases',
           collapsed: true,
-          items: ['docs/releases', ...['v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
+          items: ['docs/releases', ...['v0-12-0', 'v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
             .map((v) => `docs/releases/${v}`)],
         },
       ],

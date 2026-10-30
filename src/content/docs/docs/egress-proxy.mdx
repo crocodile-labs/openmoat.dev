@@ -21,7 +21,8 @@ Where it differs from the hook:
 - **Private addresses** (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, `fc00::/7`, …) are refused unless a rule names the address: `10.0.0.5`, or a glob that starts with a digit (`192.168.1.*`). There is no CIDR syntax.
 - **Encrypted server names** (ECH, ESNI) are refused (`proxy-sni`), so an allowed host on the same provider cannot front for another site that way.
 - **A brokered secret going to another host** is refused when the request carries its placeholder or its value (`proxy-secret`).
-- **Under `openmoat run`**, every request carries the run's credential (without it, `407`), and once a session of the run has read a secret, requests to any other host are refused (`session-taint`).
+- **It serves agent sessions only.** Every request must carry a session credential: under `openmoat run` the run's, and for the standalone proxy the one Claude Code's `SessionStart` hook gives each session (from 0.12.0). A request without one, from another local program or with a borrowed or expired credential, gets `407` (`proxy-session`). Each request is recorded under its session, and once that session has read a secret, its requests to any other host are refused (`session-taint`). [The proxy serves agent sessions only](/docs/egress-proxy/sessions/).
+- **Brokered secrets** go into plain-HTTP requests that say `plain_http: true`, and inside `openmoat run` into HTTPS to a host whose secret says `tls: terminate`, only for the requests its `allow` rules name ([Secrets over HTTPS](/docs/keep-tokens-safe/https-injection/)).
 
 ## Example
 
@@ -49,7 +50,8 @@ Every refusal is a row in the audit log: `openmoat show --since today`.
 
 | Command | What it does | Example |
 |---|---|---|
-| `openmoat proxy [--listen 127.0.0.1:<port>]` | Run the proxy in this terminal. Without `--listen`: `127.0.0.1` and `sandbox.proxy_port`, else `127.0.0.1:18080` | `openmoat proxy` |
+| `openmoat proxy [--listen 127.0.0.1:<port>]` | Run the proxy in this terminal; it serves only requests with a session credential. Without `--listen`: `127.0.0.1` and `sandbox.proxy_port`, else `127.0.0.1:18080` | `openmoat proxy` |
+| `openmoat proxy ca init` | Make the certificate authority `openmoat run`'s proxy decrypts HTTPS with, for the hosts of `tls: terminate` secrets only; shows what it covers, asks, then pins it. Terminal only | `openmoat proxy ca init` |
 | `openmoat proxy install` | Run it as a user service that starts at login and restarts on failure: a launchd agent (`~/Library/LaunchAgents/dev.openmoat.proxy.plist`) or a systemd user unit (`~/.config/systemd/user/moat-proxy.service`). Terminal only | `openmoat proxy install` |
 | `openmoat proxy status [--format json]` | `not installed`, `stopped`, `running`, `drift-blocked` or `crashlooping`; exits 64 for any state but running or not installed | `openmoat proxy status` |
 | `openmoat proxy uninstall` | Stop and remove the service. Terminal only | `openmoat proxy uninstall` |
@@ -70,13 +72,13 @@ allow:
     net: ["example.com", "example.com:8443"]
 ```
 
-Keep the bare host in the rule: the hook decides by host alone, and a `host:port` pattern matches nothing there. With `proxy_port` set, keep the proxy running (`openmoat proxy install`): while it is stopped, Claude Code's sandboxed commands have no network, and `openmoat doctor` and `openmoat status` warn. Codex passes its traffic on to the proxy only when started with `HTTP_PROXY` and `HTTPS_PROXY` set to `http://127.0.0.1:18080`, and its API hosts then need an allow rule. `sandbox.proxy_allow_ech: true` lets encrypted server names through; `openmoat policy lint` warns about it.
+Keep the bare host in the rule: the hook decides by host alone, and a `host:port` pattern matches nothing there. With `proxy_port` set, keep the proxy running (`openmoat proxy install`): while it is stopped, Claude Code's sandboxed commands have no network, and `openmoat doctor` and `openmoat status` warn. Codex passes its traffic on to the proxy only when started with `HTTP_PROXY` and `HTTPS_PROXY` set to `http://127.0.0.1:18080`, and its API hosts then need an allow rule; it sends no session credential, so that traffic needs `sandbox.proxy_serve_without_credential: true`, or run `openmoat run -- codex` instead ([Agent sessions only](/docs/egress-proxy/sessions/#codex)). `sandbox.proxy_allow_ech: true` lets encrypted server names through; `openmoat policy lint` warns about both settings.
 
 ## Limits
 
 - **It checks the host, not what is sent inside HTTPS.** An allowed host can receive whatever a command sends it, and the proxy does not see the HTTP `Host` header inside the tunnel.
-- **Brokered secrets go into plain-HTTP requests only.** HTTPS is not decrypted, so a request there keeps the placeholder ([Token broker](/docs/keep-tokens-safe/where-it-works/)).
-- **The standalone `openmoat proxy` takes no credential:** any local process may use it, and session taint does not apply there. `openmoat run`'s own proxy serves only its run.
+- **HTTPS is decrypted only inside `openmoat run`, and only to the host of a `tls: terminate` secret.** Elsewhere a brokered secret goes into plain-HTTP requests only, and an HTTPS request keeps the placeholder ([Where it works today](/docs/keep-tokens-safe/where-it-works/)).
+- **Only Claude Code's sessions get a credential for the standalone proxy.** Codex's proxy sends none, so its traffic is refused unless `sandbox.proxy_serve_without_credential: true` serves it, with no session and no taint; Cursor's sandboxed commands never reach `openmoat proxy`.
 - **No user service on Windows yet:** `openmoat proxy install` and `status` refuse; run `openmoat proxy` in a terminal.
 
 More in [Limits](/docs/limits/).

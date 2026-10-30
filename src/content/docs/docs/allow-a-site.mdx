@@ -25,12 +25,12 @@ Outbound network access from shell commands that can send data is denied by defa
 moat: deny [default.net] — no rule matched net docs.rs
 ```
 
-A plain download is not: a `curl` or `wget` that provably sends nothing but its URL and reads no configuration file of its own (`curl -q https://docs.rs/serde`, `curl -q -sS https://example.com/f.txt -o f.txt`, `wget --no-config --no-netrc …`) is decided like a web fetch, so it goes to your agent's own prompt. A body, form, upload, header, another method, credentials or following redirects (`curl -L`) keeps it denied, and so does a `curl` without `-q` first, which reads `~/.curlrc`.
+A plain download is not: a `curl` or `wget` that provably sends nothing but its URL (`curl https://docs.rs/serde`, `curl -sSL -o f.tgz https://example.com/f.tgz`, `wget https://example.com/a.tar.gz`) is decided like a web fetch, so it goes to your agent's own prompt, and the file it saves is checked like any other write. A body, form, upload, header, another method, `.netrc` or `--location-trusted` keeps it denied. (Before 0.12.0 this needed `curl -q` or `wget --no-config --no-netrc`; writing `~/.curlrc` and `~/.wgetrc` is denied by `shell-rc` instead, and moving them by `env-poison`.)
 
 | Command | Verdict | Rule |
 |---|---|---|
-| `curl -q https://docs.rs/serde`, `curl -q -sS https://example.com/f.txt -o f.txt` | defer | `default.fetch`: a download that sends nothing, decided like a web fetch |
-| `curl https://docs.rs/serde` | deny | `default.net`: without `-q` first, curl reads `~/.curlrc`, which may add a body |
+| `curl https://docs.rs/serde`, `curl -sSL -o f.tgz https://example.com/f.tgz`, `wget https://example.com/a.tar.gz` | defer | `default.fetch`: a download that sends nothing, decided like a web fetch |
+| `curl -o ~/.zshrc https://example.com/rc` | deny | `shell-rc`: the file the download writes is checked by the path rules |
 | `curl -d @notes.txt https://example.com` | deny | `default.net`: sends data to a host the policy does not list |
 | `curl http://169.254.169.254/` | deny | `cloud-metadata`, whatever the policy allows |
 
@@ -67,9 +67,9 @@ A plain download is not: a `curl` or `wget` that provably sends nothing but its 
 | The agent uses | Before | After |
 |---|---|---|
 | A web fetch tool (Claude Code `WebFetch`) on `docs.rs` | your agent's prompt | **allowed**, no prompt |
-| `curl -q https://docs.rs/serde` (sends nothing) | your agent's prompt | not denied |
-| `curl https://docs.rs/serde`, `curl -L https://docs.rs/` or `curl -d @notes.txt https://docs.rs/` | denied | not denied: your agent's prompt, like any command the policy does not list |
-| `curl -q https://www.docs.rs/` | your agent's prompt | unchanged: another host |
+| `curl https://docs.rs/serde` (sends nothing) | your agent's prompt | not denied |
+| `curl -d @notes.txt https://docs.rs/` or `curl -H 'X-Token: …' https://docs.rs/` | denied | not denied: your agent's prompt, like any command the policy does not list |
+| `curl https://www.docs.rs/` | your agent's prompt | unchanged: another host |
 
 <Impact opens={["Requests to exactly `docs.rs`, from fetch tools and from shell commands", "Sandboxed commands may connect to it"]} keeps={["Every other host stays denied, subdomains included", "Secrets are still denied, so the agent cannot read a key to send there"]} think={["The host can receive whatever the agent sends it. Never allow paste sites, webhook catchers or file-sharing hosts", "OpenMoat checks the host, not the data inside HTTPS"]} />
 
@@ -93,7 +93,7 @@ openmoat allow --remove approved-2
 | `openmoat allow --remove <id>`: take it back | `openmoat allow --remove approved-2` |
 | `openmoat allowed`: what you allowed, with the command that undoes each | `openmoat allowed` |
 | `openmoat policy check "<url>" --kind fetch`: a fetch tool's verdict | `openmoat policy check "https://docs.rs/serde" --kind fetch` |
-| `openmoat policy check "<command>"`: a shell command's | `openmoat policy check "curl -q https://docs.rs/serde"` |
+| `openmoat policy check "<command>"`: a shell command's | `openmoat policy check "curl https://docs.rs/serde"` |
 
 ## Settings
 
@@ -108,7 +108,7 @@ allow:
     net: ["example.com", "example.com:8443"]
 ```
 
-`net` patterns also match fetches; a `fetch` pattern matches only fetch tools and `curl -q`-style downloads. `defaults: net: deny` is what denies unlisted hosts.
+`net` patterns also match fetches; a `fetch` pattern matches only fetch tools, plain `curl` and `wget` downloads, and browser MCP calls that only open a page ([Browser page opens](/docs/mcp-servers/browser-pages/)). `defaults: net: deny` is what denies unlisted hosts.
 
 ## Limits
 

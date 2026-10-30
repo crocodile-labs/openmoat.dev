@@ -1,0 +1,84 @@
+---
+title: "Browser page opens"
+description: "A browser MCP call that only opens a page is checked like WebFetch: it goes to your agent's own prompt instead of being denied for every unlisted host. A file: URL is a read, and a long encoded value in a URL after a secret read is denied."
+sidebar:
+  label: "Browser page opens"
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+Your agent drives a browser through an MCP server (Playwright MCP, Chrome DevTools MCP, Puppeteer, Claude in Chrome, Browserbase) and you want to know what OpenMoat does with the pages it opens.
+
+</Aside>
+
+**Protects against** a browser call that reads a local file (`file:///Users/you/.ssh/id_rsa`), reaches a cloud metadata service or an internal address, carries a token or a placeholder in its URL, or carries a secret out encoded in a URL after the session read one; while plain page opens of public sites go on without a block.
+
+## What it does
+
+Before 0.12.0 a browser's `navigate` was a network connection to its host (`net`), so every unlisted site was denied. From 0.12.0 a browser MCP call that **only opens a page** is decided like Claude Code's `WebFetch` ([ADR-047](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-047-browser-page-opens-are-fetches.md)): it defers to the agent's own prompt, so your agent asks you, or not, as it does for any web fetch, and auto-approve modes run it. A call that sends more than its URL (a script to run on the page, launch options, headers, a form submit) stays a connection, denied for unlisted hosts.
+
+The page itself is untrusted content: opening one marks the session, and a later write to a CI workflow, a build file or an agent instruction file asks ([Session taint](/docs/session-taint/)). Reading code, editing source and running tests do not.
+
+| Call | Verdict | Rule |
+|---|---|---|
+| Playwright `browser_navigate`, Chrome DevTools `navigate_page` or `new_page`, Puppeteer `puppeteer_navigate`, Claude in Chrome `navigate`, Browserbase `navigate` to `https://docs.rust-lang.org/std/` | defer | `default.fetch` |
+| the same to `http://localhost:5173/` or `http://127.0.0.1:3000/` | defer | `local-net` |
+| a screenshot, a snapshot or a click on the open page (no URL) | defer | `default` |
+| a page whose URL holds a token (`?t=ghp_…`) or a placeholder | deny | `token-egress`, `placeholder-egress` |
+| `http://169.254.169.254/`, `http://metadata.google.internal/`, and a URL that redirects there (`?next=http://169.254.169.254/`) | deny | `cloud-metadata` |
+| an IP address in another spelling (`http://2852039166/`), a private address (`http://192.168.1.1/`), a single-label host (`http://intranet/`), `https://github.com@evil.example/` | deny | `default.net` |
+| `file:///Users/you/.ssh/id_rsa` | deny | `secrets-paths` |
+| `javascript:…`, `data:…`, `chrome://settings` | ask | `unparseable` |
+| a navigation that also runs a script (`initScript`), sets headers or launch options, or a form submit, to an unlisted host | deny | `default.net` |
+| any page open after the session read secret material | ask | `session-taint` |
+| the same with 80 or more characters of base64 or hex in the URL | deny | `encoded-egress` |
+
+Every line is from [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#browser-mcp-servers), which OpenMoat's tests check against the shipped policy.
+
+A URL is judged by every host a client may read it as reaching, the URL Standard's reading that browsers follow included: `https://evil.com\@github.com/` is decided as `evil.com` as well as `github.com`. A `file:` URL in any MCP URL argument is a read of the file it names, and a browser's screenshot, snapshot or trace tool writes the file its path names (`take_screenshot {filePath: "~/.zshrc"}` is denied by `shell-rc`).
+
+## Example
+
+```bash
+openmoat policy check "mcp__playwright__browser_navigate" --kind mcp
+```
+
+The verdict for the tool name alone. With an agent, the page open of `https://docs.rust-lang.org/std/` reaches your agent's own prompt, and OpenMoat shows nothing for it. After the same session read secret material, the next page open asks:
+
+```text
+moat: ask [session-taint] — …
+```
+
+and a URL that then carries a long encoded run is denied with `encoded-egress`.
+
+## Turn it on or off
+
+It is on by default from 0.12.0. To keep every page open denied for unlisted hosts, as before, set in your policy with `openmoat edit`:
+
+```yaml
+mcp:
+  browser_open: net        # default fetch: a page open is decided like WebFetch
+```
+
+To allow a documentation site outright, for fetches and page opens alike:
+
+```bash
+openmoat allow --site docs.rust-lang.org
+```
+
+`encoded-egress` is a new deny group: an existing policy gets it with `openmoat policy upgrade` ([Upgrade](/docs/upgrade/)).
+
+## Where it is recorded
+
+Each page open is an MCP tool call row in the audit log: `openmoat show --session <id>` lists it with its verdict and rules, and `openmoat replay --session <id>` shows which call marked the session as having read untrusted content.
+
+## Limits
+
+- **Where the page leads next is not seen.** Its scripts, links and server-side redirects, and a name that resolves to an internal address, are beyond the hook. `openmoat proxy` refuses link-local and metadata addresses after DNS only for a browser whose traffic goes through it, and browsers send an encrypted server name, which the proxy refuses unless `sandbox.proxy_allow_ech: true` ([Egress proxy](/docs/egress-proxy/)).
+- **A generic HTTP server's `fetch` tool is not a page open**: it sends methods, headers and bodies under names of its own, so its URL stays `net`.
+- **`encoded-egress` reads URLs a fetch, network or MCP tool names**, not shell commands, whose clients that can send data are `net` already.
+
+More in [Limits](/docs/limits/). The design: [ADR-047](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-047-browser-page-opens-are-fetches.md); the known gaps: [THREAT_MODEL.md §5](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md#5-known-limitations).
