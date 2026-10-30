@@ -1,0 +1,91 @@
+---
+title: "Secrets over HTTPS, for some requests only"
+description: "Inside openmoat run, a brokered secret with --tls-terminate goes into HTTPS requests to its host, and --allow 'GET /repos/**' limits which requests may carry it; every other request is refused before anything is sent (proxy-secret-route)."
+sidebar:
+  label: "Over HTTPS, some requests only"
+  order: 4
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+Your agent needs an API token for an HTTPS service and you run it under `openmoat run`, or you want the token usable for a few kinds of request only (read repositories, open issues) and nothing else.
+
+</Aside>
+
+**Protects against** the agent holding or reading the token, and against a prompt injection using the token for a request you did not mean: `DELETE /repos/o/r` with a token meant for reading, or a path spelt to look like one the rules allow.
+
+## What it does
+
+Most APIs are HTTPS, which `openmoat proxy` does not read: the token broker put a value into HTTPS only through Claude Code's own sandbox broker. From 0.12.0, inside `openmoat run`, a secret with `tls: terminate` gets its value into HTTPS requests, and `allow` rules limit which requests may have it ([ADR-043](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-043-tls-termination-for-brokered-secrets.md)):
+
+- `openmoat run`'s proxy decrypts the agent's tunnel to the secret's host with a certificate its own **certificate authority** signs, puts the value in, verifies the host's real certificate itself, and forwards the request.
+- `allow: [GET /repos/**, POST /repos/*/*/issues]` lists the only requests that may receive the value: the method in capitals, compared exactly, and the path in segments where `*` is exactly one segment and `**` any number. **Every other request to the host is refused with `403`** before anything is sent (`proxy-secret-route`), plain HTTP included; so are `..` in any spelling, encoded slashes, `;`, double encoding and a method-override header.
+- The answer is stopped before any brokered value in it, so what the agent reads back never holds the token.
+
+The CA is made once by `openmoat proxy ca init` (person-only, asks first). X.509 name constraints limit it to the terminated hosts, its key stays in `~/.moat/proxy-ca/`, which `kernel-self` denies to agents and no sandbox lets them read, and both files are pinned in the policy lock. **Only the commands `openmoat run` starts trust it**: the run writes the certificate and a bundle with the system's roots to a private directory and names them in the run's environment (`SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `PIP_CERT`, `CURL_CA_BUNDLE`, `GIT_SSL_CAINFO`, `CARGO_HTTP_CAINFO`; `NODE_EXTRA_CA_CERTS` gets the certificate alone). Nothing is added to the system's or your trust store.
+
+## Example
+
+<Steps>
+
+1. **Add the secret with its rules, in your own terminal**
+
+   ```bash
+   openmoat secret add gh --tls-terminate --allow 'GET /repos/**' --allow 'POST /repos/*/*/issues'
+   ```
+
+   It shows the change to your policy and asks, then offers to make the proxy's CA (`openmoat proxy ca init`, also asked first) when none covers `api.github.com`.
+
+2. **Start the agent under `openmoat run`, from a shell that has the token**
+
+   ```bash
+   export GITHUB_TOKEN="$(gh auth token)"
+   openmoat run -- claude        # the agent holds moat-secret:gh:placeholder, never the token
+   ```
+
+3. **Use GitHub from the agent**
+
+   `curl https://api.github.com/repos/o/r -H "Authorization: Bearer $GITHUB_TOKEN"`, and Python and Node.js clients, reach GitHub with the real token. A request the rules do not name (`DELETE /repos/o/r`, `GET /user/keys`, a path with `..` in any spelling, a method-override header) gets `403` from the proxy and never reaches GitHub; `openmoat show` lists it under `proxy-secret-route`.
+
+</Steps>
+
+## Which commands trust the CA
+
+| Client | Inside `openmoat run` |
+|---|---|
+| `curl`, `git`, `pip`, Python `requests`, `cargo`, Node.js | reach the host; the token goes in |
+| A client that ignores `SSL_CERT_FILE` and `NODE_EXTRA_CA_CERTS` (Go programs such as `gh` on macOS, tools that pin certificates), or speaks only HTTP/2 | cannot reach the host; the request is refused and recorded under `proxy-tls`, and the token is never sent |
+| Anything outside `openmoat run`: the standalone `openmoat proxy`, the agents' own sandboxes | not decrypted; an HTTPS request there keeps the placeholder |
+
+## Turn it on or off
+
+`--tls-terminate` and `--allow` are per secret, off unless set. The entry `openmoat secret add` writes:
+
+```yaml
+secrets:
+  - id: gh
+    host: api.github.com
+    header: Authorization
+    source: { env: GITHUB_TOKEN }
+    tls: terminate                  # inside openmoat run, decrypt HTTPS to the host and inject there
+    allow:                          # the only requests that get the value; at most 64 rules
+      - GET /repos/**
+      - POST /repos/*/*/issues
+```
+
+`allow` needs `tls: terminate` or `plain_http: true`, where the proxy reads requests; a policy that sets it otherwise does not load, and `openmoat run` refuses to start when no pinned CA covers every terminated host. Run `openmoat proxy ca init` again to rotate the CA (it lasts a year; `openmoat run` warns a month before) or after adding a host. Remove the two keys with `openmoat edit` to go back to plain brokering.
+
+## Where it is recorded
+
+A terminated request is a row for its method, host and port, marked `terminated` and shown as `https://host:port`, with the rule that matched. A refused one is a `proxy-secret-route` row naming the method and the reason, never the path, which can hold what the request was about. A tunnel whose handshake failed or whose upstream certificate did not verify is `proxy-tls`.
+
+## Limits
+
+- **Inside `openmoat run` only.** The standalone `openmoat proxy` and the agents' own sandboxes never decrypt: there the HTTPS request keeps the placeholder ([Where it works today](/docs/keep-tokens-safe/where-it-works/)).
+- **HTTP/1.1 only** inside a terminated tunnel; an HTTP/2-only client fails its handshake.
+- **The CA's name constraint covers names under the host too** (`*.api.github.com`), as RFC 5280 defines it, though the proxy terminates only the host itself.
+- **While the run lasts**, the plaintext of terminated requests and answers passes through the proxy's memory.
+
+More in [Limits](/docs/limits/). The design: [ADR-043](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-043-tls-termination-for-brokered-secrets.md); the keys: [POLICY.md §2.1](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#21-brokered-secrets-secrets).

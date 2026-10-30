@@ -26,7 +26,8 @@ openmoat init --mcp-proxy       # every server, at setup
 - pins each tool's name, title, description, input and output schemas and annotations (such as `readOnlyHint`, which an agent may read to run a call without asking), and every other field of the tool as it is;
 - leaves every tool of a server it has not pinned yet out of the tool list, and refuses its calls, naming `openmoat mcp accept <server>`, which shows each tool and asks;
 - leaves a changed or new tool out of the tool list, and answers a call to it with an error naming `openmoat mcp accept <server>`; the call never reaches the server;
-- records every tool call in the audit log.
+- records every tool call in the audit log;
+- from 0.12.0, passes a call to the server only when the agent's hook decided exactly that call, and refuses the rest with `mcp-unattributed` ([The MCP gateway](/docs/mcp-servers/gateway/)).
 
 `openmoat mcp accept <server>` then shows a diff of what changed. `openmoat mcp wrap` changes only the server's command in your own file (`~/.claude.json`, Cursor's `mcp.json`, Codex's `config.toml`, Copilot CLI's `mcp-config.json`), keeps a backup, and never rewrites a project's file. A server with a change you have not accepted is skipped. Add `--dry-run` to see what it would change.
 

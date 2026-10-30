@@ -23,7 +23,9 @@ The agent commits, pushes, opens pull requests or reads issues.
 | `git push`, `gh pr create` that changes a CI workflow, after the session read untrusted content or a secret | ask: `push-runs-later` |
 | `git config core.hooksPath .h`, a write into `.git/hooks` | ask: `git-internals` |
 | A write to `.github/workflows/ci.yml`, `.husky/pre-commit` | ask: `runs-later`, CI or a commit runs it later |
-| `git push --force`, `git push origin :main`, `git reset --hard`, `git clean -fdx`, `git branch -D x` | deny: `destructive` |
+| `git push --force`, `git push origin :main`, `git reset --hard`, `git clean -fdx` | deny: `destructive` |
+| `git branch -D x` | ask: `destructive-recoverable`, the reflog still holds the commits |
+| `git -c user.name=Bot commit -m x`, `GIT_EDITOR=true git commit --amend` | allow: an inert config key and a no-op editor change nothing |
 | `gh auth token`, `gh auth status -t`, `cat ~/.config/gh/hosts.yml`, `git credential fill` | deny: they print your token |
 
 ## Let gh work without handing over the token

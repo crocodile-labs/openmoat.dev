@@ -77,7 +77,7 @@ The value goes in the `Authorization` header unless you pass `--header <name>`. 
 
 ## Where it works today
 
-Over HTTPS, the value is put in only by Claude Code's own sandbox broker, for its sandboxed shell commands. Through `openmoat proxy` (Codex, Cursor, `openmoat run`) only plain-HTTP requests get it, with `plain_http: true`. The details per agent: [Where it works today](/docs/keep-tokens-safe/where-it-works/).
+Over HTTPS, the value is put in by Claude Code's own sandbox broker, for its sandboxed shell commands, and from 0.12.0 inside `openmoat run` for a secret that says `tls: terminate`, where `allow` rules also limit which requests may carry it (`openmoat secret add gh --tls-terminate --allow 'GET /repos/**'`): [Secrets over HTTPS, for some requests only](/docs/keep-tokens-safe/https-injection/). The standalone `openmoat proxy` and the other agents' sandboxes put it into plain-HTTP requests only, with `plain_http: true`. The details per agent: [Where it works today](/docs/keep-tokens-safe/where-it-works/).
 
 <Impact opens={["Programs the agent runs can call the API with your token"]} keeps={["The agent itself never holds the value, and cannot print or read it", "A request carrying the placeholder or the value to any other host is refused", "Its source is denied too: `openmoat secret add` adds the rule when none covers it"]} think={["The API host can still be told to do anything the token allows: give the token the smallest scope that works"]} />
 
@@ -87,6 +87,8 @@ Over HTTPS, the value is put in only by Claude Code's own sandbox broker, for it
 |---|---|---|
 | `openmoat secret add gh` | Broker `GITHUB_TOKEN` for `api.github.com`; shows the diff and asks. Terminal only | `openmoat secret add gh` |
 | `openmoat secret add <id> --host <host> (--env <NAME> \| --file <path>) [--header <name>]` | Broker another token for one host | `openmoat secret add stripe --host api.stripe.com --env STRIPE_API_KEY` |
+| `openmoat secret add <id> … --tls-terminate [--allow 'METHOD /path']…` | Also put the value into HTTPS to the host inside `openmoat run`, and only into the requests the rules name; offers to make the proxy CA. Terminal only | `openmoat secret add gh --tls-terminate --allow 'GET /repos/**'` |
+| `openmoat proxy ca init` | Make the CA `openmoat run`'s proxy decrypts HTTPS with, for the hosts of `tls: terminate` secrets only; asks, then pins it. Terminal only | `openmoat proxy ca init` |
 | `openmoat secret list [--format json]` | Each secret's host, header and source, never the value, and whether a deny rule covers the source | `openmoat secret list` |
 | `openmoat proxy` | Prints each secret's id, host, header and placeholder at start, and injects plain-HTTP secrets | `openmoat proxy` |
 | `openmoat sandbox show` | What Claude Code's broker does with each secret | `openmoat sandbox show` |
@@ -102,13 +104,15 @@ secrets:
     header: Authorization           # the request header the value goes in
     source: { env: GITHUB_TOKEN }   # or { file: ~/.config/moat/gh } or { keychain: { service: moat, account: gh } }
     plain_http: false               # optional; true also injects into plain-HTTP (clear-text) requests
+    # tls: terminate                # optional; inside openmoat run, decrypt HTTPS to the host and inject there
+    # allow: ["GET /repos/**"]      # optional, with tls or plain_http: the only requests that get the value
 ```
 
 A secret opens no host: its host still needs a `net` or `fetch` allow rule. `openmoat policy lint` warns when none names it, and when no deny rule covers the source. The rest: [POLICY.md §2.1](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#21-brokered-secrets-secrets).
 
 ## Limits
 
-- **HTTPS injection works through Claude Code's own sandbox broker only.** Through `openmoat proxy` (Codex, Cursor, `openmoat run`) a request over HTTPS keeps the placeholder, and the server rejects it ([above](#where-it-works-today)).
+- **HTTPS injection works through Claude Code's own sandbox broker, and inside `openmoat run` for a `tls: terminate` secret.** Through the standalone `openmoat proxy` and the other agents' sandboxes a request over HTTPS keeps the placeholder, and the server rejects it ([above](#where-it-works-today)).
 - **`token-egress` sees only prefixed token formats where the hook sees them**: not a token in an uploaded file, a here-document, a variable not on the command line, or an encoded or split token.
 - **A variable you export before starting the agent** is still passed to the programs it runs, unless it is brokered under `openmoat run`.
 

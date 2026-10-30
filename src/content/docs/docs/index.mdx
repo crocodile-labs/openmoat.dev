@@ -8,7 +8,7 @@ sidebar:
 
 import { Aside, CardGrid, LinkCard, Steps, TabItem, Tabs } from '@astrojs/starlight/components';
 
-OpenMoat runs on your machine, next to Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi or Gemini CLI. Before the agent runs a command, reads or writes a file, opens a web page or calls an MCP tool, OpenMoat checks it against one policy that you control. Normal work goes on as before; reading your keys, sending them out, destructive commands and switching OpenMoat off are blocked.
+OpenMoat runs on your machine, next to Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode or Hermes Agent. Before the agent runs a command, reads or writes a file, opens a web page or calls an MCP tool, OpenMoat checks it against one policy that you control. Normal work goes on as before; reading your keys, sending them out, destructive commands and switching OpenMoat off are blocked.
 
 ## How it works
 
@@ -28,6 +28,8 @@ The same policy is written into the agents' own OS sandboxes (Claude Code, Codex
 | GitHub Copilot CLI | hook only | [GitHub Copilot CLI](/docs/agents/#github-copilot-cli) |
 | pi | hook only (an extension) | [pi](/docs/agents/#pi) |
 | Gemini CLI | hook only | [Gemini CLI](/docs/agents/#gemini-cli) |
+| OpenCode (1 and 2) | hook only (a plugin) | [OpenCode](/docs/agents/opencode/) |
+| Hermes Agent | hook only | [Hermes Agent](/docs/agents/#hermes-agent) |
 
 `openmoat init` finds the ones you have and asks before setting up each; `openmoat status` shows the level each one has right now. What each agent's hook sees, where you answer its questions and what it does not cover: [Supported agents](/docs/agents/).
 
@@ -102,9 +104,12 @@ Already have projects? Every project you open with a protected agent is covered 
   <LinkCard title="Secrets and .env files" href="/docs/env-files/" description="Denies reading ~/.ssh, cloud credentials, .env files and secret variables such as $GITHUB_TOKEN." />
   <LinkCard title="Network allowlist" href="/docs/allow-a-site/" description="Stops a command sending data to a host the policy does not list; openmoat allow --site adds one." />
   <LinkCard title="Token broker" href="/docs/keep-tokens-safe/" description="The agent holds a placeholder; the token goes to one host only, and never to another." />
+  <LinkCard title="Secrets over HTTPS, for some requests only" href="/docs/keep-tokens-safe/https-injection/" description="Inside openmoat run the token goes into HTTPS, and only into the requests you name: GET /repos/**, nothing else." />
   <LinkCard title="MCP pinning and the MCP proxy" href="/docs/mcp-servers/" description="Holds a new or changed MCP server, or tool description, until you accept it." />
+  <LinkCard title="The MCP gateway" href="/docs/mcp-servers/gateway/" description="A wrapped server receives only the calls the agent's hook decided; a call nobody checked is refused." />
+  <LinkCard title="Browser page opens" href="/docs/mcp-servers/browser-pages/" description="A browser MCP call that only opens a page is checked like WebFetch; a file: URL is a read." />
   <LinkCard title="OS sandboxes and openmoat run" href="/docs/sandboxes/" description="Stops a test or install script reading your keys or writing outside the project." />
-  <LinkCard title="Egress proxy" href="/docs/egress-proxy/" description="Refuses unlisted hosts, cloud metadata and private addresses for sandboxed commands." />
+  <LinkCard title="Egress proxy" href="/docs/egress-proxy/" description="Refuses unlisted hosts, cloud metadata and private addresses for sandboxed commands, and serves agent sessions only." />
   <LinkCard title="Self-protection and the policy lock" href="/docs/self-protection/" description="Stops the agent editing the policy, approving itself or switching OpenMoat off." />
   <LinkCard title="Session taint" href="/docs/session-taint/" description="After a web page or MCP result, writes to CI, build and agent files ask." />
   <LinkCard title="Audit log" href="/docs/see-what-happened/" description="Every decision in a local, hash-chained log: openmoat show, replay and report." />
@@ -132,6 +137,7 @@ Already have projects? Every project you open with a protected agent is covered 
   <LinkCard title="Cloud CLIs and SSH" href="/docs/cloud-clis/" description="Why aws, kubectl and ssh cannot use your credentials from the agent." />
   <LinkCard title="Install and publish" href="/docs/packages/" description="Installs, install scripts and publishing." />
   <LinkCard title="Auto-approve and CI" href="/docs/auto-approve-and-ci/" description="What still stops a call when nobody is asked." />
+  <LinkCard title="The SDK" href="/docs/sdk/" description="openmoat-sdk and @openmoat/sdk: the same decisions in your own agent, before each tool call runs." />
   <LinkCard title="Upgrade" href="/docs/upgrade/" description="The steps after each new release." />
   <LinkCard title="Turn it off" href="/docs/turn-off/" description="Take OpenMoat out of one agent or all of them." />
 </CardGrid>

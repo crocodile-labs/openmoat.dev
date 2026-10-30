@@ -1,0 +1,81 @@
+---
+title: "The proxy serves agent sessions only"
+description: "openmoat proxy answers only requests that carry a session credential, which Claude Code's SessionStart hook gives each session; anything else gets 407 (proxy-session). Each request is recorded under its session, and the session's taint applies."
+sidebar:
+  label: "Agent sessions only"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+Sandboxed commands get `407 Proxy Authentication Required` from `openmoat proxy`, `openmoat status` says something about proxy sessions, or you want to know what the `SessionStart` hook `openmoat init` writes is for.
+
+</Aside>
+
+**Protects against** any local program using `openmoat proxy` as an open proxy, and a session escaping its taint: before 0.12.0 the standalone proxy had no sessions, so after a session read a secret its sandboxed commands could still reach other hosts through it.
+
+## What it does
+
+From 0.12.0, `openmoat proxy` serves agent sessions only ([ADR-044](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-044-standalone-proxy-sessions.md)). Every request must carry a credential issued to one agent session:
+
+- **Claude Code** gets one from the `SessionStart` hook `openmoat init` installs: at every start, resume, `/clear` and compaction, the hook gives that session's sandboxed `Bash` commands their own `HTTP_PROXY`, `HTTPS_PROXY` and `ALL_PROXY` with the credential in them. A credential is signed, accepted for 24 hours, and names one session.
+- The proxy records each request **under that session**, applies the session's taint (after the session reads a secret, its commands' connections to other hosts are refused) and the session's share of the connections.
+- A request **without a valid credential**, from another local program, or with a credential edited, borrowed from another session or expired, gets `407` and a `proxy-session` row, before its host is decided.
+- The signing key is `~/.moat/proxy.key`, which the default policy denies to agents (`kernel-self`) and every sandbox OpenMoat writes keeps out. Replacing the file revokes every credential within a second.
+
+`openmoat run` already worked this way for its own proxy, with a credential per run; the standalone proxy now does the same per agent session.
+
+## Example
+
+`openmoat status` says, for each host sandbox, whether its traffic carries a session:
+
+```console
+$ openmoat status
+...
+Claude Code      ✔ proxy sessions: each session's sandboxed commands send their own credential (session-start hook), so its taint and connection share apply
+Codex            ! proxy sessions: its proxy sends no session credential, so `openmoat proxy` refuses what it hands on (407); `openmoat run` gives each run its own
+```
+
+A program that is not one of those sessions gets `407 Proxy Authentication Required`; the row in the audit log has rule `proxy-session` and no session.
+
+## Turn it on
+
+It is on from 0.12.0, and it needs one step after upgrading:
+
+```bash
+openmoat init          # once, in your own terminal: Claude Code gets its SessionStart entry
+```
+
+Then start a new Claude Code session. Until you do, with `sandbox.proxy_port` set, Claude Code's sandboxed commands get `407`.
+
+## Codex
+
+Codex's own proxy hands what it allows on to `openmoat proxy` when Codex starts with `HTTP_PROXY` and `HTTPS_PROXY` set to `http://127.0.0.1:18080`, and it cannot send a session credential. You have two choices:
+
+```bash
+openmoat run -- codex                      # each run gets a credential of its own, and its taint applies
+```
+
+or serve requests that carry no credential, with no session, as before 0.12.0:
+
+```yaml
+sandbox:
+  proxy_port: 18080
+  proxy_serve_without_credential: true     # openmoat policy lint, doctor and status warn about it
+```
+
+With the setting, any local process may use the proxy again, and a session escapes its taint by sending no credential; a wrong credential is still refused. Cursor's sandboxed commands never reach `openmoat proxy`.
+
+## Where it is recorded
+
+Every request through `openmoat proxy` is a row in the audit log with its session id: `openmoat show --session <id>` lists a session's connections beside its hook decisions. A refused request is a `proxy-session` row with no session. The hook records the credential it issued as an allow row with rule `proxy-credential`, and says why it issued none (rule `session-start`) when the policy sets no `sandbox.proxy_port` or the session runs under `openmoat run`, whose own credential applies.
+
+## Limits
+
+- **Claude Code only, for now.** Its `SessionStart` hook is the one that issues credentials. Codex's proxy sends none (above), and Cursor's sandboxed commands do not reach `openmoat proxy`.
+- **Everything in a session shares its credential.** Claude Code keeps it in the session's environment file, so a command of that session can read it and use it for the rest of the session, under that session's taint and record.
+- **Claude Code cannot block a session from starting** when the hook fails; the session then runs with commands the proxy refuses, which fails closed.
+
+More in [Limits](/docs/limits/). The design: [ADR-044](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-044-standalone-proxy-sessions.md); the setting: [POLICY.md §9](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#9-host-sandboxes-sandbox).

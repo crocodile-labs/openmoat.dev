@@ -11,7 +11,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 ## What it does
 
-- **`kernel-self` (deny).** The agent may not write `~/.moat`, any `.moat/` folder, the agents' hook and settings files, or the `openmoat` binary, and may not read OpenMoat's state beside the policy: `audit.db`, `policy.lock`, `hosts.json`, `approvals.json`, `trust.json`, `allowed_signers` and `mcp/`. `~/.moat/policy.yaml` stays readable, so the agent can explain a deny. The commands that change what agents may do are denied to it too, by either name (`openmoat`, `moat`), by absolute path, through a link, and under terminal wrappers (`script`, `expect`, `unbuffer`, `tmux`, `screen`, `osascript`, Python's `pty.spawn`).
+- **`kernel-self` (deny).** The agent may not write `~/.moat`, any `.moat/` folder, the agents' hook and settings files, or the `openmoat` binary, and may not read OpenMoat's state beside the policy: `audit.db`, `policy.lock`, `hosts.json`, `approvals.json`, `trust.json`, `allowed_signers`, `mcp/`, and from 0.12.0 `proxy.key` (the key `openmoat proxy` checks session credentials with) and `proxy-ca/` (the proxy CA's key and certificate). `~/.moat/policy.yaml` stays readable, so the agent can explain a deny. The commands that change what agents may do are denied to it too, by either name (`openmoat`, `moat`), by absolute path, through a link, and under terminal wrappers (`script`, `expect`, `unbuffer`, `tmux`, `screen`, `osascript`, Python's `pty.spawn`). From 0.12.0 the read-only forms are allowed (`openmoat-readonly`): `openmoat --help`, `--version`, `<command> --help`, `policy lint FILE`, `policy check …` and `demo` read no state and change nothing, so an agent may run them to explain a verdict.
 - **Person-only commands.** Those commands also refuse to run when an agent started them, even through a terminal wrapper, and read your answer from the terminal itself, not from their input.
 - **The policy lock (`kernel-integrity`).** `openmoat init` records the SHA-256 of the policy, every hook file it installed and the agents' settings in `~/.moat/policy.lock`. Every call checks them; a pinned file changed, removed or replaced by a symlink without a person accepting it (**drift**) denies every call until you re-pin. `openmoat edit`, `openmoat allow` and `openmoat trust` re-pin after their own change.
 - **Pinned programs (`executables`).** `openmoat init` records where common programs (`git`, `npm`, `node`, `python3`, `cargo`, `curl`, `ssh`, `sudo`, …) resolve. A command whose program now resolves elsewhere (a `git` planted in `node_modules/.bin`) is denied.
@@ -24,8 +24,11 @@ import { Aside } from '@astrojs/starlight/components';
 | `openmoat allow --last` | deny | `kernel-self` |
 | `cat ~/.moat/audit.db`, `sqlite3 -readonly ~/.moat/audit.db` | deny | `kernel-self` |
 | `echo x >> ~/.moat/policy.yaml` | deny | `kernel-self` |
+| `cat ~/.moat/proxy.key`, `cat ~/.moat/proxy-ca/ca.key` | deny | `kernel-self` |
 | `systemctl --user stop moat-proxy` | deny | `kernel-self` |
-| `pkill -f 'openmoat proxy'` | ask | `stops-openmoat` |
+| `pkill -f 'openmoat proxy'`, `killall moat` | ask | `stops-openmoat` |
+| `pkill -f my-server.js` | no ask: the pattern cannot match `openmoat` or `moat` | |
+| `openmoat --help`, `openmoat policy check 'rm -rf ~'` | allow | `openmoat-readonly` |
 
 When anything edits a pinned file behind OpenMoat's back, every call gets:
 
@@ -52,7 +55,7 @@ moat: `openmoat allow` must be run by a person, not by an agent: it was started 
 | `openmoat init` | Re-pin, keeping the hook files already in the lock | `openmoat init` |
 | `openmoat status` | Each agent's protection level, and pinned files that changed | `openmoat status --format json` |
 
-Commands that only a person in a terminal may run (refused without a terminal, refused when an agent started them, and denied to agents by `kernel-self`): `openmoat` (its questions), `openmoat init` over an existing lock, `uninstall`, `allow`, `edit`, `secret add`, `trust`, `doctor --accept`, `doctor --bundle`, `sandbox sync`, `policy upgrade` (except `--dry-run`), `policy install`, `policy trust-key`, `policy remove`, `mcp accept`, `mcp wrap`, `mcp unwrap`, `audit anchor`, `proxy install` and `proxy uninstall`. The full list: [Commands](/docs/commands/).
+Commands that only a person in a terminal may run (refused without a terminal, refused when an agent started them, and denied to agents by `kernel-self`): `openmoat` (its questions), `openmoat init` over an existing lock, `uninstall`, `allow`, `edit`, `secret add`, `trust`, `doctor --accept`, `doctor --bundle`, `sandbox sync`, `policy upgrade` (except `--dry-run`), `policy install`, `policy trust-key`, `policy remove`, `mcp accept`, `mcp wrap`, `mcp unwrap`, `audit anchor`, `proxy ca init`, `proxy install` and `proxy uninstall`. The full list: [Commands](/docs/commands/).
 
 ## Settings
 

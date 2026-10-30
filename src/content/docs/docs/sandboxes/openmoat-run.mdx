@@ -24,7 +24,7 @@ The two `--write` paths are Claude Code's own state, which it must write to run.
 - **Network goes only through the run's proxy**, on a loopback port, with a credential made for the run; a request without it gets `407`. On Linux, where bubblewrap can run, the agent gets a network namespace of its own with only loopback.
 - **The agent's hooks still decide each call.** They run inside the sandbox and send each call to the `openmoat run` process outside it, which decides and records it.
 - **npm and uv install no version published in the last 7 days** (`npm_config_before`, `UV_EXCLUDE_NEWER`).
-- **Brokered secrets' variables are removed** before the agent starts.
+- **Brokered secrets' variables are removed** before the agent starts. A secret with `tls: terminate` is put into HTTPS here and nowhere else, only for the requests its `allow` rules name ([Secrets over HTTPS](/docs/keep-tokens-safe/https-injection/)); `openmoat run` refuses to start when no pinned CA covers such a secret's host.
 - **Nothing types into your terminal:** `TIOCSTI` is denied.
 - **Turn the agent's own sandbox off:** sandboxes do not nest. Claude Code's `sandbox.enabled` fails inside, and Codex needs `--sandbox danger-full-access`. Credentials must not come from the keychain: use an API key or `apiKeyHelper`.
 

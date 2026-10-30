@@ -48,7 +48,7 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
 
 2. **Read the release's Upgrading box**
 
-   Each page under [Releases](/docs/releases/) starts with what that release needs, such as `openmoat policy upgrade` and `openmoat init` (0.11.0) or nothing at all (0.10.1). Skipped releases? Read the box of each one in between.
+   Each page under [Releases](/docs/releases/) starts with what that release needs, such as `openmoat init` once and then `openmoat policy upgrade` (0.12.0) or nothing at all (0.10.1). Skipped releases? Read the box of each one in between.
 
 3. **Take the new default rules, if you want them**
 
@@ -105,6 +105,7 @@ Until you do, the old hooks keep working through `moat`. `openmoat doctor` says 
 
 | Upgrading to | Run |
 |---|---|
+| [0.12.0](/docs/releases/v0-12-0/) | `openmoat init` once (Claude Code's `SessionStart` hook for `openmoat proxy`), then `openmoat policy upgrade` (`encoded-egress`, `destructive-recoverable`, `openmoat-readonly`, the proxy key and CA under `kernel-self`, new `env-poison` names) and restart the agents; keep one OpenMoat installed (audit log schema 7) |
 | [0.11.0](/docs/releases/v0-11-0/) | `openmoat policy upgrade`, then `openmoat init` and restart the agents; keep one OpenMoat installed (audit log schema 5) |
 | [0.10.1](/docs/releases/v0-10-1/) | Nothing |
 | [0.10.0](/docs/releases/v0-10-0/) | Nothing for a default install; `openmoat init` if OpenClaw's configuration is at another path (`OPENCLAW_CONFIG_PATH`) |
