@@ -1,0 +1,37 @@
+---
+title: "OpenMoat 0.13.0"
+description: "A wrapped MCP server starts only from a definition you accepted, wrapped servers run in the sandbox by default, status and doctor list the servers that start outside OpenMoat, and the guard keeps its hang record when several give up at once."
+sidebar:
+  label: "0.13.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-03. [GitHub release v0.13.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.13.0).
+
+<Aside type="caution" title="Upgrading">
+
+- **Wrapped MCP servers start only from an accepted definition.** If you wrapped servers with `openmoat mcp wrap` or `openmoat init --mcp-proxy`, a server whose definition is new or changed no longer starts until you run `openmoat mcp accept <server>` in your own terminal. The agent shows an error that names that command.
+- **Re-wrapping turns the sandbox on.** `openmoat mcp wrap` now starts servers under `openmoat run`'s sandbox on macOS 13 or later and Linux; `--no-sandbox` keeps one unsandboxed. Servers you wrapped before keep their choice until you wrap them again.
+- **Inside `openmoat run`, a wrapped server does not start.** The proxy cannot read OpenMoat's state there, so it cannot check the definition.
+- **Building from source needs Rust 1.99.** Release binaries and Homebrew are unaffected.
+
+Every step after an upgrade: [Upgrade](/docs/upgrade/).
+
+</Aside>
+
+## Security
+
+- `openmoat mcp proxy` checks its own command line against the MCP server definitions a person accepted (the pin `openmoat mcp accept` writes) before it starts anything. A new or changed wrapped server never runs its command; the agent gets an error naming `openmoat mcp accept <server>`, and the refusal is recorded (rule `mcp-server-changed`, host `mcp-proxy`). A drifted lock or an unreadable policy starts no wrapped server ([#712](https://github.com/crocodile-labs/openmoat/pull/712)).
+- `openmoat status` and `openmoat doctor` warn about MCP servers that start outside OpenMoat: stdio servers that are not wrapped, wrapped ones without the sandbox, and project servers Claude Code starts without asking (`enableAllProjectMcpServers`, `enabledMcpjsonServers`) ([#712](https://github.com/crocodile-labs/openmoat/pull/712)).
+
+## Changed
+
+- `openmoat mcp wrap` and `openmoat init --mcp-proxy` start servers in the sandbox by default where `openmoat run` can sandbox (macOS 13 or later, Linux); `--no-sandbox` (`--mcp-no-sandbox` for `init`) opts out ([#712](https://github.com/crocodile-labs/openmoat/pull/712)).
+- `openmoat mcp proxy` started by hand, or by a client whose configuration OpenMoat does not read, no longer starts the server ([#712](https://github.com/crocodile-labs/openmoat/pull/712)).
+- Building OpenMoat from source now needs Rust 1.99 or later (was 1.95) ([#713](https://github.com/crocodile-labs/openmoat/pull/713)).
+
+## Fixed
+
+- A guard that gives up after its 30 s budget waits up to 2 s (was 200 ms) for its line in `~/.moat/guard-hangs.log`, so `openmoat doctor` no longer misses hangs when several guards give up at once ([#708](https://github.com/crocodile-labs/openmoat/pull/708)).
