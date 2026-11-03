@@ -1,0 +1,29 @@
+---
+title: "OpenMoat 0.12.1"
+description: "Codex's tool calls are checked again: the hook runs the guard as one command, and an allowed call no longer shows as a failed hook."
+sidebar:
+  label: "0.12.1"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-10-31. [GitHub release v0.12.1](https://github.com/crocodile-labs/openmoat/releases/tag/v0.12.1).
+
+<Aside type="caution" title="Upgrading">
+
+- **Codex users: run `openmoat init` once** in your own terminal, then open Codex, run `/hooks` and trust the OpenMoat hook. `openmoat status` says when it is not trusted yet.
+- In 0.12.0 and earlier, OpenMoat did not check Codex's tool calls with current Codex releases: the hook ran `openmoat` without its arguments, and every call went through. Codex's own sandbox still applied.
+- Nothing else changes: the policy, the commands and the other agents are as in 0.12.0.
+
+Every step after an upgrade: [Upgrade](/docs/upgrade/).
+
+</Aside>
+
+## Security
+
+- Codex hooks now run `guard --host codex` as one command string. Codex has no `args` field for a hook and ignored the arguments OpenMoat wrote, so it ran bare `openmoat`, which exited without a decision. Existing hooks are repaired by `openmoat init`, `openmoat policy upgrade` and `openmoat sandbox sync`; `openmoat status` and `openmoat doctor` report a broken hook and a hook Codex has not been told to trust, and bare `openmoat` that receives hook input now denies ([#705](https://github.com/crocodile-labs/openmoat/pull/705)).
+
+## Fixed
+
+- Codex: an allowed call is answered with no output instead of `permissionDecision: allow`, which Codex accepts only together with a rewritten input and otherwise reports as a failed hook ([#706](https://github.com/crocodile-labs/openmoat/pull/706)).
