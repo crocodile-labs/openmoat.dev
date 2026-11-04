@@ -105,6 +105,7 @@ Until you do, the old hooks keep working through `moat`. `openmoat doctor` says 
 
 | Upgrading to | Run |
 |---|---|
+| [0.14.0](/docs/releases/v0-14-0/) | `openmoat policy upgrade` (renames `ask` to `review`, adds `card-egress`); `openmoat init` once for goose or the Cline CLI; scripts reading JSON: `asked`/`top_asks` are now `reviewed`/`top_reviews` |
 | [0.13.0](/docs/releases/v0-13-0/) | If you wrap MCP servers: `openmoat mcp accept <server>` for any whose definition is new or changed; re-wrap to turn the sandbox on |
 | [0.12.1](/docs/releases/v0-12-1/) | Codex users: `openmoat init` once, then trust the OpenMoat hook in Codex's `/hooks` |
 | [0.12.0](/docs/releases/v0-12-0/) | `openmoat init` once (Claude Code's `SessionStart` hook for `openmoat proxy`), then `openmoat policy upgrade` (`encoded-egress`, `destructive-recoverable`, `openmoat-readonly`, the proxy key and CA under `kernel-self`, new `env-poison` names) and restart the agents; keep one OpenMoat installed (audit log schema 7) |
