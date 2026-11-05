@@ -1,0 +1,27 @@
+---
+// The supported-agents table for the docs, from the one list in data/agents.ts.
+// variant "glance": Supported agents' at-a-glance table; "intro": the docs introduction's.
+import { agents } from '../data/agents';
+interface Props { variant: 'glance' | 'intro' }
+const { variant } = Astro.props;
+---
+{variant === 'glance' ? (
+  <table>
+    <thead><tr><th>Agent</th><th>Protection</th><th>Where you answer a review</th><th><code>openmoat init --hosts</code></th></tr></thead>
+    <tbody>
+      {agents.map((a) => (
+        <tr><td><a href={a.docs}>{a.name}</a></td><td set:html={a.protection} /><td set:html={a.answer} /><td><code>{a.host}</code></td></tr>
+      ))}
+      <tr><td><a href="/docs/agents/#continue-cli">Continue CLI</a></td><td>not checked yet</td><td>none: use <code>openmoat run</code></td><td>none</td></tr>
+    </tbody>
+  </table>
+) : (
+  <table>
+    <thead><tr><th>Agent</th><th>Protection</th><th>Details</th></tr></thead>
+    <tbody>
+      {agents.map((a) => (
+        <tr><td>{a.name}</td><td set:html={a.protection} /><td><a href={a.docs}>{a.name}</a></td></tr>
+      ))}
+    </tbody>
+  </table>
+)}

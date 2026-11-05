@@ -13,8 +13,10 @@ import ThemeInit from '../components/ThemeInit.astro';
 import LogoRow from '../components/LogoRow.astro';
 import AgentName from '../components/AgentName.astro';
 import { agents, platforms } from '../data/logos';
+import { agents as supported, agentList } from '../data/agents';
 const title = 'OpenMoat: security for AI coding agents';
-const description = 'OpenMoat checks every command, file access, web request and MCP call your coding agent makes, and blocks the dangerous ones before they run. For Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode and Hermes Agent. Open source, runs on your machine.';
+const description = `OpenMoat checks every command, file access, web request and MCP call your coding agent makes, and blocks the dangerous ones before they run. For ${agentList()}. Open source, runs on your machine.`;
+const names = supported.map((a) => a.name.replace(' (1 and 2)', '').replace('GitHub ', '')).join(', ');
 ---
 <!doctype html>
 <html lang="en">
@@ -150,7 +152,7 @@ const description = 'OpenMoat checks every command, file access, web request and
       <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; align-items: stretch">
         <div style="border: 1px solid var(--line-2); padding: 18px; background: var(--panel)">
           <p style="margin: 0 0 6px; font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--muted-2)">1 · AGENT</p>
-          <p style="margin: 0 0 6px; font-weight: 600">Claude Code, Codex, Cursor, OpenClaw, Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent</p>
+          <p style="margin: 0 0 6px; font-weight: 600">{names}</p>
           <p style="margin: 0; color: var(--muted); font-size: 13px">wants to run a command, read or write a file, fetch a page, call an MCP tool</p>
         </div>
         <div style="border: 1px solid var(--line-2); border-left: 0; padding: 18px; background: var(--panel)">
@@ -217,7 +219,7 @@ const description = 'OpenMoat checks every command, file access, web request and
       <h2 style="margin: 0 0 24px; font-size: 36px; font-weight: 600; letter-spacing: -0.02em">More than a yes or a no.</h2>
     </section>
     <div class="edge" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 48px 56px; border-top: 1px solid var(--line); border-left: 1px solid var(--line)">
-      <div style="border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 24px"><p style="margin: 0 0 8px; font-family: 'Geist Mono', monospace; font-size: 13px; letter-spacing: 0.1em; color: var(--accent)">AGENT HOOKS</p><p style="margin: 0; color: var(--muted); font-size: 15px">Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode and Hermes Agent: every command, file read and write, web fetch and MCP call is checked.</p></div>
+      <div style="border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 24px"><p style="margin: 0 0 8px; font-family: 'Geist Mono', monospace; font-size: 13px; letter-spacing: 0.1em; color: var(--accent)">AGENT HOOKS</p><p style="margin: 0; color: var(--muted); font-size: 15px">{agentList()}: every command, file read and write, web fetch and MCP call is checked.</p></div>
       <div style="border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 24px"><p style="margin: 0 0 8px; font-family: 'Geist Mono', monospace; font-size: 13px; letter-spacing: 0.1em; color: var(--accent)">A REAL SHELL PARSER</p><p style="margin: 0; color: var(--muted); font-size: 15px">Base64, $'…', variables split as bash splits them, globs, braces, symlinks, heredocs, $(…), environment reads in python -c and node -e, and commands hidden in ssh, git and watch.</p></div>
       <div style="border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 24px"><p style="margin: 0 0 8px; font-family: 'Geist Mono', monospace; font-size: 13px; letter-spacing: 0.1em; color: var(--accent)">OS SANDBOXES</p><p style="margin: 0; color: var(--muted); font-size: 15px">One policy writes each agent's sandbox, or runs the whole agent in one with openmoat run.</p></div>
       <div style="border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 24px"><p style="margin: 0 0 8px; font-family: 'Geist Mono', monospace; font-size: 13px; letter-spacing: 0.1em; color: var(--accent)">NETWORK ALLOWLIST</p><p style="margin: 0; color: var(--muted); font-size: 15px">Only the hosts the policy lists. A curl or wget download that provably sends nothing is decided like a web fetch, and so is a browser MCP call that only opens a page. Cloud metadata services are refused.</p></div>
@@ -300,63 +302,17 @@ const description = 'OpenMoat checks every command, file access, web request and
 <div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); background: var(--panel); font-weight: 600; font-size: 15px">
 <span style="padding: 14px 16px">Agent</span>
 <span style="padding: 14px 16px">Protection</span>
-<span style="padding: 14px 16px">Where you answer a question</span>
+<span style="padding: 14px 16px">Where you answer a review</span>
 <span style="padding: 14px 16px">Good to know</span>
 </div>
-<div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)"><AgentName name="Claude Code" /></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> hook + OS sandbox<br><span style="color: var(--muted-2)">hook only on native Windows</span></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)">Claude Code's own prompt</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--review)">!</span> its sandbox covers shell commands; file tools, web fetches and MCP are checked by the hook</span>
+{supported.map((a) => (
+<div class="agent-row" style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
+<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)"><AgentName name={a.name.replace(' (1 and 2)', '')} /></span>
+<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> {a.protectionShort}{a.protectionSub && <><br><span style="color: var(--muted-2)">{a.protectionSub}</span></>}</span>
+<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)" set:html={a.homeAnswer}></span>
+<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--review)">!</span> <Fragment set:html={a.note} /></span>
 </div>
-<div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)"><AgentName name="Codex" /></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> hook + OS sandbox</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)">the call stops; run <code style="font-family: 'Geist Mono', monospace; color: var(--fg-2)">openmoat allow --last</code></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--review)">!</span> trust the hook once in Codex's <code style="font-family: 'Geist Mono', monospace; color: var(--fg-2)">/hooks</code>; web search and hosted tools are not seen</span>
-</div>
-<div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)"><AgentName name="Cursor" /></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> hook + OS sandbox<br><span style="color: var(--muted-2)">hook only on Windows</span></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)">Cursor's prompt for shell and MCP; <code style="font-family: 'Geist Mono', monospace; color: var(--fg-2)">openmoat allow --last</code> for files</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--review)">!</span> some commands run outside its sandbox (Run Everything, Auto-review)</span>
-</div>
-<div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)"><AgentName name="OpenClaw" /></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> hook only</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)">OpenClaw's own approval request</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--review)">!</span> calls run unchecked if the Gateway does not load OpenMoat's plugin; <code style="font-family: 'Geist Mono', monospace; color: var(--fg-2)">openmoat status</code> says when it has not reported loading</span>
-</div>
-<div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)"><AgentName name="GitHub Copilot CLI" /></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> hook only</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)">Copilot's own prompt</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--review)">!</span> a hook that times out lets the call run</span>
-</div>
-<div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)"><AgentName name="pi" /></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> hook only</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)">a pi dialog</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--review)">!</span> pi has no prompt of its own, so calls with no rule run</span>
-</div>
-<div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)"><AgentName name="Gemini CLI" /></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> hook only</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)">Gemini CLI's own confirmation</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--review)">!</span> hooks run only in folders it trusts; a hook that times out lets the call run</span>
-</div>
-<div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)"><AgentName name="OpenCode" /></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> hook only<br><span style="color: var(--muted-2)">OpenCode 1 (1.3.4 and later) and 2</span></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)">OpenCode 2's own prompt; on OpenCode 1 the call stops, run <code style="font-family: 'Geist Mono', monospace; color: var(--fg-2)">openmoat allow --last</code></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--review)">!</span> other plugins share its process; OpenCode 2's --auto approves OpenMoat's reviews</span>
-</div>
-<div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)"><AgentName name="Hermes Agent" /></span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> hook only</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)">Hermes's own approval prompt</span>
-<span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--review)">!</span> its plugins and tool middleware can change a call after the check; the in-session /yolo approves reviews unseen</span>
-</div>
+))}
 <div style="display: grid; grid-template-columns: minmax(170px, 1fr) minmax(190px, 1.1fr) minmax(220px, 1.3fr) minmax(260px, 1.6fr); font-size: 14px">
 <span style="padding: 14px 16px; border-top: 1px solid var(--line-2); font-weight: 600; color: var(--fg)">Any terminal agent<br><span style="font-weight: 400; color: var(--muted-2); font-size: 13px">Continue CLI and others</span></span>
 <span style="padding: 14px 16px; border-top: 1px solid var(--line-2); color: var(--muted)"><span style="color: var(--accent)">✓</span> the whole agent in a sandbox, with <code style="font-family: 'Geist Mono', monospace; color: var(--fg-2)">openmoat run</code></span>

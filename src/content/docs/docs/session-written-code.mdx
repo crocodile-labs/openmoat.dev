@@ -25,7 +25,7 @@ moat: review [session-written-code] — runs code this session wrote, with no OS
 
 | Where | What happens |
 |---|---|
-| OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent | Needs review. OpenCode 1 cannot prompt, so it denies with the `openmoat allow --last` hint |
+| OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, the Cline CLI, goose | Needs review. OpenCode 1, the Cline CLI and goose cannot prompt, so there it is denied (blocked, in goose) with the `openmoat allow --last` hint |
 | Claude Code and Cursor on native Windows, or with their sandbox not in place | Needs review |
 | Claude Code, Codex and Cursor with their sandbox in place on macOS and Linux | Unchanged: the OS sandbox stops the script's read of the key |
 | Any agent inside `openmoat run` | Unchanged: the run's sandbox holds the whole agent |

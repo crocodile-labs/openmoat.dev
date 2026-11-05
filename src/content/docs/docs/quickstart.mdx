@@ -7,6 +7,7 @@ sidebar:
 ---
 
 import { Aside, CardGrid, LinkCard, Steps, TabItem, Tabs } from '@astrojs/starlight/components';
+import { agents } from '../../../data/agents';
 
 <Aside type="note" title="Read this when">
 
@@ -65,7 +66,7 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
    openmoat init
    ```
 
-   `openmoat init` writes the default policy to `~/.moat`, then lists the agents it finds (Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent) and asks once for each, after one line per file it would change (`d` shows the full diff; the line counts below are an example):
+   `openmoat init` writes the default policy to `~/.moat`, then lists the agents it finds ({agents.map((a) => a.name).join(', ')}) and asks once for each, after one line per file it would change (`d` shows the full diff; the line counts below are an example):
 
    ```text
    Found these agents:
@@ -86,7 +87,7 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
 
    Hooks are read when a session starts, so open a new one. Then work as usual: most calls run exactly as before.
 
-   Codex runs a new hook only after you trust it in its `/hooks` view. Restart OpenClaw's Gateway, and pi. What each agent's hook covers: [Supported agents](/docs/agents/).
+   Codex runs a new hook only after you trust it in its `/hooks` view. Restart OpenClaw's Gateway, pi and goose (the CLI or the desktop app); the Cline CLI runs the hook from its next session. What each agent's hook covers: [Supported agents](/docs/agents/).
 
 4. **Check that it works**
 

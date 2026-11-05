@@ -16,6 +16,8 @@ import { Aside } from '@astrojs/starlight/components';
 
 **Protects against** a plugin that is installed but never loaded looking protected. OpenClaw, pi and OpenCode run OpenMoat through a plugin they load. Each of them starts without a plugin it cannot load (a syntax error, an API the agent dropped, a broken Node), logs the error and then runs every call unchecked.
 
+goose also runs OpenMoat from a plugin, but its plugin is a `hooks.json` file with no code to run as it loads, so it sends no such report. For goose, `openmoat status` reports a `disabledPlugins` entry that turns OpenMoat's plugin off ([goose](/docs/agents/goose/)). The Cline CLI runs OpenMoat's hook script, not a plugin, so this page does not apply to it.
+
 ## What it does
 
 OpenMoat's plugin runs `openmoat guard --heartbeat --host <id>` as the agent loads it. That records the time in `loaded/<id>.json` in OpenMoat's state directory: owner-only, holding the agent, the time and the OpenMoat release, nothing else. Under the agent's hook line, `openmoat status` and `openmoat doctor` then print one of:

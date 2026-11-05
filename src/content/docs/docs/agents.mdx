@@ -1,12 +1,14 @@
 ---
 title: "Supported agents"
-description: "The nine agents OpenMoat checks (and the Continue CLI, not yet), how well each one is protected, where you answer its questions, and what each one does not cover."
+description: "The eleven agents OpenMoat checks (and the Continue CLI, not yet), how well each one is protected, where you answer a review, and what each one does not cover."
 sidebar:
   label: "Supported agents"
   order: 2
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import AgentTable from '../../../components/AgentTable.astro';
+import { agentCount, agentList } from '../../../data/agents';
 
 <Aside type="note" title="Read this when">
 
@@ -20,18 +22,9 @@ For an agent with an **OS sandbox**, `openmoat init` also writes the sandbox set
 
 ## At a glance
 
-| Agent | Protection | Where you answer a review | `openmoat init --hosts` |
-|---|---|---|---|
-| [Claude Code](#claude-code) | hook + OS sandbox (macOS, Linux, WSL2); hook only on native Windows | Claude Code's own prompt | `claude-code` |
-| [Codex](#codex) | hook + OS sandbox | the call is denied; run `openmoat allow --last` | `codex` |
-| [Cursor](#cursor) | hook + OS sandbox (macOS, Linux); hook only on Windows | Cursor's prompt for shell and MCP calls; `openmoat allow --last` for file tools | `cursor` |
-| [OpenClaw](#openclaw) | hook only | OpenClaw's own approval request | `openclaw` |
-| [GitHub Copilot CLI](#github-copilot-cli) | hook only | Copilot's own prompt | `copilot-cli` |
-| [pi](#pi) | hook only | a pi dialog | `pi` |
-| [Gemini CLI](#gemini-cli) | hook only | Gemini CLI's own confirmation | `gemini-cli` |
-| [OpenCode](#opencode) (1 and 2) | hook only | OpenCode 2's own permission prompt; on OpenCode 1 the call is denied, run `openmoat allow --last` | `opencode` |
-| [Hermes Agent](#hermes-agent) | hook only | Hermes's own approval prompt | `hermes` |
-| [Continue CLI](#continue-cli) | not checked yet | none: use `openmoat run` | none |
+OpenMoat checks {agentCount} agents: {agentList()}.
+
+<AgentTable variant="glance" />
 
 `openmoat status` prints the level each agent has right now. It says **not protected** when the hook is missing or out of date, when the agent's own settings turn hooks off, when OpenMoat's entry lacks the agent's fail-closed key (`failClosed: true` for Cursor, `fail_closed: true` for Hermes Agent), when Hermes Agent's `shell-hooks-allowlist.json` does not approve the hook, when the agent ran without loading OpenMoat's plugin, or when the agent's version does not load OpenMoat's hook (OpenCode before 1.3.4); the line names the file and the setting. When the agent's installed version has a published security advisory that a later version fixes, `openmoat status` and `openmoat doctor` add a warning line naming the version to upgrade to.
 
@@ -117,6 +110,25 @@ OpenCode 1 (`opencode-ai`, 1.3.4 and later) and OpenCode 2 (`@opencode/cli`), th
 - **Skipped hook:** Hermes's gateway, cron and ACP sessions skip a hook its `shell-hooks-allowlist.json` does not approve, as Hermes does under `HERMES_SAFE_MODE=1` or in a profile OpenMoat did not set up. `openmoat status` reports a hook the allowlist does not approve as not protected.
 - **Not checked:** what an `execute_code` script does itself (its tool calls are checked). Plugins, another hook's `modify` reply and tool middleware can rewrite a call's arguments after the check. The in-session `/yolo` toggle and `hermes -z` approve a review unseen. Terminal commands on a remote backend (docker, ssh, modal, …) are checked as local ones.
 
+### Cline CLI
+
+The Cline CLI (`cline`, npm `@cline/cli`). Setup, the tools it checks and the limits in full: [Cline CLI](/docs/agents/cline/).
+
+- **Checked:** every tool, through OpenMoat's `PreToolUse` hook script in `~/.cline/hooks` (`$CLINE_DIR/hooks` when that is set): `run_commands`, `read_files`, `editor`, `apply_patch`, `search_codebase`, `fetch_web_content` and MCP tools; any other tool by the paths, URLs and commands its arguments name. The MCP servers in Cline's `cline_mcp_settings.json` are pinned.
+- **Reviews:** Cline's hooks cannot prompt, so a review is a deny, which ends Cline's run. Approve it with `openmoat allow --last` and continue the session.
+- **If the hook fails:** Cline itself runs a call whose hook fails, so OpenMoat's script blocks the call when `openmoat` is missing, crashes or gives no answer. A script that cannot start at all (no `sh`) or is killed after Cline's 120 seconds lets the call run.
+- **Not checked:** the Cline VS Code extension, `--yolo` runs (no hooks run at all) and native Windows.
+
+### goose
+
+goose, the open-source agent from Block, CLI and desktop app. Setup, the tools it checks and the limits in full: [goose](/docs/agents/goose/).
+
+- **Checked:** every tool, through OpenMoat's plugin, `~/.agents/plugins/openmoat/hooks/hooks.json`, one `PreToolUse` entry with `on_failure: block`: `shell`, `write`, `edit`, `tree`, `analyze`, `read_image` and extension tools. MCP extensions in goose's `config.yaml` are pinned.
+- **Reviews:** goose hooks cannot prompt, so a review is a block you approve with `openmoat allow --last`.
+- **Setup:** restart goose (the CLI or the desktop app) after `openmoat init`; it loads plugins when it starts.
+- **If the hook fails:** with `on_failure: block`, which `openmoat init` sets, a hook that cannot start, times out or answers wrongly blocks the call. goose runs every call unchecked when it does not load the plugin.
+- **Not checked:** what Code Mode's `execute_javascript` does (its tool calls skip the hook, so the call itself needs review), and hooks a project's `.agents/plugins/` adds.
+
 ### Continue CLI
 
 The Continue CLI (`cn`) is built to run Claude Code's hook, but the released `cn` runs no hooks yet, so OpenMoat cannot check its calls. Start it with `openmoat run -- cn` to keep it in a sandbox; `openmoat doctor` warns about this.
@@ -127,11 +139,11 @@ The Continue CLI (`cn`) is built to run Claude Code's hook, but the released `cn
 |---|---|---|---|---|
 | macOS | yes | Claude Code, Codex, Cursor | macOS 13 or later | launchd user agent |
 | Linux | yes | Claude Code, Codex, Cursor | yes, plus `--isolate` | systemd user unit |
-| Windows | yes | Codex only; use WSL2 for Claude Code | no; use WSL2 | not yet |
+| Windows | yes (not the Cline CLI) | Codex only; use WSL2 for Claude Code | no; use WSL2 | not yet |
 
 - **macOS:** `openmoat run` uses Seatbelt and needs macOS 13 or later. On macOS 12 it refuses to start and says so; the hooks still apply the policy.
 - **Linux:** `openmoat run` uses Landlock and seccomp. Where bubblewrap can run, the agent also gets a network namespace of its own, so its traffic can only go through OpenMoat's proxy. Without it the network is limited by port only, and `openmoat run` says so on every start (`--netns=require` refuses to start instead). Plain `openmoat run` does not protect files inside the project (`.env`, `.git`, `.moat`); `openmoat run --isolate` does.
-- **Windows:** the hooks apply the policy to every call. PowerShell commands are not parsed, so OpenMoat never allows one: they go to your agent's prompt. Secrets kept in the system keychain cannot be brokered yet.
+- **Windows:** the hooks apply the policy to every call, except for the Cline CLI, which is not covered on native Windows (its hook script needs `sh`). goose on Windows needs `sh` on the search path to run any hook; without it every call is blocked. PowerShell commands are not parsed, so OpenMoat never allows one: they go to your agent's prompt. Secrets kept in the system keychain cannot be brokered yet.
 
 ## Agent settings that switch the hook off
 
@@ -146,6 +158,8 @@ An agent's own settings can turn its hooks off, and OpenMoat cannot override the
 | Gemini CLI | `hooksConfig` in `settings.json`, or a folder Gemini CLI does not trust |
 | OpenCode | `-openmoat` (or `-*`) in `plugins`, or a `policies` entry denying OpenMoat's plugin, in `opencode.json[c]`; OpenCode 1's `--pure` or `OPENCODE_PURE` |
 | Hermes Agent | the hook's command not approved in `shell-hooks-allowlist.json`; `HERMES_SAFE_MODE=1`; a profile OpenMoat did not set up |
+| Cline CLI | `--yolo`; `--config`, `--hooks-dir` or a moved `CLINE_DIR` that OpenMoat did not install into |
+| goose | `disabledPlugins` naming `openmoat` in `~/.config/goose/settings.json` or a project's `.config/goose/` |
 
 The agent itself is denied writing your own settings files of these, so only you, or a program running outside the agent, can change them.
 

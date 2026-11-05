@@ -82,7 +82,7 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
 
 6. **Restart your agents**
 
-   An agent keeps the hook and sandbox it read when its session started. Start a new session; restart OpenClaw's Gateway, pi, OpenCode (OpenCode 2: `opencode service restart`) and Hermes Agent with its gateway. OpenClaw, pi and OpenCode report that they loaded OpenMoat's plugin only from a start after the upgrade: `openmoat status` says "plugin not loaded yet" until then. After `openmoat init` rewrote Codex's hook entry, trust it again in Codex's `/hooks`.
+   An agent keeps the hook and sandbox it read when its session started. Start a new session; restart OpenClaw's Gateway, pi, OpenCode (OpenCode 2: `opencode service restart`) Hermes Agent with its gateway, and goose. OpenClaw, pi and OpenCode report that they loaded OpenMoat's plugin only from a start after the upgrade: `openmoat status` says "plugin not loaded yet" until then. After `openmoat init` rewrote Codex's hook entry, trust it again in Codex's `/hooks`.
 
 </Steps>
 

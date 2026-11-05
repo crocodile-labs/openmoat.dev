@@ -16,7 +16,7 @@ A call can be decided more strictly because of what the same agent session did b
 | Once the session has read | These calls need review |
 |---|---|
 | A secret (only when your policy lets secret reads run; the default denies them) | Network to any host but the secret's own, every MCP call, web search and unmapped tool |
-| Untrusted content: a web page, a web search, a `curl` or `wget` download, a browser MCP call that opens a page, an MCP tool's result | Writes to CI workflows, git hooks, build files (`package.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, `Dockerfile`, …) and agent instructions and settings (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json`, …) |
+| Untrusted content: a web page, a web search, a `curl` or `wget` download, a browser MCP call that opens a page, an MCP tool's result | Writes to CI workflows, git hooks, build files (`package.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, `Dockerfile`, …) and agent instructions and settings (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json`, the Cline CLI's `.cline` and `.clinerules`, goose's `.goosehints`, …) |
 
 Taint follows files too. When a tainted session writes a file, the audit log records it; a later session that reads or runs that file (`cat`, `source run.sh`, `./run.sh`, `python x.py`) is tainted as well.
 
