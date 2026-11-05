@@ -11,7 +11,7 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 | Command | What it does | Example |
 |---|---|---|
 | `openmoat edit` | Edit `~/.moat/policy.yaml` in `$VISUAL` or `$EDITOR`; it is linted and the diff shown before `Apply? [y/N]`. **Terminal** | `openmoat edit` |
-| `openmoat policy check "<action>" [--kind shell\|fs-read\|fs-write\|net\|fetch\|mcp] [--policy <file>] [--cwd <dir>] [--project <dir>] [--format json]` | The verdict for an action, without running it; exit 0 allow or defer, 2 deny, 3 ask. Without `--policy`, it decides with your installed policy and the project's repository policy, as the hook does | `openmoat policy check "~/.aws/credentials" --kind fs-read` |
+| `openmoat policy check "<action>" [--kind shell\|fs-read\|fs-write\|net\|fetch\|mcp] [--policy <file>] [--cwd <dir>] [--project <dir>] [--format json]` | The verdict for an action, without running it; exit 0 allow or defer, 2 deny, 3 review. Without `--policy`, it decides with your installed policy and the project's repository policy, as the hook does | `openmoat policy check "~/.aws/credentials" --kind fs-read` |
 | `openmoat policy lint [<file>]` | Check a policy: schema, ids, globs; warnings for rules that can never match | `openmoat policy lint ./policy.yaml` |
 | `openmoat policy compile [--policy <file>] [--format json]` | What the OS layers enforce for the policy, and what they cannot | `openmoat policy compile` |
 | `openmoat policy upgrade [--dry-run] [--yes] [--undo]` | Take what a new release's default adds, keeping your edits; `--dry-run` shows the diff anywhere; `--undo` puts the previous policy back. **Terminal**, except `--dry-run` | `openmoat policy upgrade --dry-run` |

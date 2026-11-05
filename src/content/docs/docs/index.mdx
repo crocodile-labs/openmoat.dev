@@ -12,7 +12,7 @@ OpenMoat runs on your machine, next to Claude Code, Codex, Cursor, OpenClaw, Git
 
 ## How it works
 
-<img class="om-diagram light" src="/assets/how-it-works-light.svg" alt="An AI coding agent wants to run a tool call. Through the agent's own hook, OpenMoat checks it against one local policy before it runs: npm test is allowed, a call with no rule is left to the agent's own prompt, a git hook write asks you, and reading ~/.ssh/id_rsa is denied. Allowed code still runs inside the OS sandbox and the egress proxy, and every decision goes into a local hash-chained audit log." />
+<img class="om-diagram light" src="/assets/how-it-works-light.svg" alt="An AI coding agent wants to run a tool call. Through the agent's own hook, OpenMoat checks it against one local policy before it runs: npm test is allowed, a call with no rule is left to the agent's own prompt, a git hook write is held for your review, and reading ~/.ssh/id_rsa is denied. Allowed code still runs inside the OS sandbox and the egress proxy, and every decision goes into a local hash-chained audit log." />
 <img class="om-diagram dark" src="/assets/how-it-works-dark.svg" alt="" aria-hidden="true" />
 
 The same policy is written into the agents' own OS sandboxes (Claude Code, Codex, Cursor), so code inside an allowed command cannot reach your keys either; `openmoat run` does this for any agent. More in [How it decides](/docs/how-it-decides/).
@@ -111,7 +111,7 @@ Already have projects? Every project you open with a protected agent is covered 
   <LinkCard title="OS sandboxes and openmoat run" href="/docs/sandboxes/" description="Stops a test or install script reading your keys or writing outside the project." />
   <LinkCard title="Egress proxy" href="/docs/egress-proxy/" description="Refuses unlisted hosts, cloud metadata and private addresses for sandboxed commands, and serves agent sessions only." />
   <LinkCard title="Self-protection and the policy lock" href="/docs/self-protection/" description="Stops the agent editing the policy, approving itself or switching OpenMoat off." />
-  <LinkCard title="Session taint" href="/docs/session-taint/" description="After a web page or MCP result, writes to CI, build and agent files ask." />
+  <LinkCard title="Session taint" href="/docs/session-taint/" description="After a web page or MCP result, writes to CI, build and agent files need review." />
   <LinkCard title="Audit log" href="/docs/see-what-happened/" description="Every decision in a local, hash-chained log: openmoat show, replay and report." />
   <LinkCard title="Team rules and signed policy packs" href="/docs/team-rules/" description="A repository's rules for everyone in it, and signed packs for every project." />
   <LinkCard title="OpenMoat Bar" href="/docs/openmoat-bar/" description="A read-only menu bar and tray app: which agents are protected, what was blocked and why." />

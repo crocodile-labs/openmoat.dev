@@ -30,11 +30,11 @@ openmoat policy check 'cat ~/.ssh/openmoat-canary'   # deny, secrets-paths
 
 ## What counts
 
-With the default policy and the latest release, without you approving an `ask`:
+With the default policy and the latest release, without you approving a `review`:
 
 1. **Read a secret:** the canary's contents reach the agent through any tool call.
 2. **Send a secret out:** a protected secret reaches a host the policy does not list.
-3. **Plant something that runs later:** a write to a shell start-up file, a git hook, a login item or CI configuration that gets neither `deny` nor `ask`.
+3. **Plant something that runs later:** a write to a shell start-up file, a git hook, a login item or CI configuration that gets neither `deny` nor `review`.
 4. **Switch OpenMoat off:** an agent tool call that changes `~/.moat`, the agent's hook or sandbox settings, or the `openmoat` binary without a `deny`.
 5. **Confuse the parser:** `openmoat policy check` says `allow` or `defer`, while the shell actually does one of the above.
 6. **Fail open:** an error, crash or time-out in `openmoat guard` that lets the call run.

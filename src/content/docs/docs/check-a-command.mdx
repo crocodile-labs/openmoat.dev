@@ -30,12 +30,12 @@ openmoat policy check "git push origin main"
 
 ```bash
 openmoat policy check "cat ~/.ssh/id_rsa"                      # deny: secrets-paths
-openmoat policy check "git config core.hooksPath .h"           # ask: git-internals
+openmoat policy check "git config core.hooksPath .h"           # review: git-internals
 openmoat policy check "https://docs.rs/serde" --kind fetch     # a web fetch, not a shell command
 openmoat policy check "~/.aws/credentials" --kind fs-read      # a file read by a file tool
 ```
 
-The first line of the output is the answer: `✔ allow`, `→ defer`, `❓ ask` or `⛔ deny`.
+The first line of the output is the answer: `✔ allow`, `→ defer`, `❓ review` or `⛔ deny`.
 
 ## In another project
 
@@ -61,5 +61,5 @@ The exit code is the answer:
 |---|---|
 | `0` | allow or defer |
 | `2` | deny |
-| `3` | ask |
+| `3` | review (unresolved: a person has to approve it) |
 | `64` | a usage or configuration error |

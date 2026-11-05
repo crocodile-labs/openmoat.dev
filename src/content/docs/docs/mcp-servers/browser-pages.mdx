@@ -20,7 +20,7 @@ Your agent drives a browser through an MCP server (Playwright MCP, Chrome DevToo
 
 Before 0.12.0 a browser's `navigate` was a network connection to its host (`net`), so every unlisted site was denied. From 0.12.0 a browser MCP call that **only opens a page** is decided like Claude Code's `WebFetch` ([ADR-047](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-047-browser-page-opens-are-fetches.md)): it defers to the agent's own prompt, so your agent asks you, or not, as it does for any web fetch, and auto-approve modes run it. A call that sends more than its URL (a script to run on the page, launch options, headers, a form submit) stays a connection, denied for unlisted hosts.
 
-The page itself is untrusted content: opening one marks the session, and a later write to a CI workflow, a build file or an agent instruction file asks ([Session taint](/docs/session-taint/)). Reading code, editing source and running tests do not.
+The page itself is untrusted content: opening one marks the session, and a later write to a CI workflow, a build file or an agent instruction file needs review ([Session taint](/docs/session-taint/)). Reading code, editing source and running tests do not.
 
 | Call | Verdict | Rule |
 |---|---|---|
@@ -31,9 +31,9 @@ The page itself is untrusted content: opening one marks the session, and a later
 | `http://169.254.169.254/`, `http://metadata.google.internal/`, and a URL that redirects there (`?next=http://169.254.169.254/`) | deny | `cloud-metadata` |
 | an IP address in another spelling (`http://2852039166/`), a private address (`http://192.168.1.1/`), a single-label host (`http://intranet/`), `https://github.com@evil.example/` | deny | `default.net` |
 | `file:///Users/you/.ssh/id_rsa` | deny | `secrets-paths` |
-| `javascript:…`, `data:…`, `chrome://settings` | ask | `unparseable` |
+| `javascript:…`, `data:…`, `chrome://settings` | review | `unparseable` |
 | a navigation that also runs a script (`initScript`), sets headers or launch options, or a form submit, to an unlisted host | deny | `default.net` |
-| any page open after the session read secret material | ask | `session-taint` |
+| any page open after the session read secret material | review | `session-taint` |
 | the same with 80 or more characters of base64 or hex in the URL | deny | `encoded-egress` |
 
 Every line is from [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#browser-mcp-servers), which OpenMoat's tests check against the shipped policy.
@@ -46,10 +46,10 @@ A URL is judged by every host a client may read it as reaching, the URL Standard
 openmoat policy check "mcp__playwright__browser_navigate" --kind mcp
 ```
 
-The verdict for the tool name alone. With an agent, the page open of `https://docs.rust-lang.org/std/` reaches your agent's own prompt, and OpenMoat shows nothing for it. After the same session read secret material, the next page open asks:
+The verdict for the tool name alone. With an agent, the page open of `https://docs.rust-lang.org/std/` reaches your agent's own prompt, and OpenMoat shows nothing for it. After the same session read secret material, the next page open needs review:
 
 ```text
-moat: ask [session-taint] — …
+moat: review [session-taint] — …
 ```
 
 and a URL that then carries a long encoded run is denied with `encoded-egress`.

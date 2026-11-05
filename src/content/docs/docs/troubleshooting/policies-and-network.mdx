@@ -8,7 +8,7 @@ sidebar:
 
 ## A repository policy denies every call
 
-Every call in one project is denied with `kernel-error`, and `openmoat status` there says `repo policy      ✗ …; every call in this project is denied`. The project's `.moat/policy.yaml` cannot be read or parsed, sets a key a repository may not (only `version`, `deny`, `ask` and `allow` are accepted), or is not a regular file. OpenMoat never ignores it, because that would drop the team's deny rules. Fix the file in your own editor (the agent cannot write `.moat/`), then run `openmoat status` again. The rule syntax: [The policy file](/docs/policy-file/).
+Every call in one project is denied with `kernel-error`, and `openmoat status` there says `repo policy      ✗ …; every call in this project is denied`. The project's `.moat/policy.yaml` cannot be read or parsed, sets a key a repository may not (only `version`, `deny`, `review` and `allow` are accepted; `ask`, the name of `review` before 0.14.0, is still read, but a file with both `ask` and `review` is refused), or is not a regular file. OpenMoat never ignores it, because that would drop the team's deny rules. Fix the file in your own editor (the agent cannot write `.moat/`), then run `openmoat status` again. The rule syntax: [The policy file](/docs/policy-file/).
 
 ## A repository's allow rules do not apply
 

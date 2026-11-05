@@ -9,7 +9,7 @@ body { font-family: 'Geist Sans', system-ui, sans-serif; color: var(--fg); line-
     --fg: #ededed; --fg-strong: #ffffff; --fg-2: #d4d4d4;
     --muted: #a3a3a3; --muted-2: #8a8a8a; --faint: #4a4a4a;
     --accent: #7fd88f; --on-accent: #0a0a0a;
-    --ask: #f2c14e; --deny: #ff8a7a; --defer: #8ab4f8;
+    --review: #f2c14e; --deny: #ff8a7a; --defer: #8ab4f8;
   }
   :root[data-theme='light'] {
     color-scheme: light;
@@ -20,7 +20,7 @@ body { font-family: 'Geist Sans', system-ui, sans-serif; color: var(--fg); line-
     --fg: #171717; --fg-strong: #000000; --fg-2: #262626;
     --muted: #525252; --muted-2: #6b6b6b; --faint: #a3a3a3;
     --accent: #1f7a3c; --on-accent: #ffffff;
-    --ask: #9a6400; --deny: #b42318; --defer: #2457c5;
+    --review: #9a6400; --deny: #b42318; --defer: #2457c5;
   }
   body { margin: 0; background: var(--bg); }
   .theme-toggle { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--line-2); border-radius: 8px; background: transparent; color: var(--fg); cursor: pointer; }

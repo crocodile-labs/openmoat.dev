@@ -45,7 +45,7 @@ A project that is your home folder, or a folder above it, would let the agent ed
 
 ## What the project gives the agent
 
-<Impact opens={["Read and edit every file in the project", "Builds, tests and everyday git commands there (`dev-shell`)"]} keeps={["`.env`, `.envrc` and keys in the project stay denied", "Writes into `.git` (hooks, config) ask first: git runs them later, outside any sandbox", "Writes to CI workflows, `.husky/`, `.pre-commit-config.yaml` and `.vscode/tasks.json` ask first (`runs-later`): CI or a commit runs them later", "`.moat` and agent settings (`.claude/settings.json` and the like) stay denied", "An agent's hooks, skills, subagents, commands and MCP settings in the project (`.claude/hooks/`, `.claude/skills/`, `.mcp.json`, …) ask first (`runs-later`): the agent loads them next session"]} think={["A folder next to the project is outside it: see [Work across several repos](/docs/work-across-repos/)"]} />
+<Impact opens={["Read and edit every file in the project", "Builds, tests and everyday git commands there (`dev-shell`)"]} keeps={["`.env`, `.envrc` and keys in the project stay denied", "Writes into `.git` (hooks, config) need review first: git runs them later, outside any sandbox", "Writes to CI workflows, `.husky/`, `.pre-commit-config.yaml` and `.vscode/tasks.json` need review first (`runs-later`): CI or a commit runs them later", "`.moat` and agent settings (`.claude/settings.json` and the like) stay denied", "An agent's hooks, skills, subagents, commands and MCP settings in the project (`.claude/hooks/`, `.claude/skills/`, `.mcp.json`, …) need review first (`runs-later`): the agent loads them next session"]} think={["A folder next to the project is outside it: see [Work across several repos](/docs/work-across-repos/)"]} />
 
 ## Monorepos
 
@@ -53,7 +53,7 @@ Start the agent anywhere in the repository: the project is the whole repository,
 
 ## Rules that come with the project
 
-A repository can commit its own `.moat/policy.yaml`. Its deny and ask rules apply to everyone who works in it at once (as `repo:<id>`); its allow rules only once you trust that file with `openmoat trust`, or, with `require_signed_repo_policy: true`, when a key you trusted signed it. `openmoat status`, run in the project, shows the file and which of its rules apply. What you see in such a repository, and how to re-trust or stop using it: [Use it in your projects](/docs/your-projects/#rules-for-one-project). Writing one for a team: [A repository policy](/docs/team-rules/repository-policy/).
+A repository can commit its own `.moat/policy.yaml`. Its deny and review rules apply to everyone who works in it at once (as `repo:<id>`); its allow rules only once you trust that file with `openmoat trust`, or, with `require_signed_repo_policy: true`, when a key you trusted signed it. `openmoat status`, run in the project, shows the file and which of its rules apply. What you see in such a repository, and how to re-trust or stop using it: [Use it in your projects](/docs/your-projects/#rules-for-one-project). Writing one for a team: [A repository policy](/docs/team-rules/repository-policy/).
 
 ## Beyond one project
 

@@ -3,6 +3,7 @@ title: One set of rules for Claude Code, Codex and Cursor on your team
 description: Every agent has its own settings format, and every developer configures it differently. How to commit one policy to a repository, what a repository may and may not change, and how to check what the agents did.
 summary: Your team uses three agents with three settings formats. How a committed .moat/policy.yaml gives everyone the same deny and ask rules, why its allow rules need trust, and how to verify the audit log.
 date: 2026-10-15T13:00:00Z
+notice: "Since OpenMoat 0.14.0, the verdict this post calls ask is named review, and policies say review: (a policy that says ask: still works). The example below uses the new name."
 author: Dhanasekaran Kathiresan
 authorUrl: https://github.com/iamdotk
 avatar: /assets/dhanasekaran.jpg
@@ -30,7 +31,7 @@ deny:
   - id: no-prod-config
     reason: production settings stay with the release pipeline
     fs.write: ["${project}/deploy/prod/**"]
-ask:
+review:
   - id: migrations
     reason: database migrations change shared data
     shell: ["npm run migrate*"]

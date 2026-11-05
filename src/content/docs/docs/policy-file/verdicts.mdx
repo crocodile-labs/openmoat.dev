@@ -1,12 +1,12 @@
 ---
 title: "The four verdicts"
-description: "How a call is decided, and one worked rule for each verdict: deny, allow, ask and defer."
+description: "How a call is decided, and one worked rule for each verdict: deny, allow, review and defer."
 sidebar:
   label: "The four verdicts"
   order: 1
 ---
 
-Each tool call is split into actions (a command, each file, each host). Each action is tried against `deny`, then `allow`, then `ask`, then `defer`; the first list with a match decides, and `defaults` decides when none does. The call gets the strictest answer of its actions: `deny > ask > defer > allow`. A repository's ask rules, and a pack's, are tried right after the deny rules, before your allow rules ([Repository policies](/docs/policy-file/repositories/)).
+Each tool call is split into actions (a command, each file, each host). Each action is tried against `deny`, then `allow`, then `review`, then `defer`; the first list with a match decides, and `defaults` decides when none does. The call gets the strictest answer of its actions: `deny > review > defer > allow`. A repository's review rules, and a pack's, are tried right after the deny rules, before your allow rules ([Repository policies](/docs/policy-file/repositories/)).
 
 **Deny**: never, whatever else matches. A deny cannot be overridden by an allow, by `openmoat allow` or by a repository.
 
@@ -25,13 +25,15 @@ allow:
     net: ["npm.internal.example.com", "pypi.internal.example.com"]
 ```
 
-**Ask**: OpenMoat asks you itself, tagged with the rule, even where your agent would not.
+**Review**: OpenMoat holds the call for a person, tagged with the rule, even where your agent would not ask. Your agent shows its own prompt with the reason; an agent that cannot prompt gets a deny you approve with `openmoat allow --last`.
 
 ```yaml
-ask:
+review:
   - id: push
     shell: ["git push *"]
 ```
+
+Policies written before 0.14.0 say `ask:` (and `ask` as a default). They still load and decide as before; `openmoat policy lint` warns about the old name, and `openmoat policy upgrade` renames it in its diff. A policy with both `ask:` and `review:` is refused. Step by step: [Upgrading from ask to review](/docs/upgrade/ask-to-review/).
 
 **Defer**: your agent's own permission prompt decides, as without OpenMoat. The default for anything no rule names.
 

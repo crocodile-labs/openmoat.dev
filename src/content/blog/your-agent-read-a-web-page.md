@@ -3,6 +3,7 @@ title: Your agent read a web page. Should it edit your CI file next?
 description: Prompt injection does its damage in the files an agent writes afterwards. How OpenMoat remembers what a session has read and asks before the agent touches CI, build files or its own instructions.
 summary: A fetched page can carry instructions for your agent. The fetch itself is rarely the problem. The next write is. How session taint works, what it asks about, and what it can't do.
 date: 2026-10-17T14:00:00Z
+notice: "Since OpenMoat 0.14.0, the verdict this post calls ask is named review, and the reason line reads moat: review [session-taint]."
 author: Dhanasekaran Kathiresan
 authorUrl: https://github.com/iamdotk
 avatar: /assets/dhanasekaran.jpg

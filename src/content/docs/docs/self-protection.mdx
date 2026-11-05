@@ -26,8 +26,8 @@ import { Aside } from '@astrojs/starlight/components';
 | `echo x >> ~/.moat/policy.yaml` | deny | `kernel-self` |
 | `cat ~/.moat/proxy.key`, `cat ~/.moat/proxy-ca/ca.key` | deny | `kernel-self` |
 | `systemctl --user stop moat-proxy` | deny | `kernel-self` |
-| `pkill -f 'openmoat proxy'`, `killall moat` | ask | `stops-openmoat` |
-| `pkill -f my-server.js` | no ask: the pattern cannot match `openmoat` or `moat` | |
+| `pkill -f 'openmoat proxy'`, `killall moat` | review | `stops-openmoat` |
+| `pkill -f my-server.js` | no review: the pattern cannot match `openmoat` or `moat` | |
 | `openmoat --help`, `openmoat policy check 'rm -rf ~'` | allow | `openmoat-readonly` |
 
 When anything edits a pinned file behind OpenMoat's back, every call gets:

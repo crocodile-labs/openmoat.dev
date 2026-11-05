@@ -59,7 +59,7 @@ Rule ids must be unique across the policy; unknown keys are errors.
 
 ## How your policy and a repository's combine
 
-A repository's deny and ask rules apply at once, as `repo:<id>`; its allow rules only after you run `openmoat trust` on that exact file, or when a key you trusted signed it. The details: [Repository policies](/docs/policy-file/repositories/).
+A repository's deny and review rules apply at once, as `repo:<id>`; its allow rules only after you run `openmoat trust` on that exact file, or when a key you trusted signed it. The details: [Repository policies](/docs/policy-file/repositories/).
 
 ## Check a policy
 
@@ -69,7 +69,7 @@ openmoat policy check "npm install left-pad" --policy ./policy.yaml --project ~/
 openmoat policy check "~/.aws/credentials" --kind fs-read --policy ./policy.yaml
 ```
 
-`openmoat policy lint` prints `ok: <file> (N deny, N allow, N ask groups)`, with a `warning:` line for each rule that can never decide anything, such as an `ask` pattern an `allow` already covers. It fails (exit 64) on errors, for example:
+`openmoat policy lint` prints `ok: <file> (N deny, N allow, N review groups)`, with a `warning:` line for each rule that can never decide anything, such as a `review` pattern an `allow` already covers, and for the name `ask:` that policies used before 0.14.0 (it still loads; `openmoat policy upgrade` renames it, see [The four verdicts](/docs/policy-file/verdicts/)). It fails (exit 64) on errors, for example:
 
 ```text
 duplicate rule id `push`

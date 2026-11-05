@@ -18,7 +18,7 @@ You want to know what an agent ran, what was blocked, or whether OpenMoat is get
 
 ## What it does
 
-Every decision (allow, defer, ask, deny), every connection `openmoat proxy` decides and every tool call through `openmoat mcp proxy` goes into a local SQLite file in `~/.moat`, each event hash-chained to the one before. Credentials are redacted before anything is stored. The agent can neither read nor change it (`kernel-self`).
+Every decision (allow, defer, review, deny), every connection `openmoat proxy` decides and every tool call through `openmoat mcp proxy` goes into a local SQLite file in `~/.moat`, each event hash-chained to the one before. Credentials are redacted before anything is stored. The agent can neither read nor change it (`kernel-self`).
 
 ## Example
 
@@ -29,7 +29,7 @@ openmoat
 ```
 
 ```text
-Protecting Claude Code (hook + OS sandbox) · today: 14 decisions, 1 denied, 1 asked
+Protecting Claude Code (hook + OS sandbox) · today: 14 decisions, 1 denied, 1 reviewed
 Claude Code asked to run "git config core.pager less" (rule git-internals, session 4f2a…)
 Allow? [o]nce for this session / [a]lways / [n]o
 ```
@@ -64,7 +64,7 @@ One tree per agent session: every call, its verdict and the rule that decided it
 openmoat report --since 7d
 ```
 
-Totals, the hosts the agents reached, the rules that fired most, and asks per active hour. If you are asked often, this shows which rule does it, so you know what to allow.
+Totals, the hosts the agents reached, the rules that fired most, and reviews per active hour. If calls are held for your review often, this shows which rule does it, so you know what to allow.
 
 ## Export and verify
 
@@ -76,7 +76,7 @@ openmoat audit verify week.jsonl                # check it was not changed, with
 For a team, collect each person's export and run one report over all of them. Every file must verify first, and an event found in several files counts once:
 
 ```bash
-openmoat audit report alice.jsonl bob.jsonl     # per agent, per rule, top asks and denies
+openmoat audit report alice.jsonl bob.jsonl     # per agent, per rule, top reviews and denies
 ```
 
 ## Keep a record outside the log
@@ -106,7 +106,7 @@ The log is a SQLite file in `~/.moat`. Credentials are redacted before anything 
 | `openmoat` | One line of today's decisions, then anything that needs you | `openmoat` |
 | `openmoat show [id] [--session <id>] [--since <when>] [--recent N]` | Recent events, one session, or one event in full | `openmoat show --since today` |
 | `openmoat replay [--since <when>] [--session <id>]` | Each agent session as a tree of calls, verdicts and rules | `openmoat replay --since today` |
-| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts reached, top rules, asks per active hour | `openmoat report --since 7d` |
+| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts reached, top rules, reviews per active hour | `openmoat report --since 7d` |
 | `openmoat audit export [--since …] [--host …] [--session …]` | Events as JSON Lines, with their chain hashes | `openmoat audit export --since 7d > week.jsonl` |
 | `openmoat audit verify <file> [--anchor <hash>] [--require-anchor]` | Check an export without the database | `openmoat audit verify week.jsonl` |
 | `openmoat audit verify --against <repo or file>` | Check the log against every anchor recorded there | `openmoat audit verify --against ~/notes` |

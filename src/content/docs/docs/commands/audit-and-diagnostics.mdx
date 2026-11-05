@@ -13,7 +13,7 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 | Command | What it does | Example |
 |---|---|---|
 | `openmoat replay [--since <when>] [--session <id>]` | Each agent session as a timeline | `openmoat replay --since today` |
-| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts, top rules, asks per hour | `openmoat report --since 7d` |
+| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts, top rules, reviews per active hour | `openmoat report --since 7d` |
 | `openmoat audit export [--since <when>] [--host <id>] [--session <id>]` | Events as JSON Lines with their chain hashes, on stdout | `openmoat audit export --since 7d > week.jsonl` |
 | `openmoat audit verify <file> [--anchor <hash>] [--require-anchor]` | Check an export without the database | `openmoat audit verify week.jsonl` |
 | `openmoat audit verify --against <repo or file>` | Check the log against every anchor there; fails, naming the first anchor whose event is gone or changed | `openmoat audit verify --against ~/notes` |

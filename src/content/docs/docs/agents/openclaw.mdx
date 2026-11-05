@@ -20,7 +20,7 @@ You run OpenClaw with other plugins, or a plugin's change to a tool call no long
 
 OpenMoat's plugin registers two handlers:
 
-- **At the highest priority** it runs `openmoat guard` on the call as it came, and answers allow, ask or deny.
+- **At the highest priority** it runs `openmoat guard` on the call as it came, and answers allow, review or deny.
 - **At the lowest priority** it returns the parameters it checked.
 
 So:
@@ -28,7 +28,7 @@ So:
 | OpenMoat's answer | What runs |
 |---|---|
 | deny | Nothing. OpenClaw keeps a block whatever later handlers return, so no plugin sees a denied call |
-| ask | The call as checked, once you approve it. The first approval request is the one OpenClaw asks, and it then keeps the parameters as they were |
+| review | The call as checked, once you approve it. The first approval request is the one OpenClaw asks, and it then keeps the parameters as they were |
 | allow or defer | The call as checked. OpenMoat's last handler replaces whatever a plugin in between returned |
 
 ## Example

@@ -40,7 +40,7 @@ Releases up to 0.7.0 called the command `moat`. Every install still puts a `moat
 | `0` | allow or success |
 | `1` | the agent `openmoat run` started exited with an error |
 | `2` | deny |
-| `3` | an ask nobody answered (`openmoat policy check`) |
+| `3` | an unresolved review (`openmoat policy check`) |
 | `64` | a usage or configuration error |
 
 `openmoat guard` never exits 64: it denies with 2 instead, so a broken hook blocks rather than lets a call through.

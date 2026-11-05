@@ -50,7 +50,7 @@ const crocs = [
     <h2>OpenMoat decides. OpenMoat Bar shows you.</h2>
     <ol class="flow">
       <li><strong>Your agent makes a call</strong><span>Claude Code, Codex, Cursor or another agent runs a command, opens a file or calls an MCP tool.</span></li>
-      <li><strong>OpenMoat decides and records it</strong><span>Allow, defer, ask or deny, written to its local, hash-chained audit log.</span></li>
+      <li><strong>OpenMoat decides and records it</strong><span>Allow, defer, review or deny, written to its local, hash-chained audit log.</span></li>
       <li><strong>OpenMoat Bar reads and shows it</strong><span>It runs OpenMoat's read-only commands and updates within 2 seconds of a new decision, every minute, and when you open the menu.</span></li>
     </ol>
     <p class="small">The only commands it runs are <code>openmoat status</code>, <code>show</code>, <code>report</code>, <code>proxy status</code> and <code>--version</code>, and for the Details window <code>allowed</code>, <code>secret list</code> and <code>doctor</code>, each with <code>--format json</code>. It matches whole command lines, so a command that changes something, such as <code>openmoat doctor --accept</code>, can never run. It writes nothing to <code>~/.moat</code>.</p>

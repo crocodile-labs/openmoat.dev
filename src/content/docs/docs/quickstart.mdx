@@ -108,10 +108,10 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
 
 5. **When something is blocked**
 
-   The agent shows the rule and the reason, for example `moat: deny [default.net] — no rule matched net docs.rs` or `moat: ask [git-internals] — …`. Find the message in [Something was blocked](/docs/blocked/) and run the command next to it in your own terminal:
+   The agent shows the rule and the reason, for example `moat: deny [default.net] — no rule matched net docs.rs` or `moat: review [git-internals] — …`. Find the message in [Something was blocked](/docs/blocked/) and run the command next to it in your own terminal:
 
    ```bash
-   openmoat allow --last            # the call you were just asked about, for this agent session
+   openmoat allow --last            # the call just held for review, for this agent session
    openmoat allow --site docs.rs    # a host, for good
    openmoat allow --dir ~/work/lib  # a folder outside the project, for good
    ```
@@ -132,6 +132,6 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
 
 <Aside type="tip" title="Run openmoat anytime">
 
-`openmoat` alone shows which agents are protected, today's decisions, and anything that needs you, such as a pending ask.
+`openmoat` alone shows which agents are protected, today's decisions, and anything that needs you, such as a pending review.
 
 </Aside>

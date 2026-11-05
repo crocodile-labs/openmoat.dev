@@ -20,7 +20,7 @@ OpenMoat leaves calls it has no rule for (**defer**) to your agent's own prompt.
 |---|---|---|
 | allow | runs | runs |
 | defer | your agent asks you | **runs** |
-| ask | you are asked | stopped |
+| review | a person approves it | stopped |
 | deny | blocked | blocked |
 
 Everything the default policy denies stays denied: secrets, unknown hosts, `curl … | sh`, destructive commands, changes to OpenMoat. What changes is that installs, pushes and other unlisted commands run without a question. So does a plain download from an unlisted host (a `curl` or `wget` that sends nothing but its URL), which is decided like a web fetch and defers; the file it saves is still checked by the path rules, so `curl -o ~/.zshrc …` stays denied.
@@ -61,13 +61,13 @@ On Linux, plain `openmoat run` does not protect files inside the project (`.env`
 
 ## Per agent
 
-- **Codex** cannot show an OpenMoat prompt: an ask becomes a deny you approve with `openmoat allow --last`. A deferred call follows Codex's own approval policy.
+- **Codex** cannot show an OpenMoat prompt: a review becomes a deny you approve with `openmoat allow --last`. A deferred call follows Codex's own approval policy.
 - **Cursor** runs some commands outside the sandbox OpenMoat configures: when its Auto-review approves them, in Run Everything mode, and in the Cursor CLI without `--sandbox enabled`.
-- **Claude Code** in its `bypassPermissions` and `dontAsk` modes shows no question to a person, so an OpenMoat ask becomes a deny that says how to approve it (`openmoat allow --last`), as for Codex. Calls OpenMoat leaves to Claude Code are unchanged.
+- **Claude Code** in its `bypassPermissions` and `dontAsk` modes shows no question to a person, so an OpenMoat review becomes a deny that says how to approve it (`openmoat allow --last`), as for Codex. Calls OpenMoat leaves to Claude Code are unchanged.
 - **Claude Code** applies its sandbox to `Bash`, `PowerShell` and `Monitor`; file tools, `WebFetch` and MCP servers are checked by the hook only.
-- **GitHub Copilot CLI** in autopilot turns an ask into a deny; approve it with `openmoat allow --last`.
-- **Gemini CLI** still shows an OpenMoat ask as its own confirmation in YOLO mode.
-- **pi** has no approval step at all, so a deferred call always runs, and in print or JSON mode an ask is a deny.
+- **GitHub Copilot CLI** in autopilot turns a review into a deny; approve it with `openmoat allow --last`.
+- **Gemini CLI** still shows an OpenMoat review as its own confirmation in YOLO mode.
+- **pi** has no approval step at all, so a deferred call always runs, and in print or JSON mode a review is a deny.
 - **OpenClaw, Copilot CLI, pi, Gemini CLI, OpenCode and Hermes Agent** have no OS sandbox from OpenMoat: in auto-approve, `openmoat run` is the only thing that bounds what an allowed command does.
 
 More in [Supported agents](/docs/agents/) and [Limits](/docs/limits/).

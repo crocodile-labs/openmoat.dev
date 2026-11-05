@@ -24,7 +24,7 @@ Services on your machine can do a lot: the Docker daemon can start a container w
 | `psql -h localhost -U app mydb` | defer |
 | `docker compose up -d`, `docker run --rm -p 8080:80 nginx` | defer |
 | `docker build .` | allow |
-| `docker build --network host .`, `--secret`, `--ssh` | ask: `docker-secrets` |
+| `docker build --network host .`, `--secret`, `--ssh` | review: `docker-secrets` |
 | `curl http://169.254.169.254/` | deny: the cloud metadata service hands out credentials |
 
 ## Stop the prompts
