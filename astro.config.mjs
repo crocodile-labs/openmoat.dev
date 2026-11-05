@@ -55,7 +55,8 @@ export default defineConfig({
         group('Policy', [sub('The policy file', 'policy-file', ['verdicts', 'patterns', 'other-keys', 'repositories']),
           'change-the-rules']),
         group('Guides', ['blocked', 'check-a-command', 'work-across-repos', 'the-project', 'github', 'local-services',
-          'cloud-clis', 'packages', sub('Upgrade', 'upgrade', ['ask-to-review']), 'turn-off']),
+          'cloud-clis', 'packages']),
+        group('Run and maintain', [sub('Upgrade', 'upgrade', ['ask-to-review']), 'turn-off']),
         group('Reference', [
           sub('Commands', 'commands', ['setup', 'allow', 'policy', 'sandboxes', 'mcp-and-secrets', 'audit-and-diagnostics']),
           'allow-reference',

@@ -37,5 +37,11 @@ body { font-family: 'Geist Sans', system-ui, sans-serif; color: var(--fg); line-
   @media (max-width: 760px) {
     [style*="repeat(4, minmax(0, 1fr))"], [style*="repeat(5, minmax(0, 1fr))"], [style*="repeat(3, minmax(0, 1fr))"] { grid-template-columns: 1fr !important; }
     main section { padding-left: 20px !important; padding-right: 20px !important; }
+    /* grids and notes that sit between sections, outside their padding */
+    main > .edge { margin-left: 20px !important; margin-right: 20px !important; }
+    /* "What it stops": one row per item, stacked (name, example, verdict), no sideways scroll */
+    .stops { min-width: 0 !important; }
+    .stops > div { grid-template-columns: 1fr !important; padding: 6px 0; }
+    .stops > div > * { padding-top: 4px !important; padding-bottom: 4px !important; }
     h1 { font-size: 40px !important; }
   }
