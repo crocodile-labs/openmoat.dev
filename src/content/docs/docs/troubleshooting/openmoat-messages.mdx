@@ -39,6 +39,8 @@ Errors from `openmoat` itself start with `moat:`. Lines from `openmoat status` a
 |---|---|---|
 | `the edited policy does not lint:` | `openmoat edit` found an error; nothing was written | `y` at `Edit again? [y/N]` |
 | `duplicate rule id …`, `rule … has no patterns`, `bad glob …`, `bad shell pattern … (unbalanced quotes?)`, `unsupported policy version …` | `openmoat policy lint` found an error | Fix the rule it names ([The policy file](/docs/policy-file/)) |
+| ``warning: … `ask:` is the old name of `review:` and is read as it; `openmoat policy upgrade` renames it`` | The policy was written before 0.14.0; it still works | `openmoat policy upgrade` ([Upgrading from ask to review](/docs/upgrade/ask-to-review/)) |
+| ``the policy has both `ask:` and `review:`; `ask` is the old name of `review` …`` | A file with both names, which cannot be read either way | Move the `ask:` rules into `review:` |
 
 ## Proxy and `openmoat run`
 

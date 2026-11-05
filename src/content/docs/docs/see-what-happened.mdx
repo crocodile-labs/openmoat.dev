@@ -99,6 +99,16 @@ The log is a SQLite file in `~/.moat`. Credentials are redacted before anything 
 
 </Aside>
 
+## Evidence for an audit
+
+When a security reviewer or auditor asks how you control what the agent does, `openmoat audit evidence` reports the log for a window per control of OWASP Top 10 for LLM Applications 2025, SOC 2 (CC6 to CC8) and ISO/IEC 27001:2022 Annex A: the rules that fired, decisions by verdict and redacted sample events. It is evidence, not a certification.
+
+```bash
+openmoat audit evidence --since 30d > evidence.md
+```
+
+What the report holds, the map and its limits: [Compliance evidence](/docs/compliance-evidence/).
+
 ## Commands
 
 | Command | What it does | Example |
@@ -112,6 +122,7 @@ The log is a SQLite file in `~/.moat`. Credentials are redacted before anything 
 | `openmoat audit verify --against <repo or file>` | Check the log against every anchor recorded there | `openmoat audit verify --against ~/notes` |
 | `openmoat audit anchor --git <repo>` · `--file <path>` | Record the log's head outside it. Terminal only | `openmoat audit anchor --git ~/notes` |
 | `openmoat audit report <file>…` | One report over verified exports from several machines | `openmoat audit report alice.jsonl bob.jsonl` |
+| `openmoat audit evidence [--since …] [--until …] [--host …] [--samples N] [--format json]` | Evidence per framework control for a window | `openmoat audit evidence --since 30d` |
 
 `--since` takes `all`, `today`, `yesterday`, `12h`, `7d`, `2w` or a date (`2026-10-15`, UTC). Most commands take `--format json`.
 

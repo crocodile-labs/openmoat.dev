@@ -22,6 +22,7 @@ A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`. The
 | `moat: deny [shell-rc] — edits persist into every future shell session` | A write to `~/.zshrc`, `~/.bashrc`, `~/.curlrc`, … | Edit the file yourself |
 | `moat: deny [cloud-metadata] — instance metadata and link-local services hand out cloud credentials` | `169.254.169.254`, `metadata.google.internal` | Nothing |
 | `moat: deny [token-egress] — sends a known kind of token to a host that is not its service's` | A GitHub, OpenAI, AWS, … token on its way to another host | Nothing; see [tokens sent to the wrong host](/docs/keep-tokens-safe/token-egress/) |
+| `moat: deny [card-egress] — sends a payment card number to a host off this machine` | A card number in a URL, a web search or what a command sends, to any host but this machine | Take the number out; processors' published test numbers are allowed ([Card numbers sent out](/docs/env-files/card-numbers/)) |
 | `moat: deny [placeholder-egress] — sends a brokered secret's placeholder to a host the proxy does not put that secret in` | A brokered placeholder sent elsewhere | Nothing |
 | `moat: deny [default.net] — no rule matched net <host>` | A host the policy does not list, for a command that can send data | `openmoat allow --site <host>` ([Network allowlist](/docs/allow-a-site/)) |
 | `moat: deny [push-secret]` | A commit the push would publish adds a token | Remove it from the commits ([GitHub](/docs/github/#what-a-push-would-publish)) |
@@ -43,7 +44,7 @@ A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`. The
 | `moat: review [session-taint]` | The session read a secret or untrusted content earlier | [Session taint](/docs/session-taint/) |
 | `moat: review [push-runs-later]`, `[push-unchecked]` | A tainted session's push changes a CI or hook file; a push OpenMoat could not check in 10 s | Push from your own terminal |
 | `moat: review [unchecked]`, `[unparseable]` | OpenMoat sees only part of the call, or cannot read part of it | Approve if it is what you expect |
-| A deny whose message says to run `openmoat allow --last` | A review on an agent that cannot show a prompt (Codex, Claude Code in `bypassPermissions`, …) | `openmoat allow --last`, then ask the agent to retry |
+| A deny whose message says to run `openmoat allow --last` | A review on an agent that cannot show a prompt (Codex, Claude Code in `bypassPermissions`, the Cline CLI, goose, …) | `openmoat allow --last`, then ask the agent to retry |
 | `no decision within 30 s` | OpenMoat could not decide in time | Retry ([details](/docs/troubleshooting/hooks-and-lock/#a-call-is-denied-with-no-decision-within-30-s)) |
 
 The same messages with the one command that gets you moving again, for everyday work: [Something was blocked](/docs/blocked/).

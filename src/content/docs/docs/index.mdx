@@ -94,6 +94,7 @@ Already have projects? Every project you open with a protected agent is covered 
 <CardGrid>
   <LinkCard title="Shell command checks" href="/docs/shell-commands/" description="Parses variables, globs, base64 and nested commands; stops curl | sh, git push --force and rm -rf ~." />
   <LinkCard title="Secrets and .env files" href="/docs/env-files/" description="Denies reading ~/.ssh, cloud credentials, .env files and secret variables such as $GITHUB_TOKEN." />
+  <LinkCard title="Card numbers sent out" href="/docs/env-files/card-numbers/" description="Denies a payment card number sent to any host off the machine, allowed hosts included." />
   <LinkCard title="Network allowlist" href="/docs/allow-a-site/" description="Stops a command sending data to a host the policy does not list; openmoat allow --site adds one." />
   <LinkCard title="Token broker" href="/docs/keep-tokens-safe/" description="The agent holds a placeholder; the token goes to one host only, and never to another." />
   <LinkCard title="Secrets over HTTPS, for some requests only" href="/docs/keep-tokens-safe/https-injection/" description="Inside openmoat run the token goes into HTTPS, and only into the requests you name: GET /repos/**, nothing else." />
@@ -105,8 +106,17 @@ Already have projects? Every project you open with a protected agent is covered 
   <LinkCard title="Self-protection and the policy lock" href="/docs/self-protection/" description="Stops the agent editing the policy, approving itself or switching OpenMoat off." />
   <LinkCard title="Session taint" href="/docs/session-taint/" description="After a web page or MCP result, writes to CI, build and agent files need review." />
   <LinkCard title="Audit log" href="/docs/see-what-happened/" description="Every decision in a local, hash-chained log: openmoat show, replay and report." />
-  <LinkCard title="Team rules and signed policy packs" href="/docs/team-rules/" description="A repository's rules for everyone in it, and signed packs for every project." />
   <LinkCard title="OpenMoat Bar" href="/docs/openmoat-bar/" description="A read-only menu bar and tray app: which agents are protected, what was blocked and why." />
+</CardGrid>
+
+## For teams and CI
+
+<CardGrid>
+  <LinkCard title="Team rules and signed policy packs" href="/docs/team-rules/" description="A repository's rules for everyone in it, and signed packs for every project." />
+  <LinkCard title="Check a pull request" href="/docs/check-a-pull-request/" description="openmoat policy check-diff and a GitHub Action report a change to CI, hooks, agent settings or a token before it is merged." />
+  <LinkCard title="Compliance evidence" href="/docs/compliance-evidence/" description="openmoat audit evidence maps the audit log to OWASP LLM Top 10, SOC 2 and ISO 27001 controls. Evidence, not a certification." />
+  <LinkCard title="Auto-approve and CI" href="/docs/auto-approve-and-ci/" description="What still stops a call when nobody is asked." />
+  <LinkCard title="The SDK" href="/docs/sdk/" description="openmoat-sdk and @openmoat/sdk: the same decisions in your own agent, before each tool call runs." />
 </CardGrid>
 
 ## Policy
@@ -128,9 +138,8 @@ Already have projects? Every project you open with a protected agent is covered 
   <LinkCard title="Local services" href="/docs/local-services/" description="Dev servers, databases and Docker." />
   <LinkCard title="Cloud CLIs and SSH" href="/docs/cloud-clis/" description="Why aws, kubectl and ssh cannot use your credentials from the agent." />
   <LinkCard title="Install and publish" href="/docs/packages/" description="Installs, install scripts and publishing." />
-  <LinkCard title="Auto-approve and CI" href="/docs/auto-approve-and-ci/" description="What still stops a call when nobody is asked." />
-  <LinkCard title="The SDK" href="/docs/sdk/" description="openmoat-sdk and @openmoat/sdk: the same decisions in your own agent, before each tool call runs." />
   <LinkCard title="Upgrade" href="/docs/upgrade/" description="The steps after each new release." />
+  <LinkCard title="Upgrading from ask to review" href="/docs/upgrade/ask-to-review/" description="0.14.0 calls the ask verdict review: what changes, and the one command that renames it." />
   <LinkCard title="Turn it off" href="/docs/turn-off/" description="Take OpenMoat out of one agent or all of them." />
 </CardGrid>
 

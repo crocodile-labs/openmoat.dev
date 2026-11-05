@@ -93,3 +93,5 @@ openmoat policy check "$PWD/deploy/prod/app.yaml" --kind fs-write --cwd .   # ex
 ```
 
 Install `openmoat` on the runner as in the [Quick start](/docs/quickstart/). A job that runs these in a shell with `set -e` stops at the first non-zero exit: check the code yourself, for example `openmoat policy check "npm run migrate" --cwd . || test $? -eq 3`. The runner decides with the default policy, not each person's, so it checks the repository's rules, not what a given person gets.
+
+To check every pull request for changes to CI workflows, git hooks, agent settings, `.env` files or added tokens, with the repository's rules read as the base branch has them, use `openmoat policy check-diff` and the GitHub Action: [Check a pull request](/docs/check-a-pull-request/).

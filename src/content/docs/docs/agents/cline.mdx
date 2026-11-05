@@ -1,0 +1,98 @@
+---
+title: "Cline CLI"
+description: "OpenMoat checks the Cline CLI's tool calls through a PreToolUse hook script it owns in ~/.cline/hooks. A review is a deny you approve with openmoat allow --last."
+sidebar:
+  label: "Cline CLI"
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You use the Cline CLI (`cline`, npm `@cline/cli`) and want OpenMoat to check its tool calls. New in 0.14.0.
+
+</Aside>
+
+**Protection level:** hook only. OpenMoat writes no OS sandbox for the Cline CLI; `openmoat run -- cline` runs the whole agent in one ([openmoat run](/docs/sandboxes/openmoat-run/)).
+
+<Aside type="caution" title="Not covered">
+
+The Cline **VS Code extension** runs its own hook layer, with another payload, and is not protected. Neither are `cline --yolo` runs (no hooks run at all) or **native Windows** (the hook script needs `sh`).
+
+</Aside>
+
+## Set it up
+
+<Steps>
+
+1. **Write OpenMoat's hook script**
+
+   ```bash
+   openmoat init --hosts cline
+   ```
+
+   It writes OpenMoat's script to `~/.cline/hooks/PreToolUse` (`$CLINE_DIR/hooks/` when that is set: run `openmoat init` with the same `CLINE_DIR` Cline runs with), and pins the MCP servers in Cline's `cline_mcp_settings.json`. A file of yours with that name is backed up first, and `openmoat uninstall` gives it back.
+
+2. **Start a new Cline session**
+
+   Cline runs every `PreToolUse` file in its hooks directories before each tool call, from its next session.
+
+3. **Check it**
+
+   ```bash
+   openmoat status
+   ```
+
+</Steps>
+
+## What OpenMoat sees
+
+| Cline tool | Checked as |
+|---|---|
+| `run_commands` | each command as a shell command, in the workspace; a `{command, args}` entry as its quoted words. Several commands are decided together; one that cannot be read alone (an open quote, a trailing `\`) makes the call need review |
+| `read_files`, `search_codebase` | file reads (`search_codebase` reads the workspace) |
+| `editor` | a file write |
+| `apply_patch` | every file the patch names |
+| `fetch_web_content` | a fetch for one URL; for several, every URL its arguments name |
+| MCP tools (`<server>__<tool>`) | an MCP tool, recorded as `mcp__<server>__<tool>`; a browser server's call that only opens a page is that page's open |
+| any other tool (skills, subagent and team tools, a plugin's) | every path, URL and command its arguments name |
+
+The hook sees the arguments as the model gave them, before Cline puts them in one shape, so every shape Cline accepts is read and any other is denied. `ask_question` and `submit_and_exit` are not checked, and the model provider's own `web_search` never reaches the hook.
+
+## When a call needs review
+
+Cline's hooks cannot prompt, so a review is a deny, and a deny ends Cline's run with OpenMoat's reason. In your own terminal:
+
+```bash
+openmoat allow --last            # that exact call, for the rest of the Cline session
+openmoat allow --last --always   # or a permanent rule
+```
+
+Then continue the session. Cline approves calls on its own by default (`--auto-approve`), so a call OpenMoat defers usually runs.
+
+## What the default policy protects
+
+- `kernel-self` protects Cline's hook and plugin directories, and `~/Documents/Cline/Hooks`, so the agent cannot change or remove OpenMoat's script.
+- `agent-credentials` covers Cline's stored provider keys (`~/.cline/data/settings/providers.json`) and connector credentials.
+- Session taint covers `.cline` and `.clinerules`: after the session read a web page or an MCP result, writing a workspace's `.cline/hooks` or `.clinerules/hooks` needs review, since those hooks run with the agent's rights.
+- Any change to OpenMoat's script denies every call until you run `openmoat doctor --accept`.
+
+## If the hook fails
+
+Cline runs a call whose hook fails, and reads only what the hook prints. So OpenMoat's script prints a cancel itself when `openmoat` is missing, crashes or exits without its answer.
+
+| Failure | Cline |
+|---|---|
+| `openmoat` missing, crashing or giving no answer | blocked by OpenMoat's script |
+| the script cannot start (no `sh`, as on native Windows) | runs the call |
+| the script prints something that is not JSON | runs the call |
+| the script is killed after Cline's 120 seconds | runs the call |
+| `--yolo` | runs no hooks at all |
+
+## Limits
+
+- No OS sandbox from OpenMoat: an allowed command runs with your permissions, and a script the session wrote needs review before it runs ([Code the agent wrote](/docs/session-written-code/)).
+- `--config`, `--hooks-dir` or a `CLINE_DIR` that OpenMoat did not install into skip OpenMoat's script. `CLINE_DATA_DIR` and `CLINE_MCP_SETTINGS_PATH` move Cline's data and MCP file; OpenMoat reads them only at their default place.
+- Another `PreToolUse` file or a plugin can rewrite a call's input after OpenMoat checked it.
+
+Every agent side by side: [Supported agents](/docs/agents/).

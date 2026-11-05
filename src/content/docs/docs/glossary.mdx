@@ -65,6 +65,8 @@ A page or a message uses a word you have not met yet.
 |---|---|
 | **brokered secret**, **placeholder** | A token kept by OpenMoat: programs the agent runs hold a placeholder, and the value is put into requests to one host only. [Token broker](/docs/keep-tokens-safe/) |
 | `token-egress` | Denies a well-known token sent to a host that is not its service's. [Tokens to the wrong host](/docs/keep-tokens-safe/token-egress/) |
+| `card-egress` | Denies a payment card number sent to a host off this machine, allowed hosts included; processors' test numbers are left out. [Card numbers sent out](/docs/env-files/card-numbers/) |
+| `@pii-egress` | The atom personal data on its way out becomes: `@pii-egress card <host>` (which `card-egress` denies) or `@pii-egress emails <host>` (ten or more mail addresses in one send, which no default rule names). [Card numbers sent out](/docs/env-files/card-numbers/#settings) |
 | **egress proxy** | `openmoat proxy`: lets sandboxed commands reach only allowed hosts, and refuses metadata and private addresses. [Egress proxy](/docs/egress-proxy/) |
 | **session taint**, **untrusted content** | After a session read a secret, or a web page or MCP result (untrusted content), some of its later calls need review. [Session taint](/docs/session-taint/) |
 | **provenance** | Taint that follows a file a tainted session wrote to the next session that reads or runs it. [How it decides](/docs/how-it-decides/#files-a-tainted-session-wrote) |
@@ -84,4 +86,6 @@ A page or a message uses a word you have not met yet.
 | **audit log**, **hash chain** | Every decision in `~/.moat/audit.db`, each event chained to the one before by its hash, so a change in the middle shows. [Audit log](/docs/see-what-happened/) |
 | **anchor** | The log's newest event recorded outside it (`openmoat audit anchor`), to catch a log cut short later. [Audit log](/docs/see-what-happened/#keep-a-record-outside-the-log) |
 | `MOAT_HOME`, `~/.moat` | Where OpenMoat keeps its state; `MOAT_HOME` moves it. [The policy file](/docs/policy-file/) |
+| **compliance evidence** | `openmoat audit evidence`: the audit log for a window, per control of OWASP Top 10 for LLM Applications 2025, SOC 2 and ISO/IEC 27001:2022. Evidence, not a certification. [Compliance evidence](/docs/compliance-evidence/) |
+| **pull request check**, `check-diff` | `openmoat policy check-diff` and the GitHub Action: every file a change touches, decided by the policy before it is merged; rules `diff-secret`, `diff-path`, `diff-policy`, `diff-link`, `diff-submodule`. [Check a pull request](/docs/check-a-pull-request/) |
 | **MoatBench** | The bundled scenarios `openmoat bench` scores a hook against. [Audit and diagnostics](/docs/commands/audit-and-diagnostics/) |
