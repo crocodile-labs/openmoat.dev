@@ -30,7 +30,7 @@ I build OpenMoat to close that gap.
 
 OpenMoat checks each action an AI coding agent takes on your computer and stops the dangerous ones before they run. That covers every command, file access, web request and MCP call the agent makes through its hooks. It works with Claude Code, Codex and Cursor.
 
-It is one Rust binary that runs on your machine. A check takes about 10 ms. No AI model makes the decision: written rules do. The same call, policy, files and session always get the same answer. Nothing leaves your machine unless you export it.
+It is one Rust binary that runs on your machine. No AI model makes the decision: written rules do. The same call, policy, files and session always get the same answer. Nothing leaves your machine unless you export it.
 
 Here is the upload from above, checked without running it:
 
