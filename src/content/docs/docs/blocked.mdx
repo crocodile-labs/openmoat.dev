@@ -10,7 +10,7 @@ import { Aside, Steps } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
-Your agent says a call was denied or asked, or you keep seeing a prompt you do not want.
+Your agent says a call was denied or held for review, or you keep seeing a prompt you do not want.
 
 </Aside>
 
@@ -19,8 +19,8 @@ Find the message you saw, then run the command next to it **in your own terminal
 | You saw | It means | Run |
 |---|---|---|
 | `moat: deny [default.net] — no rule matched net docs.rs` | A host the policy does not list, for a command that can send data there (a body, a header, `curl -L`, a `curl` without `-q` first). | `openmoat allow --site docs.rs` |
-| `moat: ask [git-internals] — …` or `[runs-later]` | A call whose effect outlives the session: a git hook, a CI workflow, an agent's skills, hooks or MCP settings that load next session. | Approve it in the prompt, or `openmoat allow --last` |
-| `moat: ask [unchecked] — …` | OpenMoat sees the call but cannot check all of it: a search pattern that may climb out of its folder, a search of every workspace folder, text typed into a running shell. | Approve it if it is what you expect, or ask the agent to name the folder or run the command in one call |
+| `moat: review [git-internals] — …` or `[runs-later]` | A call whose effect outlives the session: a git hook, a CI workflow, an agent's skills, hooks or MCP settings that load next session. | Approve it in the prompt, or `openmoat allow --last` |
+| `moat: review [unchecked] — …` | OpenMoat sees the call but cannot check all of it: a search pattern that may climb out of its folder, a search of every workspace folder, text typed into a running shell. | Approve it if it is what you expect, or ask the agent to name the folder or run the command in one call |
 | Your agent's own prompt, for a file outside the project | OpenMoat has no rule for it and left it to your agent. | `openmoat allow --dir <folder>`, see [Work across several repos](/docs/work-across-repos/) |
 | `moat: deny [secrets-paths] — secret material: read …` | A key, token or `.env`. This is the block working. | Nothing. If the agent needs a token, see [Keep a token from the agent](/docs/keep-tokens-safe/) |
 | `moat: deny [env-secrets] — …` or `[env-dump]` for `python -c`, `node -e` and similar | Inline code read a secret variable by name, or printed the whole environment. | Nothing. See [.env and variables](/docs/env-files/) |
@@ -31,18 +31,18 @@ Find the message you saw, then run the command next to it **in your own terminal
 | `407 Proxy Authentication Required` from `openmoat proxy` | The request carried no session credential: Claude Code has not got its `SessionStart` hook yet, the session started before the upgrade, or another program used the proxy. | `openmoat init` once, then a new session; for Codex see [Agent sessions only](/docs/egress-proxy/sessions/#codex) |
 | `403` from `openmoat proxy` to a brokered secret's host, `proxy-secret-route` in `openmoat show` | The request is not one the secret's `allow` rules name (`DELETE /repos/o/r` under `GET /repos/**`). This is the rule working. | Nothing, or widen the rules with `openmoat edit`, see [Secrets over HTTPS](/docs/keep-tokens-safe/https-injection/) |
 | `moat: deny [encoded-egress] — …` | After the session read a secret, a URL carried 80 or more characters of base64 or hex. | Nothing. See [Session taint](/docs/session-taint/) |
-| `moat: ask [destructive-recoverable] — …` for `git branch -D` | Deleting a local branch; the reflog keeps its commits for weeks. | Approve it in the prompt, or `openmoat allow --last` |
-| `moat: ask [package-near-miss] — …` | The package name is one typo away from a popular package, which the reason names. | Check the name. If it is right, approve it, see [Install and publish](/docs/packages/#a-name-close-to-a-popular-package) |
-| `moat: ask [session-taint] — … which session … wrote after it read untrusted content` | The session read or ran a file another session wrote after it read a web page or an MCP result, and now writes a CI, build or agent file. | Look at the file it names, then approve, or `openmoat allow --last`, see [How it decides](/docs/how-it-decides/#files-a-tainted-session-wrote) |
+| `moat: review [destructive-recoverable] — …` for `git branch -D` | Deleting a local branch; the reflog keeps its commits for weeks. | Approve it in the prompt, or `openmoat allow --last` |
+| `moat: review [package-near-miss] — …` | The package name is one typo away from a popular package, which the reason names. | Check the name. If it is right, approve it, see [Install and publish](/docs/packages/#a-name-close-to-a-popular-package) |
+| `moat: review [session-taint] — … which session … wrote after it read untrusted content` | The session read or ran a file another session wrote after it read a web page or an MCP result, and now writes a CI, build or agent file. | Look at the file it names, then approve, or `openmoat allow --last`, see [How it decides](/docs/how-it-decides/#files-a-tainted-session-wrote) |
 | `moat: deny [project-settings] — …` | A project's `.claude/settings.json` or `.claude/settings.local.json` changed during the session (a `git pull`, a checkout) and turns hooks off or sets hooks, `env` or a command. | Look at the file, see [Project settings that turn hooks off](#project-settings-that-turn-hooks-off) |
 | `moat: deny [kernel-self] — …` for `~/.moat/audit.db` or another OpenMoat file | The agent tried to read or change OpenMoat's own state. | Nothing, see [OpenMoat's own files](#openmoats-own-files) |
 | `moat: deny [kernel-integrity] — … was modified` | A pinned file (the policy, a hook) changed. Every call is blocked until you look. | `openmoat`, see [Troubleshooting](/docs/troubleshooting/hooks-and-lock/#every-call-is-denied-with-kernel-integrity) |
-| `moat: deny [repo:<id>] — …` or `moat: ask [repo:<id>] — …` | A rule in the project's own `.moat/policy.yaml`, which applies to everyone working there. | Read the rule in that file; approve an ask in the prompt or with `openmoat allow --last`, see [Use it in your projects](/docs/your-projects/#rules-for-one-project) |
+| `moat: deny [repo:<id>] — …` or `moat: review [repo:<id>] — …` | A rule in the project's own `.moat/policy.yaml`, which applies to everyone working there. | Read the rule in that file; approve a review in the prompt or with `openmoat allow --last`, see [Use it in your projects](/docs/your-projects/#rules-for-one-project) |
 | `moat: deny [kernel-error] — …` for every call in one project | The project's `.moat/policy.yaml` does not parse, or sets a key a repository may not. | Fix the file, see [A repository policy denies every call](/docs/troubleshooting/policies-and-network/#a-repository-policy-denies-every-call) |
 
 Every other message: [Messages in the agent](/docs/troubleshooting/agent-messages/).
 
-## An ask you want to approve
+## A review you want to approve
 
 <Steps>
 
@@ -51,17 +51,17 @@ Every other message: [Messages in the agent](/docs/troubleshooting/agent-message
    Answer the prompt, or run:
 
    ```bash
-   openmoat allow --last            # the last ask: allowed for the rest of that agent session
+   openmoat allow --last            # the last review: allowed for the rest of that agent session
    ```
 
    ```text
-   last ask: 41 on claude-code (session 4f2a…) wanted to run "git config core.pager less"
+   last review: 41 on claude-code (session 4f2a…), 2m ago, wanted to run "git config core.pager less"
    ✔ session 4f2a… on claude-code may run "git config core.pager less" for 24h
-     only in this agent session: a new session asks again (`claude --continue` resumes this one)
+     only in this agent session: a new session needs review again (`claude --continue` resumes this one)
    ✔ lock re-pinned (6 files)
    ```
 
-   It first shows which agent, session and call it means, and asks `Approve it? [y/N]`. A session grant lasts 24 hours and covers only that session and that exact command or file. A command grant also holds only in the project it was asked in: the same command in another repository asks again.
+   It first shows which agent, session and call it means, and asks `Approve it? [y/N]`. A session grant lasts 24 hours and covers only that session and that exact command or file. A command grant also holds only in the project it was held in: the same command in another repository needs review again.
 
 2. **Or allow it for good**
 
@@ -77,7 +77,7 @@ To see everything you have allowed, with the command that takes each one back, r
 
 <Aside type="note" title="Agents that cannot show a prompt">
 
-Codex, and Cursor for file tools, cannot show a prompt, and neither can Claude Code in its `bypassPermissions` and `dontAsk` modes, GitHub Copilot CLI in autopilot or pi in print and JSON mode. There an ask becomes a deny whose message says to run `openmoat` or `openmoat allow --last`. Run it, then ask the agent to retry. See [Supported agents](/docs/agents/).
+Codex, and Cursor for file tools, cannot show a prompt, and neither can Claude Code in its `bypassPermissions` and `dontAsk` modes, GitHub Copilot CLI in autopilot, pi in print and JSON mode, OpenCode 1, the Cline CLI or goose. There a review becomes a deny (a block, in goose) whose message says to run `openmoat` or `openmoat allow --last`. Run it, then ask the agent to retry. See [Supported agents](/docs/agents/).
 
 </Aside>
 
@@ -110,4 +110,4 @@ openmoat allow --dir ~/work/shared     # read and write in that folder
 openmoat allow --site docs.rs          # network access to that host
 ```
 
-`openmoat` alone shows today's decisions, so you can see which calls deferred, asked or were denied.
+`openmoat` alone shows today's decisions, so you can see which calls deferred, were held for review or were denied.

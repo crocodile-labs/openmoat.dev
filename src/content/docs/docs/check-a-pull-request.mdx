@@ -1,0 +1,155 @@
+---
+title: "Check a pull request"
+description: "openmoat policy check-diff and the GitHub Action: report a change that adds a CI workflow, a git hook, agent settings, a .env file or a token, before it is merged."
+sidebar:
+  label: "Check a pull request"
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You want CI to flag a pull request that changes files an agent must not write, or files that run later outside any sandbox, whether an agent, a person or a fork wrote it. New in 0.14.0.
+
+</Aside>
+
+**Protects against** a change that was never checked by OpenMoat's hook reaching your main branch: one written by an agent on a machine without OpenMoat, by a person, or by a fork. The hook checks each call while an agent works; a pull request is the other place to check.
+
+## What it does
+
+`openmoat policy check-diff` reads a change and reports:
+
+- every file it adds, edits, deletes or renames that the policy protects: CI workflows, git hooks and hook managers, build and package files (`package.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, …), agent instructions, settings, hooks and MCP server lists (`CLAUDE.md`, `.claude/`, `.mcp.json`, `.cursor/`, …), OpenMoat's own files (`.moat/`) and secret files (`.env`);
+- every added line that holds a known token format (GitHub, OpenAI and Anthropic, AWS access key ids, Slack, Google API, npm, GitLab), without printing the token;
+- symbolic links and where they point, submodule changes, and paths that leave the repository.
+
+Each file is decided by the policy's own rules, as a write from untrusted content, so the lists of protected files are the ones the hook uses. With 0.15.0's default policy that includes the git hook folders `core.hooksPath` usually names (`.githooks/`, `.git-hooks/`, `githooks/`, `git-hooks/`, `scripts/git-hooks/`) and Cline's workspace hooks (`.clinerules/hooks/`, `.cline/hooks/`), reported for `review`.
+
+The check reads paths and added lines only: which files change, and whether an added line holds a known token format. It does not read what the rest of a changed file does.
+
+| Level | Exit code | Means |
+|---|---|---|
+| `deny` | 2 | the policy denies an agent this write (`kernel-self`, `secrets-paths`), the change adds a token, or a path leaves the repository |
+| `review` | 3 | a person should look before merging: a file that CI, a build, a commit hook or an agent runs or reads later, a link, a submodule, a policy file |
+| clean | 0 | nothing the policy protects |
+| error | 64 | the change or a policy could not be read; never reported as clean |
+
+## Run it locally
+
+```bash
+openmoat policy check-diff --base origin/main             # this branch against main
+openmoat policy check-diff --base main --head feature --format json
+git diff main | openmoat policy check-diff                # any unified diff on stdin
+openmoat policy check-diff --base main --policy ci/openmoat.yaml
+```
+
+With `--base`, the change is everything from the commit `--base` and `--head` (default `HEAD`) share to `--head`, as a pull request shows it. Without `--policy`, the **shipped default policy** is used, not the one installed in `~/.moat`, so every machine gives the same answer. That is unlike `openmoat policy check`, which decides with your installed policy.
+
+## Example
+
+A pull request that changes a workflow trigger, sets hooks in `.claude/settings.json`, adds a `postinstall` script and edits one source file:
+
+```text
+review  .github/workflows/ci.yml [runs-later, session-taint]
+        CI, commit hooks, the editor or the agent host run this later, outside any sandbox: write .github/workflows/ci.yml
+        CI, a build or test tool, a commit hook or an AI agent runs or reads this file later
+deny    .claude/settings.json [kernel-self]
+        OpenMoat protects its own policy, hooks and binary: write .claude/settings.json
+review  package.json [session-taint]
+        CI, a build or test tool, a commit hook or an AI agent runs or reads this file later
+deny: 1 deny, 2 review in 4 changed files (checked against the default policy)
+```
+
+The source file is not listed: nothing the policy protects. `--format json` prints one document with `result`, `files`, `policy`, `repository_policy` and `findings` (each with `level`, `path`, `line` for an added line, `rules` and `reasons`).
+
+## On GitHub
+
+<Steps>
+
+1. **Add the workflow**
+
+   Save this as `.github/workflows/openmoat.yml`. Pin the action to the full commit SHA of an OpenMoat release tag, and set `version` to that release:
+
+   ```yaml
+   name: openmoat
+   on:
+     pull_request:
+
+   permissions:
+     contents: read
+
+   jobs:
+     merge-check:
+       runs-on: ubuntu-24.04
+       steps:
+         - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+           with:
+             fetch-depth: 0             # the base and head commits and what they share
+             persist-credentials: false
+         - uses: crocodile-labs/openmoat@<full commit SHA of the release tag> # v0.15.0
+           with:
+             version: 0.15.0            # the same release, without the leading v
+             fail-on: review            # review (default), deny or never
+             # policy: ci/openmoat.yaml # read as the pull request's base has it
+   ```
+
+2. **Open a pull request**
+
+   The action downloads that release for the runner (Linux or macOS, x64 or arm64), checks the archive's sha256 against the release's `sha256.sum` and its build attestation with `gh attestation verify`, then runs `openmoat policy check-diff` on the pull request's base and head.
+
+3. **Read the annotations**
+
+   Every finding becomes an annotation on the pull request: `deny` as an error, `review` as a warning. The step fails on what `fail-on` names; the output `result` is `clean`, `review` or `deny`.
+
+4. **Hold merges on it, if you want**
+
+   A finding is a report, not a block on merging. Make the job a required status check to hold merges until it passes, and merge past it when a person meant the change.
+
+</Steps>
+
+| Input | Default | What it does |
+|---|---|---|
+| `version` | none (required) | the OpenMoat release to run |
+| `fail-on` | `review` | fail the step on anything found (`review`), only on `deny`, or `never` |
+| `policy` | the default policy | a policy file in the repository, read as the base has it |
+| `base`, `head` | the pull request's base and head commits | the revisions to compare |
+| `token` | `github.token` | what `gh attestation verify` reads the attestation with |
+
+Use the `pull_request` event, not `pull_request_target`: the check needs no secrets, and `pull_request_target` runs with the base repository's token while it reads code from the pull request. Under GitHub Actions, `--format github` (workflow annotations) is the default.
+
+## The change cannot loosen its own check
+
+With `--base`, the policy files are read as the base revision has them, with git, not from the checked-out files: a relative `--policy` path, and the repository's `.moat/policy.yaml`, whose `deny` and `review` rules are added as the hook adds them for an untrusted repository. A change to either file is reported (`diff-policy`) and applies from the next change after it is merged. A diff on stdin has no base revision: `--policy` is read from disk and no repository policy is read.
+
+## Rule ids it adds
+
+| Rule id | Level | When |
+|---|---|---|
+| `diff-secret` | deny | an added line holds a known token format |
+| `diff-path` | deny | a path is absolute, leaves the repository (`../`) or is not a file name |
+| `diff-policy` | review | the change edits a policy file the check read |
+| `diff-link` | review | the change makes a symbolic link; where it points is checked too |
+| `diff-submodule` | review | the change moves a submodule to another commit |
+| `diff-unchecked` | review | the diff is larger than 64 MiB: its paths were checked, its added lines were not searched |
+
+Paths are compared without letter case and as Windows opens them (trailing dots and spaces dropped, `\` as `/`), `.` and `..` are collapsed, and a renamed file is checked under both names; a deleted file is checked too.
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat policy check-diff --base <rev> [--head <rev>]` | Check the change between two revisions | `openmoat policy check-diff --base origin/main` |
+| `openmoat policy check-diff` (diff on stdin) | Check any unified diff | `git diff main \| openmoat policy check-diff` |
+| `--policy <file>` | Check against that policy instead of the shipped default | `--policy ci/openmoat.yaml` |
+| `--format text\|json\|github` | Text, one JSON document, or workflow annotations | `--format json` |
+
+## Limits
+
+- It checks which files change and what lines are added, not what a program does. A source file a build or a test runs is code like any other and is not flagged, nor is a script that a flagged file (`package.json`) already named before the change.
+- Binary files are not searched for tokens; their paths are checked.
+- Only token formats with a vendor prefix are found: a password, a private key or a token without a known prefix is not. Commit messages are not searched.
+- A submodule's code, and what a symbolic link points to outside the repository, are not read.
+- `~/` rules do not apply to repository paths, so a dotfiles repository is checked as an ordinary project. Windows short names (`GITHUB~1`) are not expanded.
+- The action runs on Linux and macOS runners.
+
+The full reference: [MERGE_CHECK.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/MERGE_CHECK.md). Checking what a repository's own rules decide for one command in CI: [A repository policy](/docs/team-rules/repository-policy/#check-it-in-ci).

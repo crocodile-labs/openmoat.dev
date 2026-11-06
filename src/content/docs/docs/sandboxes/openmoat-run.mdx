@@ -10,7 +10,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
-Your agent has no OS sandbox from OpenMoat (OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, Continue CLI), or you run one with auto-approve.
+Your agent has no OS sandbox from OpenMoat (OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, the Cline CLI, goose, Continue CLI), or you run one with auto-approve.
 
 </Aside>
 
@@ -26,9 +26,18 @@ The two `--write` paths are Claude Code's own state, which it must write to run.
 - **npm and uv install no version published in the last 7 days** (`npm_config_before`, `UV_EXCLUDE_NEWER`).
 - **Brokered secrets' variables are removed** before the agent starts. A secret with `tls: terminate` is put into HTTPS here and nowhere else, only for the requests its `allow` rules name ([Secrets over HTTPS](/docs/keep-tokens-safe/https-injection/)); `openmoat run` refuses to start when no pinned CA covers such a secret's host.
 - **Nothing types into your terminal:** `TIOCSTI` is denied.
+- **No hard links to protected files** (macOS, from 0.15.0): the Seatbelt profile also denies hard links to every path it denies reading or writing, so a sandboxed command cannot link `~/.moat/proxy.key` or `audit.db` into the project.
 - **Turn the agent's own sandbox off:** sandboxes do not nest. Claude Code's `sandbox.enabled` fails inside, and Codex needs `--sandbox danger-full-access`. Credentials must not come from the keychain: use an API key or `apiKeyHelper`.
 
-Before the agent starts, `openmoat run` prints how many places the sandbox is stricter or wider than the policy; `--verbose` lists each one. It needs macOS 13 or later, or Linux; it refuses on Windows. More on auto-approve: [Auto-approve and CI](/docs/auto-approve-and-ci/#run-a-whole-agent-in-a-sandbox).
+Before the agent starts, `openmoat run` prints how many places the sandbox is stricter or wider than the policy; `--verbose` lists each one. It needs macOS 13 or later, or Linux; it refuses on Windows.
+
+<Aside type="caution" title="Linux: plain openmoat run leaves project files open">
+
+Without `--isolate`, commands the agent starts can still read and write the project's `.env`, create `.envrc` and write `.moat` and `.git/hooks`. From 0.15.0 plain `openmoat run` says so on standard error when it starts, and that `openmoat run --isolate` closes this (naming bubblewrap when it is missing). `openmoat doctor` warns about the same, and `openmoat status`, `doctor` and `init` name `openmoat run --isolate` for an agent without a sandbox of its own.
+
+</Aside>
+
+More on auto-approve: [Auto-approve and CI](/docs/auto-approve-and-ci/#run-a-whole-agent-in-a-sandbox).
 
 <Aside type="note" title="Cursor CLI under openmoat run">
 

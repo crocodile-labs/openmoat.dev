@@ -3,6 +3,7 @@ title: What did your coding agent do yesterday?
 description: The agent's own summary is the agent's account. How OpenMoat keeps a local, hash-chained record of every call it decided, how to read it, and what that record can and can't prove.
 summary: openmoat show, replay and report read a local log of every decision. What is in it, why the agent can't read or rewrite it, and why hash-chained means tamper-evident, not tamper-proof.
 date: 2026-10-24T09:00:00Z
+notice: "Updated for OpenMoat 0.14.0, where the verdict ask is named review: the output below shows the new wording."
 author: Dhanasekaran Kathiresan
 authorUrl: https://github.com/iamdotk
 avatar: /assets/dhanasekaran.jpg
@@ -37,7 +38,7 @@ openmoat
 ```
 
 ```text
-Protecting Claude Code (hook + OS sandbox) · today: 14 decisions, 1 denied, 1 asked
+Protecting Claude Code (hook + OS sandbox) · today: 14 decisions, 1 denied, 1 reviewed
 Claude Code asked to run "git config core.pager less" (rule git-internals, session 4f2a…)
 Allow? [o]nce for this session / [a]lways / [n]o
 ```
@@ -74,7 +75,7 @@ For a summary over a longer window:
 openmoat report --since 7d
 ```
 
-It gives totals, the hosts the agents reached, the rules that fired most, and asks per active hour. If you are asked often, this shows which rule does it, so you know what to allow.
+It gives totals, the hosts the agents reached, the rules that fired most, and reviews per active hour. If calls are often held for your review, this shows which rule does it, so you know what to allow.
 
 ## The agent can't read or rewrite it
 

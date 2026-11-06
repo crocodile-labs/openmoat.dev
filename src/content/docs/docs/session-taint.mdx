@@ -1,6 +1,6 @@
 ---
 title: "Session taint"
-description: "What a session read earlier makes its later calls stricter: after a secret, network and MCP calls ask; after web or MCP content, writes to CI, build and agent files ask."
+description: "What a session read earlier makes its later calls stricter: after a secret, network and MCP calls need review; after web or MCP content, writes to CI, build and agent files need review."
 sidebar:
   label: "Session taint"
 ---
@@ -11,33 +11,33 @@ import { Aside } from '@astrojs/starlight/components';
 
 ## What it does
 
-A call can be decided more strictly because of what the same agent session did before. Taint only adds asks, with rule `session-taint`: an allowed call becomes an ask, and a deny stays a deny.
+A call can be decided more strictly because of what the same agent session did before. Taint only adds reviews, with rule `session-taint`: an allowed call can need review, and a deny stays a deny.
 
-| Once the session has read | These calls ask |
+| Once the session has read | These calls need review |
 |---|---|
 | A secret (only when your policy lets secret reads run; the default denies them) | Network to any host but the secret's own, every MCP call, web search and unmapped tool |
-| Untrusted content: a web page, a web search, a `curl` or `wget` download, a browser MCP call that opens a page, an MCP tool's result | Writes to CI workflows, git hooks, build files (`package.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, `Dockerfile`, …) and agent instructions and settings (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json`, …) |
+| Untrusted content: a web page, a web search, a `curl` or `wget` download, a browser MCP call that opens a page, an MCP tool's result | Writes to CI workflows, git hooks, build files (`package.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, `Dockerfile`, …) and agent instructions and settings (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json`, the Cline CLI's `.cline` and `.clinerules`, goose's `.goosehints`, …) |
 
 Taint follows files too. When a tainted session writes a file, the audit log records it; a later session that reads or runs that file (`cat`, `source run.sh`, `./run.sh`, `python x.py`) is tainted as well.
 
-A push from a tainted session that changes a file `runs-later` names asks (`push-runs-later`). After a secret read, a URL a fetch, network or MCP tool opens that carries 80 or more characters of base64 or hex is denied (`encoded-egress`, new in 0.12.0): a person reading the ask can judge a short URL, not a few hundred characters of encoded text. Under `openmoat run`, the run's proxy cannot ask, so after a secret read it refuses requests to every other host, registries included; a new run starts clean. The standalone `openmoat proxy` does the same for Claude Code's sessions from 0.12.0, since each sends its own credential ([Agent sessions only](/docs/egress-proxy/sessions/)).
+A push from a tainted session that changes a file `runs-later` names needs review (`push-runs-later`). After a secret read, a URL a fetch, network or MCP tool opens that carries 80 or more characters of base64 or hex is denied (`encoded-egress`, new in 0.12.0): a person reviewing the call can judge a short URL, not a few hundred characters of encoded text. Under `openmoat run`, the run's proxy cannot prompt, so after a secret read it refuses requests to every other host, registries included; a new run starts clean. The standalone `openmoat proxy` does the same for Claude Code's sessions from 0.12.0, since each sends its own credential ([Agent sessions only](/docs/egress-proxy/sessions/)).
 
 ## Your answer covers the file
 
-From 0.12.0 a `session-taint` ask is answered once per file. After you approve the agent's `Write`, `Edit` or `MultiEdit` of a protected file in a session that read untrusted content, later writes and edits of the same file in that session are allowed, until the session reads untrusted content again; then the file asks once more. The reason says so:
+From 0.12.0 a `session-taint` review is answered once per file. After you approve the agent's `Write`, `Edit` or `MultiEdit` of a protected file in a session that read untrusted content, later writes and edits of the same file in that session are allowed, until the session reads untrusted content again; then the file needs review once more. The reason says so:
 
 ```text
 an earlier write of <file> in this session was approved after the session last read untrusted content
 ```
 
-The evidence is the file itself: it must hold what the approved call leaves (for an edit, the file with its replacements applied) and not what it held before. So a write you declined covers nothing, and a write of the file's own content, an edit Claude Code would refuse, a patch or a shell write (whose result the hook cannot see), another file or another session still ask. An ask that comes from a secret the session read is never answered this way ([ADR-048](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-048-taint-answer-covers-the-path.md)).
+The evidence is the file itself: it must hold what the approved call leaves (for an edit, the file with its replacements applied) and not what it held before. So a write you declined covers nothing, and a write of the file's own content, an edit Claude Code would refuse, a patch or a shell write (whose result the hook cannot see), another file or another session still need review. A review that comes from a secret the session read is never answered this way ([ADR-048](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-048-taint-answer-covers-the-path.md)).
 
 ## Example
 
-In a clean session, an edit of `package.json` in the project is allowed (`project-fs`). After the same session fetched a web page, the same edit asks:
+In a clean session, an edit of `package.json` in the project is allowed (`project-fs`). After the same session fetched a web page, the same edit needs review:
 
 ```text
-moat: ask [session-taint] — …
+moat: review [session-taint] — …
 ```
 
 When the taint came from a file, the reason names it and the session that wrote it:
@@ -50,7 +50,7 @@ read /p/run.sh, which session a wrote after it read untrusted content (fetch cra
 
 | Command | What it does | Example |
 |---|---|---|
-| `openmoat allow --last` | Grant that one file until the session reads untrusted content again. A secret's ask is never answered this way | `openmoat allow --last` |
+| `openmoat allow --last` | Grant that one file until the session reads untrusted content again. A secret's review is never answered this way | `openmoat allow --last` |
 | `openmoat replay --session <id>` | The session as a timeline: which read tainted it | `openmoat replay --session 4f2a…` |
 | `openmoat show --session <id>` | Every event of that session | `openmoat show --session 4f2a…` |
 
@@ -60,7 +60,7 @@ At the `openmoat allow --last` question, `s` instead of `y` approves every prote
 
 ```yaml
 taint:
-  protected_writes: ["**/deploy/**"]   # more paths a tainted session must ask to write
+  protected_writes: ["**/deploy/**"]   # more paths whose writes need review in a tainted session
   provenance: true                     # default; false stops following written files
 ```
 
@@ -71,6 +71,6 @@ taint:
 - **Taint is per session.** A new session starts clean, except for the files a tainted session wrote.
 - **Not followed:** a file copied or renamed, files a build or script writes, and files a search tool (`Grep`, `Glob`) reads.
 - **Shell network to an allowed host** (`git fetch`, `gh pr view`) is not untrusted content.
-- **Codex turns an ask into a deny**, so under Codex an ask never taints. At the standalone `openmoat proxy`, taint applies to Claude Code's sessions, which send a credential; Codex's traffic carries none, so it is refused, or served without taint under `sandbox.proxy_serve_without_credential` ([Agent sessions only](/docs/egress-proxy/sessions/)).
+- **Codex turns a review into a deny**, so under Codex a review never taints. At the standalone `openmoat proxy`, taint applies to Claude Code's sessions, which send a credential; Codex's traffic carries none, so it is refused, or served without taint under `sandbox.proxy_serve_without_credential` ([Agent sessions only](/docs/egress-proxy/sessions/)).
 
 More in [How it decides](/docs/how-it-decides/#what-the-session-read-earlier) and [Limits](/docs/limits/).

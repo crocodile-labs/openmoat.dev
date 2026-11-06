@@ -1,6 +1,6 @@
 ---
 title: "Code the agent wrote"
-description: "Where no OS sandbox from OpenMoat holds the command, running a file the same agent session wrote asks first (session-written-code)."
+description: "Where no OS sandbox from OpenMoat holds the command, running a file the same agent session wrote needs review first (session-written-code)."
 sidebar:
   label: "Overview"
 ---
@@ -9,7 +9,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
-Your agent asked before running a script it had just written, with rule `session-written-code`, or you use an agent with no OS sandbox from OpenMoat.
+A script the agent had just written was held for review before it ran, with rule `session-written-code`, or you use an agent with no OS sandbox from OpenMoat.
 
 </Aside>
 
@@ -17,16 +17,16 @@ Your agent asked before running a script it had just written, with rule `session
 
 ## What it does
 
-When the agent runs a file the same agent session wrote, and no OS sandbox from OpenMoat holds the command, the call asks with rule `session-written-code`. The reason names the file:
+When the agent runs a file the same agent session wrote, and no OS sandbox from OpenMoat holds the command, the call needs review with rule `session-written-code`. The reason names the file:
 
 ```text
-moat: ask [session-written-code] — runs code this session wrote, with no OS sandbox below the hook: /p/x.py
+moat: review [session-written-code] — runs code this session wrote, with no OS sandbox below the hook: /p/x.py
 ```
 
 | Where | What happens |
 |---|---|
-| OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent | Asks. OpenCode 1 cannot ask, so it denies with the `openmoat allow --last` hint |
-| Claude Code and Cursor on native Windows, or with their sandbox not in place | Asks |
+| OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, the Cline CLI, goose | Needs review. OpenCode 1, the Cline CLI and goose cannot prompt, so there it is denied (blocked, in goose) with the `openmoat allow --last` hint |
+| Claude Code and Cursor on native Windows, or with their sandbox not in place | Needs review |
 | Claude Code, Codex and Cursor with their sandbox in place on macOS and Linux | Unchanged: the OS sandbox stops the script's read of the key |
 | Any agent inside `openmoat run` | Unchanged: the run's sandbox holds the whole agent |
 
@@ -50,7 +50,7 @@ The agent writes `x.py` with its file tool, then runs it:
 python3 x.py
 ```
 
-On Gemini CLI the second call asks, with the message above. Before 0.11.0 it was allowed. The same holds for a script the shell writes, in one command line or two:
+On Gemini CLI the second call needs review, with the message above. Before 0.11.0 it was allowed. The same holds for a script the shell writes, in one command line or two:
 
 ```bash
 echo … > x.sh; bash x.sh
@@ -72,10 +72,10 @@ cargo test
 |---|---|---|
 | `openmoat policy upgrade` | Takes the `session-written-code` rule into a policy written before 0.11.0 | `openmoat policy upgrade` |
 | `openmoat allow --last` | Look at the script, then approve the command for the session. It holds until the agent writes the file again | `openmoat allow --last` |
-| `openmoat status` | Shows whether each agent has `hook + OS sandbox` (no ask) or `hook only` (asks) | `openmoat status` |
-| `openmoat run -- <agent>` | Puts the whole agent in one sandbox, so the ask does not apply | `openmoat run --write ~/.claude --write ~/.claude.json -- claude` |
+| `openmoat status` | Shows whether each agent has `hook + OS sandbox` (no review) or `hook only` (review) | `openmoat status` |
+| `openmoat run -- <agent>` | Puts the whole agent in one sandbox, so the review does not apply | `openmoat run --write ~/.claude --write ~/.claude.json -- claude` |
 
-`openmoat allow --last --always` refuses this ask: a permanent rule cannot vouch for code the agent may rewrite.
+`openmoat allow --last --always` refuses this review: a permanent rule cannot vouch for code the agent may rewrite.
 
 ## What OpenMoat records
 
@@ -83,9 +83,9 @@ To know which files a session wrote, the audit log (schema 5 from 0.11.0) keeps,
 
 ## Limits
 
-- **Test runners, build tools and package scripts** (`pytest`, `npm test`, `cargo test`, `make`, `go run .`) running files the session wrote do not ask.
-- **Files another session or a person wrote** do not ask.
-- **Files written where the hook cannot see it** do not ask: the files `tar x` or `unzip` extract, a build's or a package manager's output, what a script the agent wrote writes in turn, a download saved under a name the command does not show, a copy made inside a script.
+- **Test runners, build tools and package scripts** (`pytest`, `npm test`, `cargo test`, `make`, `go run .`) running files the session wrote do not need review.
+- **Files another session or a person wrote** do not need review.
+- **Files written where the hook cannot see it** do not need review: the files `tar x` or `unzip` extract, a build's or a package manager's output, what a script the agent wrote writes in turn, a download saved under a name the command does not show, a copy made inside a script.
 - **Code a program loads on its own** (`import helper` of a written `helper.py`, `require('./lib')`, a `conftest.py`, a git hook) is not seen, nor a program named through a variable whose value the line does not show.
 - **Shells OpenMoat does not parse** (PowerShell, `cmd`) defer to the agent.
 - **A flag that turns a sandbox off at start** (Codex's `--sandbox danger-full-access`) is not seen: the sandbox state is read from the agents' settings, as `openmoat status` reads it.

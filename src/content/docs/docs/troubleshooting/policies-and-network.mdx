@@ -8,7 +8,7 @@ sidebar:
 
 ## A repository policy denies every call
 
-Every call in one project is denied with `kernel-error`, and `openmoat status` there says `repo policy      ✗ …; every call in this project is denied`. The project's `.moat/policy.yaml` cannot be read or parsed, sets a key a repository may not (only `version`, `deny`, `ask` and `allow` are accepted), or is not a regular file. OpenMoat never ignores it, because that would drop the team's deny rules. Fix the file in your own editor (the agent cannot write `.moat/`), then run `openmoat status` again. The rule syntax: [The policy file](/docs/policy-file/).
+Every call in one project is denied with `kernel-error`, and `openmoat status` there says `repo policy      ✗ …; every call in this project is denied`. The project's `.moat/policy.yaml` cannot be read or parsed, sets a key a repository may not (only `version`, `deny`, `review` and `allow` are accepted; `ask`, the name of `review` before 0.14.0, is still read, but a file with both `ask` and `review` is refused), or is not a regular file. OpenMoat never ignores it, because that would drop the team's deny rules. Fix the file in your own editor (the agent cannot write `.moat/`), then run `openmoat status` again. The rule syntax: [The policy file](/docs/policy-file/).
 
 ## A repository's allow rules do not apply
 
@@ -53,10 +53,14 @@ allow:
     net: ["example.com", "example.com:8443"]
 ```
 
+## `openmoat policy check-diff` reports files you meant to change
+
+A pull request check ([Check a pull request](/docs/check-a-pull-request/)) reports every change to a file that runs later or steers an agent, whoever wrote it. A finding is a report, not a block: look at the change, then merge it. To make the step fail only on `deny`, set `fail-on: deny` in the workflow. A change to the policy file the check reads is reported as `diff-policy` and applies from the next pull request after it is merged.
+
 ## `openmoat audit verify --against` fails
 
 An event that an anchor recorded is no longer in the log, or has another hash: the log was cut short or rewritten after you anchored it. The message names the first such anchor. Look at the events around it with `openmoat show`, and keep the database file as it is while you find out what changed it.
 
 ## An older OpenMoat cannot open the audit log
 
-Each release that adds to the audit database moves it to a new schema version the first time it writes (0.6.0: file provenance, schema 4; 0.11.0: the session's writes, schema 5; 0.12.0: the gateway's decisions and the taint answers, schemas 6 and 7), and an older `openmoat` then refuses to open it. Upgrade every `openmoat` (and any older `moat`) on the machine to the same release.
+Each release that adds to the audit database moves it to a new schema version the first time it writes (0.6.0: file provenance, schema 4; 0.11.0: the session's writes, schema 5; 0.12.0: the gateway's decisions and the taint answers, schemas 6 and 7; 0.14.0: the `review` verdict, schema 8), and an older `openmoat` then refuses to open it. Upgrade every `openmoat` (and any older `moat`) on the machine to the same release.

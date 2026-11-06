@@ -1,0 +1,77 @@
+---
+title: "Upgrading from ask to review"
+description: "OpenMoat 0.14.0 calls the ask verdict review. Your policy keeps working; openmoat policy upgrade renames it. What changes for scripts, repository policies and packs."
+sidebar:
+  label: "From ask to review"
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You upgraded to 0.14.0 or later from an earlier release, `openmoat policy lint` warns about `ask`, or a script reads OpenMoat's JSON output.
+
+</Aside>
+
+From 0.14.0 the verdict `ask` is called `review`, everywhere OpenMoat shows or stores it. Nothing else changes: the same calls need a person's approval, exit code 3 still means an unresolved review, and every agent still receives its own protocol's word (Claude Code still gets `"ask"`, for example).
+
+| Where | Before 0.14.0 | From 0.14.0 |
+|---|---|---|
+| Policy rule list | `ask:` | `review:` (`ask:` still read) |
+| A default verdict | `"*": ask` | `"*": review` (`ask` still read) |
+| The reason the agent shows | `moat: ask [git-internals] — …` | `moat: review [git-internals] — …` |
+| `openmoat` | `… 1 denied, 1 asked` | `… 1 denied, 1 reviewed` |
+| `openmoat policy check` | `❓ ask` | `❓ review` |
+| `openmoat report` | asks per active hour, top asks | reviews per active hour, top reviews |
+| `--format json` | `"verdict": "ask"`, `asked`, `top_asks` | `"verdict": "review"`, `reviewed`, `top_reviews` |
+| SDKs | `Verdict::Ask`, `"ask"` | `Verdict::Review`, `"review"` (`"ask"` still read) |
+
+<Steps>
+
+1. **See whether your policy uses the old name**
+
+   ```bash
+   openmoat policy lint
+   ```
+
+   A policy that says `ask:` still loads and decides exactly as before. Lint prints a `warning:` line: `` `ask:` is the old name of `review:` and is read as it; `openmoat policy upgrade` renames it `` (and the same for an `ask` default).
+
+2. **Look at the change first**
+
+   ```bash
+   openmoat policy upgrade --dry-run
+   ```
+
+   The diff shows the rename, together with anything else the new default policy adds, such as `card-egress` ([Card numbers sent out](/docs/env-files/card-numbers/)). It changes nothing.
+
+3. **Apply it, in your own terminal**
+
+   ```bash
+   openmoat policy upgrade
+   ```
+
+   It shows the diff, asks before writing, keeps a backup and re-pins the lock. Lines you changed yourself are never touched. `openmoat policy upgrade --undo` puts the previous policy back.
+
+4. **Update scripts that read OpenMoat's output**
+
+   JSON output says `"review"`, and the keys `asked` and `top_asks` are now `reviewed` and `top_reviews`. A script that matches `moat: ask [` in an agent's transcript, or `❓ ask` in text output, needs the new words.
+
+5. **Check repository policies and packs**
+
+   A repository's `.moat/policy.yaml` or a policy pack that says `ask:` keeps working. Rename it to `review:` when you next change it, and run `openmoat policy lint` on the file. A signed pack or repository policy must be signed again after the edit.
+
+</Steps>
+
+<Aside type="caution" title="Both names in one file is an error">
+
+A policy with both `ask:` and `review:` is refused, since which list was meant cannot be told: `` the policy has both `ask:` and `review:`; `ask` is the old name of `review`: move the `ask:` rules into `review:` ``. For your own policy, every call is then denied until it is fixed; for a repository's, every call in that project ([Policies and the network](/docs/troubleshooting/policies-and-network/)).
+
+</Aside>
+
+## The audit log
+
+Audit rows written before 0.14.0 keep `ask` (the hash chain covers them), are shown as `review` and still verify. The audit database moves to schema version 8, which an older OpenMoat refuses to open: to go back to an earlier release after upgrading, you need a copy of `~/.moat/audit.db` made before the upgrade.
+
+## Library crates
+
+`openmoat-core`, `openmoat-hosts` and `openmoat-sdk` rename `Verdict::Ask` to `Verdict::Review` and the items named after it, with no deprecated aliases. The full list is in the [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md). Release notes: [0.14.0](/docs/releases/v0-14-0/). Every other upgrade step: [Upgrade](/docs/upgrade/).

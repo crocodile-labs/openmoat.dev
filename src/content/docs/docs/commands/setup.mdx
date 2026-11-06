@@ -21,8 +21,8 @@ Host ids for `--hosts` and `--host`: `claude-code`, `codex`, `cursor`, `openclaw
 
 | Command | What it does | Example |
 |---|---|---|
-| `openmoat` | Which agents are protected, today's decisions, and anything that needs you: a changed pinned file, a policy update, the last ask. Its questions are asked only at a terminal | `openmoat` |
-| `openmoat status [--format json]` | Each agent's protection level (`hook + OS sandbox`, `hook only`, `not protected`) and what it does not cover; run in a project, also its repository policy and project settings; exits 64 when something needs fixing | `openmoat status` |
+| `openmoat` | Which agents are protected, today's decisions, and anything that needs you: a changed pinned file, a policy update, the last review. Its questions are asked only at a terminal | `openmoat` |
+| `openmoat status [--format json]` | Each agent's protection level (`hook + OS sandbox`, `hook only`, `not protected`) and what it does not cover (JSON: each agent's `limit`, and `other_hooks` for the Cline CLI's other hooks and plugins); run in a project, also its repository policy and project settings; exits 64 when something needs fixing | `openmoat status` |
 | `openmoat show [<id>] [--session <id>] [--since <when>] [--recent N]` | Recent events, one session, or one event in full | `openmoat show 1` |
 | `openmoat demo [--format json]` | The verdict, rule and reason for a fixed list of example agent calls, with your policy; nothing runs and nothing is changed | `openmoat demo` |
 

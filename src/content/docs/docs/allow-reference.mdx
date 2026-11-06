@@ -25,7 +25,7 @@ Two facts hold for every allow below:
 | Command | Covers | Lasts | Undo |
 |---|---|---|---|
 | Your agent's own "allow" answer | one deferred call, as your agent decides | as your agent decides | in your agent |
-| `openmoat allow --last` | the exact command or files of the last OpenMoat ask; a command only in the project it was asked in | that agent session, 24 h | expires |
+| `openmoat allow --last` | the exact command or files of the last OpenMoat review; a command only in the project it was held in | that agent session, 24 h | expires |
 | `openmoat allow --last --always` | that command, also with extra arguments; or exactly those files | until removed | `openmoat allow --remove <id>` |
 | `openmoat allow "<command>" --always` | that command, also with extra arguments | until removed | `openmoat allow --remove <id>` |
 | `openmoat allow --dir <folder>` | read and write in the folder and below | until removed | `openmoat allow --remove <id>` |
@@ -38,11 +38,11 @@ Every rule `openmoat allow` adds is in `~/.moat/policy.d/approved.yaml`, with it
 
 ## `openmoat allow --last`
 
-<Impact opens={["The one call OpenMoat just asked about, in that agent session"]} keeps={["A new session asks again; other commands and files are not covered", "The same command in another repository asks again"]} think={["Low risk: you saw the exact call"]} />
+<Impact opens={["The one call OpenMoat just held for review, in that agent session"]} keeps={["A new session needs review again; other commands and files are not covered", "The same command in another repository needs review again"]} think={["Low risk: you saw the exact call"]} />
 
 ## `openmoat allow --last --always` and `openmoat allow "<command>" --always`
 
-<Impact opens={["A command rule matches the command **and the same command with more arguments**: `npm run build` also allows `npm run build -- --anything`", "A file rule matches exactly the files of that ask, nothing below them"]} keeps={["Hosts the command connects to are not covered: `curl -d @notes.txt https://example.com` is still denied for that host", "Deny rules on what the command reads or writes still win"]} think={["Allow the shortest command that is safe with anything after it. Never allow a bare interpreter (`python`, `node`, `bash`)"]} />
+<Impact opens={["A command rule matches the command **and the same command with more arguments**: `npm run build` also allows `npm run build -- --anything`", "A file rule matches exactly the files of that review, nothing below them"]} keeps={["Hosts the command connects to are not covered: `curl -d @notes.txt https://example.com` is still denied for that host", "Deny rules on what the command reads or writes still win"]} think={["Allow the shortest command that is safe with anything after it. Never allow a bare interpreter (`python`, `node`, `bash`)"]} />
 
 ## `openmoat allow --dir <folder>`
 
@@ -58,7 +58,7 @@ Every rule `openmoat allow` adds is in `~/.moat/policy.d/approved.yaml`, with it
 
 ## `openmoat trust`
 
-<Impact opens={["The repository's allow rules apply, for you, in that checkout"]} keeps={["Your deny rules still win; the repository's deny and ask rules always apply, trusted or not", "Any change to the file (a pull, a branch switch) drops its allow rules until you trust it again"]} think={["Read the rules it prints before you trust: they can widen your asks and defaults"]} />
+<Impact opens={["The repository's allow rules apply, for you, in that checkout"]} keeps={["Your deny rules still win; the repository's deny and review rules always apply, trusted or not", "Any change to the file (a pull, a branch switch) drops its allow rules until you trust it again"]} think={["Read the rules it prints before you trust: they can widen your review rules and defaults"]} />
 
 ## What allows can never open
 

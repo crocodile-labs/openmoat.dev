@@ -20,7 +20,7 @@ Your policy is `~/.moat/policy.yaml`. Most changes need no editing at all:
 |---|---|
 | Read and write a folder | `openmoat allow --dir <folder>` |
 | Reach a host | `openmoat allow --site <host>` |
-| Allow the command you were just asked about | `openmoat allow --last --always` |
+| Allow the command that was just held for review | `openmoat allow --last --always` |
 | Take one of those back | `openmoat allow --remove <id>` |
 
 ## Edit the policy
@@ -79,16 +79,16 @@ allow:
     fs.read: ["~/work/acme/**"]
 ```
 
-### Example: always ask before deploying
+### Example: always review before deploying
 
 ```yaml
-ask:
+review:
   - id: deploys
     reason: deploys reach production
     shell: ["npm run deploy*", "fly deploy*"]
 ```
 
-Rules are tried in the order **deny → allow → ask**, and across one command the strictest answer wins. A deny cannot be overridden by an allow.
+Rules are tried in the order **deny → allow → review**, and across one command the strictest answer wins. A deny cannot be overridden by an allow.
 
 ## Edit by hand
 

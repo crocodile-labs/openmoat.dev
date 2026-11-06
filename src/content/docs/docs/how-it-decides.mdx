@@ -10,20 +10,20 @@ import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
-You want to know why a call ran, went to your agent's prompt, asked or was blocked.
+You want to know why a call ran, went to your agent's prompt, was held for your review or was blocked.
 
 </Aside>
 
 Before the agent runs a command, reads or writes a file, opens a web page or calls an MCP tool, OpenMoat checks it against your policy (`~/.moat/policy.yaml`) and gives one of four answers.
 
-<img class="om-diagram light" src="/assets/how-it-works-light.svg" alt="An AI coding agent wants to run a tool call. Through the agent's own hook, OpenMoat checks it against one local policy before it runs: npm test is allowed, a call with no rule is left to the agent's own prompt, a git hook write asks you, and reading ~/.ssh/id_rsa is denied. Allowed code still runs inside the OS sandbox and the egress proxy, and every decision goes into a local hash-chained audit log." />
+<img class="om-diagram light" src="/assets/how-it-works-light.svg" alt="An AI coding agent wants to run a tool call. Through the agent's own hook, OpenMoat checks it against one local policy before it runs: npm test is allowed, a call with no rule is left to the agent's own prompt, a git hook write is held for your review, and reading ~/.ssh/id_rsa is denied. Allowed code still runs inside the OS sandbox and the egress proxy, and every decision goes into a local hash-chained audit log." />
 <img class="om-diagram dark" src="/assets/how-it-works-dark.svg" alt="" aria-hidden="true" />
 
 | Answer | When | What you see |
 |---|---|---|
 | **Allow** | Normal development work: builds, tests, reading and editing the project, everyday git. | Nothing. The call runs and is recorded. |
 | **Defer** | Anything the policy has no rule for. | Your agent's own permission prompt, exactly as without OpenMoat. |
-| **Ask** | The few calls whose effect outlives the session (a git hook, a login item), or any call after the session read a secret. | A prompt tagged with the rule: `moat: ask [git-internals] — …` |
+| **Review** | The few calls whose effect outlives the session (a git hook, a login item), or any call after the session read a secret. OpenMoat holds the call for a person, even where your agent would not ask. | A prompt tagged with the rule: `moat: review [git-internals] — …` |
 | **Deny** | What must never happen: secrets read or sent, unknown hosts, destructive commands, changes to OpenMoat itself. | The agent is told the rule and the reason, and usually tells you. |
 
 ## Real verdicts from the default policy
@@ -35,9 +35,9 @@ Every line is checked against the shipped policy on every change to OpenMoat.
 | `git status --short`, `cargo test`, `npm test` | allow | `dev-shell` |
 | `cat src/main.rs` | allow | `dev-shell`, `project-fs` |
 | `npm install left-pad`, `git push origin main` | defer | `default`: your agent's prompt decides |
-| `git config core.hooksPath .h`, `echo x > .git/hooks/pre-commit` | ask | `git-internals` |
-| A write to `.github/workflows/ci.yml` or `.husky/pre-commit` | ask | `runs-later` |
-| `grep -r token ~` | ask | `home-sweep` |
+| `git config core.hooksPath .h`, `echo x > .git/hooks/pre-commit` | review | `git-internals` |
+| A write to `.github/workflows/ci.yml` or `.husky/pre-commit` | review | `runs-later` |
+| `grep -r token ~` | review | `home-sweep` |
 | `cat ~/.ssh/id_rsa`, `cat .env` | deny | `secrets-paths` |
 | `curl https://docs.rs/serde`, `curl -sSL -o f.tgz https://example.com/f.tgz`, `wget https://example.com/a.tar.gz` | defer | `default.fetch`: a download that sends nothing, decided like a web fetch, and the file it saves like any other write |
 | `curl -o ~/.zshrc https://example.com/rc` | deny | `shell-rc`: the file the download writes is checked by the path rules |
@@ -48,7 +48,7 @@ Every line is checked against the shipped policy on every change to OpenMoat.
 | `echo x >> ~/.zshrc` | deny | `shell-rc` |
 | `openmoat allow --last` (run by the agent) | deny | `kernel-self` |
 
-A `curl` or `wget` to an unlisted host is decided like a web fetch only when it provably sends nothing but its URL (redirects followed): a body, form, upload, header, other method, `.netrc` or `--location-trusted` keeps it denied. Every file it writes (`-o`, `-O`, `--output-dir`, `wget -P`, a plain `wget`'s saved name) is checked like any other write: `curl -o ~/.zshrc …` is denied by `shell-rc`, `curl -o ~/.local/bin/x …` asks (`persistence`), a project file is allowed. The configuration files both programs read can add a body: writing `~/.curlrc` or `~/.wgetrc` is denied by `shell-rc`, and moving them (`CURL_HOME`, `XDG_CONFIG_HOME`, `WGETRC`) by `env-poison`.
+A `curl` or `wget` to an unlisted host is decided like a web fetch only when it provably sends nothing but its URL (redirects followed): a body, form, upload, header, other method, `.netrc` or `--location-trusted` keeps it denied. Every file it writes (`-o`, `-O`, `--output-dir`, `wget -P`, a plain `wget`'s saved name) is checked like any other write: `curl -o ~/.zshrc …` is denied by `shell-rc`, `curl -o ~/.local/bin/x …` needs review (`persistence`), a project file is allowed. The configuration files both programs read can add a body: writing `~/.curlrc` or `~/.wgetrc` is denied by `shell-rc`, and moving them (`CURL_HOME`, `XDG_CONFIG_HOME`, `WGETRC`) by `env-poison`.
 
 Hiding the action does not change the answer: a path in a shell variable (`d=~/.ssh; cat $d/id_rsa`), base64, `$'…'` escapes, a glob (`cat .e*`) and a symlink are checked as what they open. An unquoted variable whose value holds spaces is split into words as bash splits it, so each word is checked as its own argument. So are:
 
@@ -60,7 +60,7 @@ Hiding the action does not change the answer: a path in a shell variable (`d=~/.
 - hard links (`ln`, `cp -l`) and copies by `gcp`, `ditto`, `pax` or `cpio`, as writes of the file they create;
 - the program git runs for the other side of a remote (`--upload-pack`, `--receive-pack`).
 
-A command line too long or too deeply nested to read in full asks instead of falling through to the default. So does a call OpenMoat can see but not fully check (`unchecked`), such as a search pattern that may climb out of its folder, or text typed into a shell another call left running.
+A command line too long or too deeply nested to read in full needs review instead of falling through to the default. So does a call OpenMoat can see but not fully check (`unchecked`), such as a search pattern that may climb out of its folder, or text typed into a shell another call left running.
 
 A tool OpenMoat has no mapping for, such as one an extension adds, is still checked for every path, URL and shell command its arguments name: an extension's tool that reads `~/.ssh/id_rsa` is denied like `cat ~/.ssh/id_rsa`.
 
@@ -69,32 +69,33 @@ A tool OpenMoat has no mapping for, such as one an extension adds, is still chec
 | What the agent does | Rule |
 |---|---|
 | Sends a GitHub, OpenAI, AWS or other known token to a host that is not its service's, allowed hosts included | `token-egress` ([Keep a token from the agent](/docs/keep-tokens-safe/token-egress/)) |
+| Sends a payment card number off the machine (a URL, a web search, `curl -d`, `-H`, `--json`, a query, a pipe into `curl`), allowed hosts included. `localhost` and the test numbers payment processors publish are left out, and file contents are not read | `card-egress` ([Card numbers sent out](/docs/env-files/card-numbers/)) |
 | Pushes a commit that adds a token | `push-secret` ([GitHub and gh](/docs/github/#what-a-push-would-publish)) |
 | Calls a tool of an MCP server whose definition changed or is new | `mcp-server-changed` ([MCP servers](/docs/mcp-servers/)) |
 | Reads OpenMoat's own state: the audit log, the lock, the approvals, the trust records, the MCP pins | `kernel-self` ([Something was blocked](/docs/blocked/#openmoats-own-files)) |
 
-An install of a package whose name is one typo away from a popular package asks instead (`package-near-miss`, see [Install and publish](/docs/packages/#a-name-close-to-a-popular-package)).
+An install of a package whose name is one typo away from a popular package needs review instead (`package-near-miss`, see [Install and publish](/docs/packages/#a-name-close-to-a-popular-package)).
 
 ## What the session read earlier
 
-A call can be decided more strictly because of what the same agent session did before (`session-taint`). Taint only adds asks: an allowed call can become an ask, and a deny stays a deny.
+A call can be decided more strictly because of what the same agent session did before (`session-taint`). Taint only adds reviews: an allowed call can need review, and a deny stays a deny.
 
-| Once the session has read | These calls ask |
+| Once the session has read | These calls need review |
 |---|---|
 | A secret (only when your policy lets secret reads run; the default denies them) | Network to any host but the secret's own, every MCP call and web search |
 | Untrusted content: a web page, a web search, an MCP tool's result | Writes to CI workflows, git hooks, build files (`package.json`, `Makefile`, `Cargo.toml`, …) and agent instructions and settings (`CLAUDE.md`, `AGENTS.md`, `.claude/`, …) |
 
-`openmoat allow --last` after a write ask grants that one file until the session reads untrusted content again. An ask that comes from a secret read is not answered that way.
+`openmoat allow --last` after a write held for review grants that one file until the session reads untrusted content again. A review that comes from a secret read is not answered that way.
 
 ### Files a tainted session wrote
 
-Taint also follows the files a tainted session writes. When a session that read untrusted content writes a file, the audit log records the path and the session. When a later session reads or runs that file (`Read`, `cat`, `source run.sh`, `bash run.sh`, `./run.sh`, `python x.py`), that session is tainted too, and its writes to CI, build and agent files ask. The reason names the file and the session that wrote it:
+Taint also follows the files a tainted session writes. When a session that read untrusted content writes a file, the audit log records the path and the session. When a later session reads or runs that file (`Read`, `cat`, `source run.sh`, `bash run.sh`, `./run.sh`, `python x.py`), that session is tainted too, and its writes to CI, build and agent files need review. The reason names the file and the session that wrote it:
 
 ```text
 read /p/run.sh, which session a wrote after it read untrusted content (fetch crates.io)
 ```
 
-- It adds no asks of its own: a later session only gets the asks above.
+- It adds no reviews of its own: a later session only gets the reviews above.
 - For a `Write`, which sends the whole file, the log keeps the content's hash, so the file stops counting once a change made outside the agent (an editor, `git checkout`) gives it other content. An `Edit` or a shell write records no hash, so that file keeps counting.
 - A `Write` of the whole file by a session that read no untrusted content clears it. An `Edit` by such a session does not: what the tainted session wrote may still be there.
 - Not followed: a file copied or renamed, files a build or script writes, and files a search tool (`Grep`, `Glob`) reads.
@@ -111,7 +112,7 @@ OpenMoat denies what must never happen and stays quiet about the rest. A call no
 ## The layers
 
 <CardGrid>
-  <LinkCard title="Agent hook" href="/docs/agents/" description="Checks each call before it runs. Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode and Hermes Agent call openmoat guard for every tool use." />
+  <LinkCard title="Agent hook" href="/docs/agents/" description="Checks each call before it runs. Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, the Cline CLI and goose call openmoat guard for every tool use." />
   <LinkCard title="OS sandbox" href="/docs/sandboxes/" description="The same policy configures each agent's own sandbox (Claude Code, Codex, Cursor), so code inside an allowed command (a test script) cannot reach your keys either. openmoat run does this for any agent." />
   <LinkCard title="Audit log" href="/docs/see-what-happened/" description="Every decision in a local SQLite file that detects tampering." />
   <LinkCard title="Self-protection" href="/docs/self-protection/" description="The agent cannot edit the policy, read the audit log, approve itself or switch OpenMoat off. A policy changed behind OpenMoat's back blocks everything until you review it." />

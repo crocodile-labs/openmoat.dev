@@ -29,7 +29,7 @@ Errors from `openmoat` itself start with `moat:`. Lines from `openmoat status` a
 | `Codex … open Codex and trust OpenMoat's hook in /hooks; Codex runs a changed hook only then` | Codex has the hook but does not run it yet | Open `/hooks` in Codex and trust OpenMoat's |
 | ``mcp servers      ✗ …; `openmoat mcp accept` shows it and asks`` | An MCP server changed or is new | `openmoat mcp accept <server>` |
 | `repo policy      ✗ …; every call in this project is denied` | The project's `.moat/policy.yaml` does not parse, or sets a key a repository may not | Fix the file ([below](/docs/troubleshooting/policies-and-network/#a-repository-policy-denies-every-call)) |
-| `repo policy      … not trusted: tightening only, allow rules ignored (…)` | Its deny and ask rules apply; its allow rules wait for you | Read the file, then `openmoat trust` if you want them ([Use it in your projects](/docs/your-projects/#rules-for-one-project)) |
+| `repo policy      … not trusted: tightening only, allow rules ignored (…)` | Its deny and review rules apply; its allow rules wait for you | Read the file, then `openmoat trust` if you want them ([Use it in your projects](/docs/your-projects/#rules-for-one-project)) |
 | ``repo policy      … changed since `openmoat trust`: tightening only, allow rules ignored (…)`` | The file changed (a pull, a branch switch) after you trusted it | Review the change, then `openmoat trust` again |
 | `not signed by a trusted key: tightening only, allow rules ignored (…)` | `require_signed_repo_policy: true`, and the repository policy has no signature by a key you trusted | [Repositories and packs](/docs/troubleshooting/policies-and-network/#a-repositorys-allow-rules-stopped-applying-after-openmoat-trust) |
 
@@ -39,13 +39,15 @@ Errors from `openmoat` itself start with `moat:`. Lines from `openmoat status` a
 |---|---|---|
 | `the edited policy does not lint:` | `openmoat edit` found an error; nothing was written | `y` at `Edit again? [y/N]` |
 | `duplicate rule id …`, `rule … has no patterns`, `bad glob …`, `bad shell pattern … (unbalanced quotes?)`, `unsupported policy version …` | `openmoat policy lint` found an error | Fix the rule it names ([The policy file](/docs/policy-file/)) |
+| ``warning: … `ask:` is the old name of `review:` and is read as it; `openmoat policy upgrade` renames it`` | The policy was written before 0.14.0; it still works | `openmoat policy upgrade` ([Upgrading from ask to review](/docs/upgrade/ask-to-review/)) |
+| ``the policy has both `ask:` and `review:`; `ask` is the old name of `review` …`` | A file with both names, which cannot be read either way | Move the `ask:` rules into `review:` |
 
 ## Proxy and `openmoat run`
 
 | Message | Means | Run |
 |---|---|---|
 | `moat proxy: … (proxy-port)` | An allowed host on a port no rule names | Add `host:port` ([a port other than 443 or 80](/docs/troubleshooting/policies-and-network/#a-connection-to-a-port-other-than-443-or-80-is-refused)) |
-| `moat proxy: … the proxy cannot ask, so a host the hook would ask for or leave to the agent is refused (…)` | A host the policy does not allow | `openmoat allow --site <host>` |
+| `moat proxy: … the proxy cannot prompt, so a host the hook would hold for review or leave to the agent is refused (…)` | A host the policy does not allow | `openmoat allow --site <host>` |
 | `moat proxy: … is a cloud metadata service (proxy-address)` | Refused whatever the policy says | Nothing |
 | ``moat: `openmoat run` needs macOS 13 or later; this Mac has macOS …, whose `sandbox-exec` cannot read the sandbox profile. The agent was not started.`` | macOS 12 or earlier | Start the agent without `openmoat run`; the hooks still apply |
 | ``moat: `openmoat run` needs an operating-system sandbox OpenMoat can generate (Seatbelt on macOS, Landlock on Linux); there is none on windows.`` | Windows | Use WSL2, or the agent's own sandbox |

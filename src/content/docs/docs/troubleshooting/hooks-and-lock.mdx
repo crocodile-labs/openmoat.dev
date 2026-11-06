@@ -60,11 +60,13 @@ Hooks are read when a session starts. Start a new agent session after `openmoat 
 
 ## The `openmoat` binary is missing or broken
 
-Codex, and Claude Code before 2.1.295, then run calls without the check; Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode and Hermes Agent block them. With Claude Code 2.1.295 or later, `openmoat init` sets `"onFailure": "block"` on OpenMoat's hook, so a call is blocked when `openmoat` cannot start, crashes or times out. It writes the key only when the `claude` on your `PATH` reports that version, and `openmoat doctor` warns when Claude Code is older or not found. Reinstall it (`brew reinstall crocodile-labs/tap/openmoat`, or the installer), then run `openmoat status`.
+Codex, and Claude Code before 2.1.295, then run calls without the check; Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent and goose block them, and for the Cline CLI OpenMoat's own hook script blocks them. With Claude Code 2.1.295 or later, `openmoat init` sets `"onFailure": "block"` on OpenMoat's hook, so a call is blocked when `openmoat` cannot start, crashes or times out. It writes the key only when the `claude` on your `PATH` reports that version, and `openmoat doctor` warns when Claude Code is older or not found. Reinstall it (`brew reinstall crocodile-labs/tap/openmoat`, or the installer), then run `openmoat status`.
 
 ## A call is denied with `no decision within 30 s`
 
 OpenMoat could not decide the call in 30 seconds, usually on a heavily loaded machine, and denied it rather than let it run. Ask the agent to try again. `openmoat doctor` names the step most such calls were stuck in.
+
+Every call denied this way right after upgrading from 0.13 to 0.14.0, with a large audit log? 0.14.0's first hook call copied the whole log to accept the `review` verdict and ran past the time limit, then started again on the next call. Upgrade to 0.15.0 or later, which changes the log's check in place ([0.15.0](/docs/releases/v0-15-0/)).
 
 ## `openmoat run` refuses on macOS 12
 

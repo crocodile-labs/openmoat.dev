@@ -99,7 +99,7 @@ OpenMoat treats these as secret reads. **Deny**, `secrets-paths`. The same goes 
 
 ## Why rules, not a model
 
-None of this uses an AI model. OpenMoat parses the shell, decodes, expands and resolves paths, then applies written rules. The same command, policy, files and session give the same answer every time, in about 10 ms. That makes the answer something you can check in advance, and something a cleverly worded injection cannot argue with.
+None of this uses an AI model. OpenMoat parses the shell, decodes, expands and resolves paths, then applies written rules. The same command, policy, files and session give the same answer every time. That makes the answer something you can check in advance, and something a cleverly worded injection cannot argue with.
 
 ## What it does not read
 

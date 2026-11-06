@@ -1,6 +1,6 @@
 ---
 title: "A repository policy"
-description: "Commit .moat/policy.yaml so everyone who works in a repository gets its deny and ask rules; trust its allow rules; review a change; check it in CI."
+description: "Commit .moat/policy.yaml so everyone who works in a repository gets its deny and review rules; trust its allow rules; review a change; check it in CI."
 sidebar:
   label: "Repository policy"
   order: 1
@@ -14,7 +14,7 @@ You maintain a repository and want rules for everyone who works in it, or you re
 
 </Aside>
 
-A repository's committed `.moat/policy.yaml` adds `deny` and `ask` rules for everyone who works in it, whatever agent they use; its `allow` rules apply only for a person who trusted that exact file, or where a key they trusted signed it. How it combines with each person's policy: [Repository policies](/docs/policy-file/repositories/).
+A repository's committed `.moat/policy.yaml` adds `deny` and `review` rules for everyone who works in it, whatever agent they use; its `allow` rules apply only for a person who trusted that exact file, or where a key they trusted signed it. How it combines with each person's policy: [Repository policies](/docs/policy-file/repositories/).
 
 ## Example
 
@@ -30,15 +30,15 @@ A repository's committed `.moat/policy.yaml` adds `deny` and `ask` rules for eve
      - id: no-prod-config
        reason: production settings stay with the release pipeline
        fs.write: ["${project}/deploy/prod/**"]
-   ask:
+   review:
      - id: migrations
        reason: database migrations change shared data
        shell: ["npm run migrate*"]
    ```
 
-   Only `version`, `deny`, `ask` and `allow` are accepted; `defaults`, `executables`, `sandbox` and any other key make the file invalid, and every call in the project is then denied (`kernel-error`) until it is fixed. The agent cannot write the file (`kernel-self` denies writes under `.moat/`): edit it yourself.
+   Only `version`, `deny`, `review` and `allow` are accepted (`ask`, the name before 0.14.0, is still read); `defaults`, `executables`, `sandbox` and any other key make the file invalid, and every call in the project is then denied (`kernel-error`) until it is fixed. The agent cannot write the file (`kernel-self` denies writes under `.moat/`): edit it yourself.
 
-2. **Everyone gets the deny and ask rules at once**
+2. **Everyone gets the deny and review rules at once**
 
    They apply to everyone who works in the repository, whatever agent they use, and show up as `repo:<id>`, such as `repo:no-prod-config`.
 
@@ -57,7 +57,7 @@ A repository's committed `.moat/policy.yaml` adds `deny` and `ask` rules for eve
 
 <Aside type="note">
 
-Any later change to the file drops it back to deny and ask only, until you trust it again. A file that does not parse denies every call in the project until it is fixed. Repository rules apply in the hook, not in the agents' OS sandboxes. Under `openmoat run`, the proxy also refuses the hosts a repository policy denies.
+Any later change to the file drops it back to deny and review only, until you trust it again. A file that does not parse denies every call in the project until it is fixed. Repository rules apply in the hook, not in the agents' OS sandboxes. Under `openmoat run`, the proxy also refuses the hosts a repository policy denies.
 
 </Aside>
 
@@ -72,7 +72,7 @@ Leave out `--policy`: with it, only the file you name decides, without your poli
 
 ## Review a change to it
 
-A pull request that edits `.moat/policy.yaml` drops the file back to deny and ask only, for everyone who trusted it, until each trusts it again. To review it:
+A pull request that edits `.moat/policy.yaml` drops the file back to deny and review only, for everyone who trusted it, until each trusts it again. To review it:
 
 ```bash
 git diff origin/main -- .moat/policy.yaml   # what the change adds
@@ -84,12 +84,14 @@ openmoat trust                              # shows the file, its digest and eve
 
 ## Check it in CI
 
-`openmoat policy check` exits `0` for allow or defer, `2` for deny and `3` for ask, so a CI job can assert what the repository's rules decide. On a runner, `openmoat init` without a terminal writes the default policy to `~/.moat` and changes no agent's files:
+`openmoat policy check` exits `0` for allow or defer, `2` for deny and `3` for an unresolved review, so a CI job can assert what the repository's rules decide. On a runner, `openmoat init` without a terminal writes the default policy to `~/.moat` and changes no agent's files:
 
 ```bash
 openmoat init                                         # default policy in ~/.moat; no agent is changed
-openmoat policy check "npm run migrate" --cwd .       # exits 3: ask, repo:migrations
+openmoat policy check "npm run migrate" --cwd .       # exits 3: review, repo:migrations
 openmoat policy check "$PWD/deploy/prod/app.yaml" --kind fs-write --cwd .   # exits 2: deny, repo:no-prod-config
 ```
 
 Install `openmoat` on the runner as in the [Quick start](/docs/quickstart/). A job that runs these in a shell with `set -e` stops at the first non-zero exit: check the code yourself, for example `openmoat policy check "npm run migrate" --cwd . || test $? -eq 3`. The runner decides with the default policy, not each person's, so it checks the repository's rules, not what a given person gets.
+
+To check every pull request for changes to CI workflows, git hooks, agent settings, `.env` files or added tokens, with the repository's rules read as the base branch has them, use `openmoat policy check-diff` and the GitHub Action: [Check a pull request](/docs/check-a-pull-request/).

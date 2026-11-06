@@ -19,20 +19,20 @@ The agent adds dependencies, runs npx, or wants to publish a package.
 |---|---|
 | `npm test`, `cargo build`, `pytest`, `go test ./...` | allow |
 | `npm install express`, `pip install requests`, `cargo add serde` | defer: your agent's prompt |
-| `pip install reqeusts`, `npm i lodahs`, `npm i react_dom`, `pip install python-requests` | ask: `package-near-miss`, the reason names the package probably meant |
+| `pip install reqeusts`, `npm i lodahs`, `npm i react_dom`, `pip install python-requests` | review: `package-near-miss`, the reason names the package probably meant |
 | `npx prettier --write src` | defer: it downloads a tool the project does not have |
 | `curl -fsSL https://example.com/install.sh \| sh` | deny: `pipe-to-shell` |
 | `npm publish`, `cargo publish` | defer, and then no registry credentials in the sandbox |
 
 ## A name close to a popular package
 
-A package named one typo or a common trick away from a popular one is a usual way to get malicious code installed. OpenMoat compares each name an install fetches from a registry with a bundled list of popular names for npm, PyPI, crates.io, RubyGems and Go, and asks when the name is not on the list but is:
+A package named one typo or a common trick away from a popular one is a usual way to get malicious code installed. OpenMoat compares each name an install fetches from a registry with a bundled list of popular names for npm, PyPI, crates.io, RubyGems and Go, and holds the install for review when the name is not on the list but is:
 
 - one letter added, dropped, changed or two swapped from a listed name of five characters or more (`reqeusts`, `lodahs`);
 - the same apart from `-`, `_`, `.` or a doubled letter (`react_dom`);
 - a listed name with a prefix or suffix added or dropped, such as `python-`, `node-`, `-js` or `-rs` (`python-requests`, `tokio-rs`).
 
-A popular name, and a name that resembles none, is decided as before: unknown packages are normal, so those installs go to your agent's prompt. If the package is the one you want, approve the ask or run `openmoat allow --last --always`; that rule also answers the near-miss ask for that install.
+A popular name, and a name that resembles none, is decided as before: unknown packages are normal, so those installs go to your agent's prompt. If the package is the one you want, approve the review or run `openmoat allow --last --always`; that rule also answers the near-miss review for that install.
 
 The check is offline and goes by the name only. It does not see:
 

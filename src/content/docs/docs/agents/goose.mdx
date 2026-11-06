@@ -1,0 +1,96 @@
+---
+title: "goose"
+description: "OpenMoat checks goose's tool calls through a PreToolUse hook in its own plugin, with on_failure: block. A review is a block you approve with openmoat allow --last."
+sidebar:
+  label: "goose"
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You use goose, the open-source agent from Block (the `goose` CLI or the desktop app), and want OpenMoat to check its tool calls. New in 0.14.0.
+
+</Aside>
+
+**Protection level:** hook only. OpenMoat writes no OS sandbox for goose; `openmoat run -- goose` runs the whole agent in one ([openmoat run](/docs/sandboxes/openmoat-run/)).
+
+## Set it up
+
+<Steps>
+
+1. **Write OpenMoat's plugin**
+
+   ```bash
+   openmoat init --hosts goose
+   ```
+
+   It writes `~/.agents/plugins/openmoat/hooks/hooks.json` with one `PreToolUse` entry for every tool, a 60-second timeout and `on_failure: block`, and pins the MCP extensions in goose's `config.yaml`. `openmoat init` without `--hosts` finds goose by its configuration directory (`~/.config/goose`, or `$XDG_CONFIG_HOME/goose`; `GOOSE_PATH_ROOT` moves it) and asks first.
+
+2. **Restart goose**
+
+   goose loads plugins once, when it starts. Restart the CLI or the desktop app.
+
+3. **Check it**
+
+   ```bash
+   openmoat status
+   ```
+
+   goose's line says `hook only`, or `not protected` with the reason.
+
+</Steps>
+
+## What OpenMoat sees
+
+| goose tool | Checked as |
+|---|---|
+| `shell` | a shell command (on Windows, where goose runs `cmd` or `GOOSE_SHELL`, the command is not parsed, so OpenMoat never allows it) |
+| `write`, `edit` | a file write |
+| `tree`, `analyze` | a file read |
+| `read_image` | a fetch for an http(s) URL, else a file read |
+| extension tools (`<extension>__<tool>`) | an MCP tool, recorded as `mcp__<extension>__<tool>` |
+| `load`, `delegate`, `load_skill` and any other tool | every path, URL and command its arguments name; a `delegate` subagent's own calls go through the hook too |
+| Code Mode's `execute_javascript` | needs review: the tool calls a script makes skip the hook |
+
+goose has no file read or fetch tool of its own; it reads through `shell`. goose asks for its own approval (`GOOSE_MODE`) before it runs the hook.
+
+## When a call needs review
+
+goose's hooks cannot prompt, so a review reaches goose as a block whose reason says how to approve it. In your own terminal:
+
+```bash
+openmoat allow --last            # that exact call, for the rest of the goose session
+openmoat allow --last --always   # or a permanent rule
+```
+
+Then ask goose to try again. The audit log keeps the review.
+
+## What the default policy protects
+
+- `kernel-self` keeps the agent from changing goose's `config.yaml`, its plugin settings and every `.agents/plugins` directory.
+- `agent-credentials` covers `secrets.yaml`, where goose keeps provider keys when its keyring is off (`GOOSE_DISABLE_KEYRING`).
+- Session taint covers `.goosehints` and saved recipes: after the session read a web page or an MCP result, writing them needs review.
+
+## If the hook fails
+
+With `on_failure: block`, goose blocks the call when the hook cannot start, times out, gets no payload, exits non-zero without a block or prints anything but a decision. On Windows goose needs `sh` on the search path to run any hook; without it every call is blocked.
+
+goose runs every call unchecked when it does not load OpenMoat's plugin: `disabledPlugins` naming `openmoat` in `~/.config/goose/settings.json` (or a project's `.config/goose/settings.json` or `settings.local.json`), `enabled: false` for it under `plugins` in `config.yaml`, a project plugin named `openmoat` that replaces it, or a `hooks.json` goose cannot read. `openmoat status` reports a `disabledPlugins` entry as not protected.
+
+From 0.15.0, `openmoat status` and `openmoat doctor` also report goose **not protected** in a directory whose `.agents/plugins/openmoat` replaces OpenMoat's plugin (any hook file but a byte-for-byte copy of OpenMoat's), name the directory to remove, and warn about the hooks of the project's other plugins:
+
+```bash
+cd ~/work/app
+openmoat status    # goose: not protected, with the directory to remove
+```
+
+## Limits
+
+- No OS sandbox from OpenMoat: an allowed command runs with your permissions, and a script the session wrote needs review before it runs ([Code the agent wrote](/docs/session-written-code/)).
+- What a Code Mode script does is not checked; the `execute_javascript` call itself needs review.
+- A project's `.agents/plugins/` can add hooks or replace OpenMoat's plugin. `openmoat status` and `openmoat doctor` report it for the directory they run in.
+- `list_functions` and `get_function_details` are not checked. The Windows shell is left to goose.
+- With `GOOSE_PATH_ROOT`, the moved plugin is pinned by the lock but not named in the default policy. A changed `hooks.json` is caught on the next call.
+
+Every agent side by side: [Supported agents](/docs/agents/).

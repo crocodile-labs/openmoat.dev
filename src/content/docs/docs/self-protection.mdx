@@ -12,10 +12,13 @@ import { Aside } from '@astrojs/starlight/components';
 ## What it does
 
 - **`kernel-self` (deny).** The agent may not write `~/.moat`, any `.moat/` folder, the agents' hook and settings files, or the `openmoat` binary, and may not read OpenMoat's state beside the policy: `audit.db`, `policy.lock`, `hosts.json`, `approvals.json`, `trust.json`, `allowed_signers`, `mcp/`, and from 0.12.0 `proxy.key` (the key `openmoat proxy` checks session credentials with) and `proxy-ca/` (the proxy CA's key and certificate). `~/.moat/policy.yaml` stays readable, so the agent can explain a deny. The commands that change what agents may do are denied to it too, by either name (`openmoat`, `moat`), by absolute path, through a link, and under terminal wrappers (`script`, `expect`, `unbuffer`, `tmux`, `screen`, `osascript`, Python's `pty.spawn`). From 0.12.0 the read-only forms are allowed (`openmoat-readonly`): `openmoat --help`, `--version`, `<command> --help`, `policy lint FILE`, `policy check …` and `demo` read no state and change nothing, so an agent may run them to explain a verdict.
+- **Editors count as writes** (from 0.15.0). `vi`, `vim`, `nvim`, `nano`, `emacs` and `code` save the file they open, so `vim /usr/local/bin/openmoat` and `nano ~/.moat/policy.yaml` are denied by `kernel-self` as writing them is.
+- **The hook's own entry points** (from 0.15.0). Only a host runs `openmoat guard` and `openmoat mcp proxy`, so an agent running them from its own shell tool is denied (`kernel-self`): it cannot write audit rows, MCP tickets or a session's proxy credential for calls it made up. `--help` still works.
+- **The agents' own hook places.** `kernel-self` also covers the Cline CLI's hook and plugin directories (and `~/Documents/Cline/Hooks`) and goose's configuration, its plugin settings and every `.agents/plugins` directory, so an agent cannot add, change or remove a hook there.
 - **Person-only commands.** Those commands also refuse to run when an agent started them, even through a terminal wrapper, and read your answer from the terminal itself, not from their input.
-- **The policy lock (`kernel-integrity`).** `openmoat init` records the SHA-256 of the policy, every hook file it installed and the agents' settings in `~/.moat/policy.lock`. Every call checks them; a pinned file changed, removed or replaced by a symlink without a person accepting it (**drift**) denies every call until you re-pin. `openmoat edit`, `openmoat allow` and `openmoat trust` re-pin after their own change.
+- **The policy lock (`kernel-integrity`).** `openmoat init` records the SHA-256 of the policy, every hook file it installed and the agents' settings in `~/.moat/policy.lock`. Every call checks them; a pinned file changed, removed or replaced by a symlink without a person accepting it (**drift**) denies every call until you re-pin. `openmoat edit`, `openmoat allow` and `openmoat trust` re-pin after their own change. From 0.15.0, `openmoat allow --last` and `openmoat policy upgrade` (and `--undo`) refuse to re-pin when a pinned file or the lock changed while they waited for your answer, so a change made meanwhile is never pinned unseen.
 - **Pinned programs (`executables`).** `openmoat init` records where common programs (`git`, `npm`, `node`, `python3`, `cargo`, `curl`, `ssh`, `sudo`, …) resolve. A command whose program now resolves elsewhere (a `git` planted in `node_modules/.bin`) is denied.
-- **It fails closed.** If its own check errors or hangs, OpenMoat blocks the call (`kernel-error`, or `no decision within 30 s`).
+- **It fails closed.** If its own check errors or hangs, OpenMoat blocks the call (`kernel-error`, or `no decision within 30 s`), in the format of the event it was given (a `ConfigChange` is blocked as one).
 
 ## Example
 
@@ -23,11 +26,12 @@ import { Aside } from '@astrojs/starlight/components';
 |---|---|---|
 | `openmoat allow --last` | deny | `kernel-self` |
 | `cat ~/.moat/audit.db`, `sqlite3 -readonly ~/.moat/audit.db` | deny | `kernel-self` |
-| `echo x >> ~/.moat/policy.yaml` | deny | `kernel-self` |
+| `echo x >> ~/.moat/policy.yaml`, `nano ~/.moat/policy.yaml` | deny | `kernel-self` |
+| `openmoat guard --host claude-code`, `openmoat mcp proxy …` | deny | `kernel-self` |
 | `cat ~/.moat/proxy.key`, `cat ~/.moat/proxy-ca/ca.key` | deny | `kernel-self` |
 | `systemctl --user stop moat-proxy` | deny | `kernel-self` |
-| `pkill -f 'openmoat proxy'`, `killall moat` | ask | `stops-openmoat` |
-| `pkill -f my-server.js` | no ask: the pattern cannot match `openmoat` or `moat` | |
+| `pkill -f 'openmoat proxy'`, `killall moat` | review | `stops-openmoat` |
+| `pkill -f my-server.js` | no review: the pattern cannot match `openmoat` or `moat` | |
 | `openmoat --help`, `openmoat policy check 'rm -rf ~'` | allow | `openmoat-readonly` |
 
 When anything edits a pinned file behind OpenMoat's back, every call gets:
@@ -63,7 +67,7 @@ Self-protection has no switch. `executables:` adds pins of your own ([Shell comm
 
 ## Limits
 
-- **The lock is a list of digests, with no key.** A program that runs as you outside any sandbox can change the policy and write new digests. Only an OS sandbox stops that, so hook-only agents (OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, and Claude Code and Cursor on native Windows) do not have this protection.
+- **The lock is a list of digests, with no key.** A program that runs as you outside any sandbox can change the policy and write new digests. Only an OS sandbox stops that, so hook-only agents (OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, the Cline CLI, goose, and Claude Code and Cursor on native Windows) do not have this protection.
 - **Agent settings can turn hooks off** (`disableAllHooks`, `[features] hooks = false`, pi's `--no-extensions`), and a repository's `.claude/settings.json` is loaded at session start, before any hook runs ([Keep Claude Code's hooks on for everyone](/docs/team-rules/#keep-claude-codes-hooks-on-for-everyone)).
 - **Some agents run a call when the hook fails**: Codex, and Claude Code before 2.1.295, if `openmoat` is missing or crashes.
 - **A root user or a replaced `openmoat` binary** is out of scope.

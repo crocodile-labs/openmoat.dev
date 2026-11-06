@@ -10,7 +10,7 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 
 | Command | What it does | Example |
 |---|---|---|
-| `openmoat allow --last` | Allow the last ask for the rest of that agent session (24 h; a command only in the project it was asked in). Shows the call and asks `Approve it? [y/N]`. **Terminal** | `openmoat allow --last` |
+| `openmoat allow --last` | Allow the last review for the rest of that agent session (24 h; a command only in the project it was held in). Shows the call and asks `Approve it? [y/N]`. **Terminal** | `openmoat allow --last` |
 | `openmoat allow --last --always` | A permanent rule for exactly that command or those files, in `~/.moat/policy.d/approved.yaml`. **Terminal** | `openmoat allow --last --always` |
 | `openmoat allow "<command>" --always` | A permanent rule for a command you name. **Terminal** | `openmoat allow "make deploy-docs" --always` |
 | `openmoat allow "<command>" --host <id> --session <id> [--project <dir>]` | A session grant for a command you name. **Terminal** | `openmoat allow "git config core.pager less" --host claude-code --session 4f2a…` |

@@ -82,7 +82,7 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
 
 6. **Restart your agents**
 
-   An agent keeps the hook and sandbox it read when its session started. Start a new session; restart OpenClaw's Gateway, pi, OpenCode (OpenCode 2: `opencode service restart`) and Hermes Agent with its gateway. OpenClaw, pi and OpenCode report that they loaded OpenMoat's plugin only from a start after the upgrade: `openmoat status` says "plugin not loaded yet" until then. After `openmoat init` rewrote Codex's hook entry, trust it again in Codex's `/hooks`.
+   An agent keeps the hook and sandbox it read when its session started. Start a new session; restart OpenClaw's Gateway, pi, OpenCode (OpenCode 2: `opencode service restart`) Hermes Agent with its gateway, and goose. OpenClaw, pi and OpenCode report that they loaded OpenMoat's plugin only from a start after the upgrade: `openmoat status` says "plugin not loaded yet" until then. After `openmoat init` rewrote Codex's hook entry, trust it again in Codex's `/hooks`.
 
 </Steps>
 
@@ -105,7 +105,8 @@ Until you do, the old hooks keep working through `moat`. `openmoat doctor` says 
 
 | Upgrading to | Run |
 |---|---|
-| [0.14.0](/docs/releases/v0-14-0/) | `openmoat policy upgrade` (renames `ask` to `review`, adds `card-egress`); `openmoat init` once for goose or the Cline CLI; scripts reading JSON: `asked`/`top_asks` are now `reviewed`/`top_reviews` |
+| [0.15.0](/docs/releases/v0-15-0/) | `openmoat policy upgrade` (card ids no longer denied, git hook folders and Cline's workspace hooks need review, `git config <name>` reads allowed, `openmoat guard` from an agent denied); Codex users: `openmoat init` again, then trust OpenMoat's hook in Codex's `/hooks` |
+| [0.14.0](/docs/releases/v0-14-0/) | `openmoat policy upgrade` (renames `ask` to `review`, adds `card-egress`); `openmoat init` once for goose or the Cline CLI; scripts reading JSON: `asked`/`top_asks` are now `reviewed`/`top_reviews` ([Upgrading from ask to review](/docs/upgrade/ask-to-review/)) |
 | [0.13.0](/docs/releases/v0-13-0/) | If you wrap MCP servers: `openmoat mcp accept <server>` for any whose definition is new or changed; re-wrap to turn the sandbox on |
 | [0.12.1](/docs/releases/v0-12-1/) | Codex users: `openmoat init` once, then trust the OpenMoat hook in Codex's `/hooks` |
 | [0.12.0](/docs/releases/v0-12-0/) | `openmoat init` once (Claude Code's `SessionStart` hook for `openmoat proxy`), then `openmoat policy upgrade` (`encoded-egress`, `destructive-recoverable`, `openmoat-readonly`, the proxy key and CA under `kernel-self`, new `env-poison` names) and restart the agents; keep one OpenMoat installed (audit log schema 7) |

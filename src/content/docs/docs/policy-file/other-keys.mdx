@@ -1,6 +1,6 @@
 ---
 title: "Other keys"
-description: "executables, sandbox, secrets, taint, require_signed_repo_policy and mcp."
+description: "executables, sandbox, secrets, taint, require_signed_repo_policy and mcp, and the @pii-egress atoms a shell rule can name."
 sidebar:
   label: "Other keys"
   order: 3
@@ -20,5 +20,20 @@ mcp:
 ```
 
 See [OS sandboxes](/docs/sandboxes/#settings), [Token broker](/docs/keep-tokens-safe/), [Session taint](/docs/session-taint/#settings), [Signed policy packs](/docs/team-rules/policy-packs/#require-a-signature-on-repository-policies) and [MCP](/docs/mcp-servers/).
+
+## Atoms a shell rule can name
+
+Some checks turn what they find into an atom, a word a `shell` pattern can match like a command. Personal data on its way out is one: a payment card number becomes `@pii-egress card <host>` (the default rule `card-egress` denies it), and ten or more distinct mail addresses in one send become `@pii-egress emails <host>`, which no default rule names, so they change no decision. To act on mail lists, add a rule for them:
+
+```yaml
+review:
+  - id: mail-list-egress
+    reason: sends a list of mail addresses off this machine
+    shell: ["@pii-egress emails *"]
+```
+
+Use `deny:` instead to refuse them. Details: [Card numbers sent out](/docs/env-files/card-numbers/).
+
+## Reserved keys
 
 `approval:` and `scope:` (`project_roots`) are reserved: older policy files that set them stay valid, they have no effect yet, and `openmoat policy lint` says so. Unknown keys are errors.

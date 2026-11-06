@@ -1,6 +1,6 @@
 ---
 title: "Audit and diagnostic commands"
-description: "openmoat replay, report and audit; openmoat doctor, bench and guard."
+description: "openmoat replay, report and audit (export, verify, anchor, report, evidence); openmoat doctor, bench and guard."
 sidebar:
   label: "Audit and diagnostics"
   order: 6
@@ -13,14 +13,15 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 | Command | What it does | Example |
 |---|---|---|
 | `openmoat replay [--since <when>] [--session <id>]` | Each agent session as a timeline | `openmoat replay --since today` |
-| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts, top rules, asks per hour | `openmoat report --since 7d` |
+| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts, top rules, reviews per active hour | `openmoat report --since 7d` |
 | `openmoat audit export [--since <when>] [--host <id>] [--session <id>]` | Events as JSON Lines with their chain hashes, on stdout | `openmoat audit export --since 7d > week.jsonl` |
 | `openmoat audit verify <file> [--anchor <hash>] [--require-anchor]` | Check an export without the database | `openmoat audit verify week.jsonl` |
 | `openmoat audit verify --against <repo or file>` | Check the log against every anchor there; fails, naming the first anchor whose event is gone or changed | `openmoat audit verify --against ~/notes` |
 | `openmoat audit anchor --git <repo>` · `--file <path>` | Record the log's head outside it; nothing is sent anywhere. **Terminal** | `openmoat audit anchor --file ~/anchors.jsonl` |
 | `openmoat audit report <file>…` | One report over verified exports from several machines | `openmoat audit report alice.jsonl bob.jsonl` |
+| `openmoat audit evidence [--since <when>] [--until <when>] [--host <id>] [--samples N] [--format json]` | Evidence for a window per control of OWASP Top 10 for LLM Applications 2025, SOC 2 (CC6 to CC8) and ISO/IEC 27001:2022 Annex A: rules that fired, decisions by verdict, redacted samples, the chain head, and the policy, lock and protections now. Evidence, not a certification ([Compliance evidence](/docs/compliance-evidence/)) | `openmoat audit evidence --since 90d > evidence.md` |
 
-`--since` takes `all`, `today`, `yesterday`, `12h`, `7d`, `2w` or a date (`2026-10-15`, UTC). Most commands take `--format json`. See [Audit log](/docs/see-what-happened/).
+`--since` takes `all`, `today`, `yesterday`, `12h`, `7d`, `2w` or a date (`2026-10-15`, UTC); `audit evidence` also takes `--until`, in the same forms, for the end of the window (not included). Most commands take `--format json`. See [Audit log](/docs/see-what-happened/).
 
 ## Diagnostics
 

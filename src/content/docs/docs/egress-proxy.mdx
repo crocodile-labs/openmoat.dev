@@ -15,7 +15,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 Where it differs from the hook:
 
-- **It cannot ask.** Only an allow lets a connection through: a host the hook would ask about, or leave to your agent's prompt, is refused. Open a host with `openmoat allow --site <host>`.
+- **It cannot prompt.** Only an allow lets a connection through: a host the hook would hold for review, or leave to your agent's prompt, is refused. Open a host with `openmoat allow --site <host>`.
 - **Ports count.** A host allowed without a port is reached on 443 and 80 only; a rule `host:port` opens another port (`proxy-port`).
 - **Loopback, link-local, cloud metadata** (`169.254.169.254`, `metadata.google.internal`, …) and non-unicast destinations are refused whatever the policy allows, by the name and by every address it resolves to (`proxy-address`).
 - **Private addresses** (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, `fc00::/7`, …) are refused unless a rule names the address: `10.0.0.5`, or a glob that starts with a digit (`192.168.1.*`). There is no CIDR syntax.
@@ -35,7 +35,7 @@ curl -fsS -o /dev/null -m 30 http://evil.example/
 The proxy answers `403 Forbidden`, in every layer CI checks ([EVIDENCE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/EVIDENCE.md)). The body names the reason and the rule:
 
 ```text
-moat proxy: … the proxy cannot ask, so a host the hook would ask for or leave to the agent is refused (…)
+moat proxy: … the proxy cannot prompt, so a host the hook would hold for review or leave to the agent is refused (…)
 ```
 
 An allowed host on another port:
@@ -57,7 +57,7 @@ Every refusal is a row in the audit log: `openmoat show --since today`.
 | `openmoat proxy uninstall` | Stop and remove the service. Terminal only | `openmoat proxy uninstall` |
 | `openmoat sandbox sync` | Point the agents' sandboxes at the proxy after you set `sandbox.proxy_port`; restarts the service so it reads the new policy | `openmoat sandbox sync` |
 
-The agent cannot stop the service: `systemctl --user stop moat-proxy`, `launchctl bootout …/dev.openmoat.proxy` and the like are denied (`kernel-self`), and `pkill` or `killall` naming `moat` asks (`stops-openmoat`).
+The agent cannot stop the service: `systemctl --user stop moat-proxy`, `launchctl bootout …/dev.openmoat.proxy` and the like are denied (`kernel-self`), and `pkill` or `killall` naming `moat` needs review (`stops-openmoat`).
 
 ## Settings
 

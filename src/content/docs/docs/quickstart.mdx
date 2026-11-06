@@ -7,6 +7,7 @@ sidebar:
 ---
 
 import { Aside, CardGrid, LinkCard, Steps, TabItem, Tabs } from '@astrojs/starlight/components';
+import { agents } from '../../../data/agents';
 
 <Aside type="note" title="Read this when">
 
@@ -48,7 +49,7 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
    </TabItem>
    <TabItem label="Cargo">
 
-   From crates.io, with Rust 1.95.
+   From crates.io, with Rust 1.99 or later.
 
    ```bash
    cargo install openmoat --locked
@@ -65,7 +66,7 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
    openmoat init
    ```
 
-   `openmoat init` writes the default policy to `~/.moat`, then lists the agents it finds (Claude Code, Codex, Cursor, OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent) and asks once for each, after one line per file it would change (`d` shows the full diff; the line counts below are an example):
+   `openmoat init` writes the default policy to `~/.moat`, then lists the agents it finds ({agents.map((a) => a.name).join(', ')}) and asks once for each, after one line per file it would change (`d` shows the full diff; the line counts below are an example):
 
    ```text
    Found these agents:
@@ -86,7 +87,7 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
 
    Hooks are read when a session starts, so open a new one. Then work as usual: most calls run exactly as before.
 
-   Codex runs a new hook only after you trust it in its `/hooks` view. Restart OpenClaw's Gateway, and pi. What each agent's hook covers: [Supported agents](/docs/agents/).
+   Codex runs a new hook only after you trust it in its `/hooks` view. Restart OpenClaw's Gateway, pi and goose (the CLI or the desktop app); the Cline CLI runs the hook from its next session. What each agent's hook covers: [Supported agents](/docs/agents/).
 
 4. **Check that it works**
 
@@ -108,10 +109,10 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
 
 5. **When something is blocked**
 
-   The agent shows the rule and the reason, for example `moat: deny [default.net] — no rule matched net docs.rs` or `moat: ask [git-internals] — …`. Find the message in [Something was blocked](/docs/blocked/) and run the command next to it in your own terminal:
+   The agent shows the rule and the reason, for example `moat: deny [default.net] — no rule matched net docs.rs` or `moat: review [git-internals] — …`. Find the message in [Something was blocked](/docs/blocked/) and run the command next to it in your own terminal:
 
    ```bash
-   openmoat allow --last            # the call you were just asked about, for this agent session
+   openmoat allow --last            # the call just held for review, for this agent session
    openmoat allow --site docs.rs    # a host, for good
    openmoat allow --dir ~/work/lib  # a folder outside the project, for good
    ```
@@ -132,6 +133,6 @@ You are setting OpenMoat up for the first time on a machine. Already have 0.7 or
 
 <Aside type="tip" title="Run openmoat anytime">
 
-`openmoat` alone shows which agents are protected, today's decisions, and anything that needs you, such as a pending ask.
+`openmoat` alone shows which agents are protected, today's decisions, and anything that needs you, such as a pending review.
 
 </Aside>

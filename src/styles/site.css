@@ -9,7 +9,7 @@ body { font-family: 'Geist Sans', system-ui, sans-serif; color: var(--fg); line-
     --fg: #ededed; --fg-strong: #ffffff; --fg-2: #d4d4d4;
     --muted: #a3a3a3; --muted-2: #8a8a8a; --faint: #4a4a4a;
     --accent: #7fd88f; --on-accent: #0a0a0a;
-    --ask: #f2c14e; --deny: #ff8a7a; --defer: #8ab4f8;
+    --review: #f2c14e; --deny: #ff8a7a; --defer: #8ab4f8;
   }
   :root[data-theme='light'] {
     color-scheme: light;
@@ -20,7 +20,7 @@ body { font-family: 'Geist Sans', system-ui, sans-serif; color: var(--fg); line-
     --fg: #171717; --fg-strong: #000000; --fg-2: #262626;
     --muted: #525252; --muted-2: #6b6b6b; --faint: #a3a3a3;
     --accent: #1f7a3c; --on-accent: #ffffff;
-    --ask: #9a6400; --deny: #b42318; --defer: #2457c5;
+    --review: #9a6400; --deny: #b42318; --defer: #2457c5;
   }
   body { margin: 0; background: var(--bg); }
   .theme-toggle { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--line-2); border-radius: 8px; background: transparent; color: var(--fg); cursor: pointer; }
@@ -33,8 +33,15 @@ body { font-family: 'Geist Sans', system-ui, sans-serif; color: var(--fg); line-
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .tab { font-family: 'Geist Mono', monospace; font-size: 13px; padding: 8px 14px; border-radius: 6px; border: 0; cursor: pointer; min-height: 36px; background: transparent; color: var(--muted-2); }
   .tab[aria-selected='true'] { background: var(--panel-2); color: var(--fg); }
+  .agent-row code { font-family: 'Geist Mono', monospace; color: var(--fg-2); }
   @media (max-width: 760px) {
     [style*="repeat(4, minmax(0, 1fr))"], [style*="repeat(5, minmax(0, 1fr))"], [style*="repeat(3, minmax(0, 1fr))"] { grid-template-columns: 1fr !important; }
     main section { padding-left: 20px !important; padding-right: 20px !important; }
+    /* grids and notes that sit between sections, outside their padding */
+    main > .edge { margin-left: 20px !important; margin-right: 20px !important; }
+    /* "What it stops": one row per item, stacked (name, example, verdict), no sideways scroll */
+    .stops { min-width: 0 !important; }
+    .stops > div { grid-template-columns: 1fr !important; padding: 6px 0; }
+    .stops > div > * { padding-top: 4px !important; padding-bottom: 4px !important; }
     h1 { font-size: 40px !important; }
   }

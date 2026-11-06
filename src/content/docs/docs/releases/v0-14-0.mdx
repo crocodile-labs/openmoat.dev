@@ -3,7 +3,7 @@ title: "OpenMoat 0.14.0"
 description: "Card numbers sent off the machine are denied, a pull request check and GitHub Action, compliance evidence from the audit log, goose and the Cline CLI, and the ask verdict is now called review."
 sidebar:
   label: "0.14.0"
-  order: 1
+  order: 2
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -19,20 +19,20 @@ Released 2026-11-05. [GitHub release v0.14.0](https://github.com/crocodile-labs/
 - **New agents:** run `openmoat init` once to protect goose or the Cline CLI.
 - **Library crates:** `Verdict::Ask` is `Verdict::Review` (and the items named after it), and `Host` gains `Cline` and `Goose`. See the [changelog](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md).
 
-Every step after an upgrade: [Upgrade](/docs/upgrade/).
+Every step after an upgrade: [Upgrade](/docs/upgrade/). The rename step by step: [Upgrading from ask to review](/docs/upgrade/ask-to-review/).
 
 </Aside>
 
 ## Security
 
-- **Card numbers stay on the machine.** A payment card number in what a call sends (a URL a fetch, network or MCP tool opens, a web search, or a command that connects to a host such as `curl -d` or a pipe into `curl`) is denied (`card-egress`). A number counts only if it has a card brand's prefix and length and passes the Luhn check. Sends to this machine and the test numbers payment processors publish are left out; file contents and encoded data are not read. A list of 10 or more mail addresses in one send can be denied or held for review by adding a rule for `@pii-egress emails *`; no default rule does ([#719](https://github.com/crocodile-labs/openmoat/pull/719)).
+- **Card numbers stay on the machine.** A payment card number in what a call sends (a URL a fetch, network or MCP tool opens, a web search, or a command that connects to a host such as `curl -d` or a pipe into `curl`) is denied (`card-egress`). A number counts only if it has a card brand's prefix and length and passes the Luhn check. Sends to this machine and the test numbers payment processors publish are left out; file contents and encoded data are not read. Ten or more distinct mail addresses in one send become the atom `@pii-egress emails <host>`, which no default rule names; a rule for `@pii-egress emails *` denies them or holds them for review ([Card numbers sent out](/docs/env-files/card-numbers/)) ([#719](https://github.com/crocodile-labs/openmoat/pull/719)).
 
 ## Added
 
-- **Check a pull request before merge.** `openmoat policy check-diff --base main` decides every file a change adds, edits, deletes or renames with the policy's own rules: CI workflows, git hooks, build and package files and agent settings are reported for `review`, what the policy denies an agent (`.claude/settings.json`, `.env`, `.moat/`) as `deny`, and added lines holding a known token format are reported too. The policy is read as the base branch has it, so a change cannot loosen its own check. A GitHub Action (`action.yml` in the repository) runs it on pull requests with a checked release ([#717](https://github.com/crocodile-labs/openmoat/pull/717)).
-- **Compliance evidence from the audit log.** `openmoat audit evidence` reports, per control of the OWASP Top 10 for LLM Applications 2025, SOC 2 (CC6 to CC8) and ISO/IEC 27001:2022 Annex A, which rules fired, decisions by verdict, redacted sample events, the hash chain, the policy hash and each agent's protection level. It is evidence, not a certification ([#718](https://github.com/crocodile-labs/openmoat/pull/718)).
-- **goose is supported.** `openmoat init` writes OpenMoat's goose plugin with `on_failure: block`, so a hook that fails blocks the call. goose cannot prompt, so a review is a block you approve with `openmoat allow --last` ([#715](https://github.com/crocodile-labs/openmoat/pull/715)).
-- **The Cline CLI is supported.** `openmoat init --hosts cline` writes OpenMoat's hook script, which blocks the call itself when `openmoat` is missing or does not answer. The Cline VS Code extension, `--yolo` runs and native Windows are not covered ([#716](https://github.com/crocodile-labs/openmoat/pull/716)).
+- **Check a pull request before merge.** `openmoat policy check-diff --base main` decides every file a change adds, edits, deletes or renames with the policy's own rules: CI workflows, git hooks, build and package files and agent settings are reported for `review`, what the policy denies an agent (`.claude/settings.json`, `.env`, `.moat/`) as `deny`, and added lines holding a known token format are reported too. The policy is read as the base branch has it, so a change cannot loosen its own check. A GitHub Action (`action.yml` in the repository) runs it on pull requests with a checked release ([Check a pull request](/docs/check-a-pull-request/)) ([#717](https://github.com/crocodile-labs/openmoat/pull/717)).
+- **Compliance evidence from the audit log.** `openmoat audit evidence` reports, per control of the OWASP Top 10 for LLM Applications 2025, SOC 2 (CC6 to CC8) and ISO/IEC 27001:2022 Annex A, which rules fired, decisions by verdict, redacted sample events, the hash chain, the policy hash and each agent's protection level. It is evidence, not a certification ([Compliance evidence](/docs/compliance-evidence/)) ([#718](https://github.com/crocodile-labs/openmoat/pull/718)).
+- **goose is supported.** `openmoat init` writes OpenMoat's goose plugin with `on_failure: block`, so a hook that fails blocks the call. goose cannot prompt, so a review is a block you approve with `openmoat allow --last` ([goose](/docs/agents/goose/)) ([#715](https://github.com/crocodile-labs/openmoat/pull/715)).
+- **The Cline CLI is supported.** `openmoat init --hosts cline` writes OpenMoat's hook script, which blocks the call itself when `openmoat` is missing or does not answer. The Cline VS Code extension, `--yolo` runs and native Windows are not covered ([Cline CLI](/docs/agents/cline/)) ([#716](https://github.com/crocodile-labs/openmoat/pull/716)).
 
 ## Changed
 

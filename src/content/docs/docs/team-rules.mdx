@@ -18,7 +18,7 @@ Your team wants the same guard rails in a repository or in every project, or a r
 
 ## What it does
 
-A repository's committed `.moat/policy.yaml` adds `deny` and `ask` rules for everyone who works in it, whatever agent they use; its `allow` rules apply only for a person who trusted that exact file, or where a key they trusted signed it. A signed policy pack carries a team's rules into every project. Neither can weaken your own deny rules. How the two combine with your policy: [Repository policies](/docs/policy-file/repositories/).
+A repository's committed `.moat/policy.yaml` adds `deny` and `review` rules for everyone who works in it, whatever agent they use; its `allow` rules apply only for a person who trusted that exact file, or where a key they trusted signed it. A signed policy pack carries a team's rules into every project. Neither can weaken your own deny rules. How the two combine with your policy: [Repository policies](/docs/policy-file/repositories/).
 
 <CardGrid>
   <LinkCard title="A repository policy" href="/docs/team-rules/repository-policy/" description="Write it, trust its allow rules, review a change, check it in CI." />

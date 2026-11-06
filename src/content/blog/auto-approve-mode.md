@@ -3,6 +3,7 @@ title: What still stops a bad command when your agent runs without prompts
 description: Auto-approve modes remove the one moment you could say no. Here is what OpenMoat still blocks there, and what it does not.
 summary: "--dangerously-skip-permissions, Run Everything, CI and background agents: what still stops a bad command when nobody answers a prompt."
 date: 2026-10-15T09:00:00Z
+notice: "Since OpenMoat 0.14.0, the verdict this post calls ask is named review, and policies say review: (a policy that says ask: still works)."
 author: Dhanasekaran Kathiresan
 authorUrl: https://github.com/iamdotk
 avatar: /assets/dhanasekaran.jpg
