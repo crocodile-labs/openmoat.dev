@@ -16,10 +16,11 @@ A new release is out and you want to know what changed, or whether you need to r
 
 Latest first. Each page starts with an **Upgrading** box (what to run after installing it), then the changes grouped as in the [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md): Security, Added, Changed, Fixed. Changes that need action or break something are marked **Breaking**. How to upgrade: [Upgrade](/docs/upgrade/).
 
-Latest: [0.14.0](/docs/releases/v0-14-0/) (2026-11-05). Releases before 0.14.0 call the `review` verdict `ask`; their pages keep the name they shipped with ([Upgrading from ask to review](/docs/upgrade/ask-to-review/)).
+Latest: [0.15.0](/docs/releases/v0-15-0/) (2026-11-05). Releases before 0.14.0 call the `review` verdict `ask`; their pages keep the name they shipped with ([Upgrading from ask to review](/docs/upgrade/ask-to-review/)).
 
 | Release | Date | Headline |
 |---|---|---|
+| [0.15.0](/docs/releases/v0-15-0/) | 2026-11-05 | Codex and Cursor decide a command from the session's project, Codex's `read_mcp_resource` and `view_image` are checked, card ids are no longer denied, git hook folders and Cline's workspace hooks need review, editors count as writes, and more passwords are masked in the audit log. Run `openmoat policy upgrade`; Codex: `openmoat init` again. |
 | [0.14.0](/docs/releases/v0-14-0/) | 2026-11-05 | Card numbers sent off the machine are denied, a pull request check and GitHub Action, compliance evidence from the audit log, goose and the Cline CLI, and `ask` is now called `review`. |
 | [0.13.0](/docs/releases/v0-13-0/) | 2026-11-03 | A wrapped MCP server starts only from a definition you accepted, wrapped servers run in the sandbox by default, and status and doctor list the servers that start outside OpenMoat. |
 | [0.12.1](/docs/releases/v0-12-1/) | 2026-10-31 | Codex's tool calls are checked again: the hook runs the guard as one command, and an allowed call no longer shows as a failed hook. |

@@ -105,6 +105,7 @@ Until you do, the old hooks keep working through `moat`. `openmoat doctor` says 
 
 | Upgrading to | Run |
 |---|---|
+| [0.15.0](/docs/releases/v0-15-0/) | `openmoat policy upgrade` (card ids no longer denied, git hook folders and Cline's workspace hooks need review, `git config <name>` reads allowed, `openmoat guard` from an agent denied); Codex users: `openmoat init` again, then trust OpenMoat's hook in Codex's `/hooks` |
 | [0.14.0](/docs/releases/v0-14-0/) | `openmoat policy upgrade` (renames `ask` to `review`, adds `card-egress`); `openmoat init` once for goose or the Cline CLI; scripts reading JSON: `asked`/`top_asks` are now `reviewed`/`top_reviews` ([Upgrading from ask to review](/docs/upgrade/ask-to-review/)) |
 | [0.13.0](/docs/releases/v0-13-0/) | If you wrap MCP servers: `openmoat mcp accept <server>` for any whose definition is new or changed; re-wrap to turn the sandbox on |
 | [0.12.1](/docs/releases/v0-12-1/) | Codex users: `openmoat init` once, then trust the OpenMoat hook in Codex's `/hooks` |
