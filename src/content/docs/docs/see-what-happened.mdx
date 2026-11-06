@@ -99,6 +99,21 @@ The log is a SQLite file in `~/.moat`. Credentials are redacted before anything 
 
 </Aside>
 
+## Passwords and keys in commands
+
+A command is stored with its passwords and keys masked. From 0.15.0 that also covers:
+
+| In the command | Masked |
+|---|---|
+| `mysql -p<password>`, `sshpass -p`, `docker login -p`, `redis-cli -a`, `zip -P`, `htpasswd -b` | the password |
+| `openssl -k`, `-pass pass:` | the passphrase |
+| `PGPASSWORD=`, `MYSQL_PWD=`, and any variable whose name ends in `PASSWORD`, `_KEY`, `_SECRET`, `_TOKEN` or `_AUTH` | the value |
+| `Cookie:` and `Set-Cookie:` headers | the cookie values |
+| `aws configure set aws_secret_access_key` | the key |
+| Slack and Discord webhook URLs, a key given as the user part of a URL (a Sentry DSN) | the secret part |
+
+The same flags of other programs keep their values: `cargo test -p mycrate`, `ssh -p 2222`, `mkdir -p dir`.
+
 ## Evidence for an audit
 
 When a security reviewer or auditor asks how you control what the agent does, `openmoat audit evidence` reports the log for a window per control of OWASP Top 10 for LLM Applications 2025, SOC 2 (CC6 to CC8) and ISO/IEC 27001:2022 Annex A: the rules that fired, decisions by verdict and redacted sample events. It is evidence, not a certification.
@@ -133,6 +148,8 @@ None: every decision is recorded. Where you keep anchors is up to you ([above](#
 ## Limits
 
 - **Tamper-evident, not tamper-proof.** Whoever can write the log file can delete its newest events and leave a log that still checks out; `openmoat audit verify --against` catches that only up to your last anchor.
+- **Masking goes by known spellings.** A password passed in a spelling not listed above is stored as the command shows it.
+- **Upgrading from 0.13:** use 0.15.0 or later. On 0.14.0 the first hook call after the upgrade copied the whole log to accept the `review` verdict, and on a large log that ran past the guard's time budget, so every call was denied; 0.15.0 changes the check in place.
 - **Only what the hooks and the proxy see is recorded.** A call a hook never reports (Codex web search, hosted tools) is not in the log.
 
 More in [Limits](/docs/limits/).

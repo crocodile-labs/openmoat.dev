@@ -66,6 +66,8 @@ Codex, and Claude Code before 2.1.295, then run calls without the check; Cursor,
 
 OpenMoat could not decide the call in 30 seconds, usually on a heavily loaded machine, and denied it rather than let it run. Ask the agent to try again. `openmoat doctor` names the step most such calls were stuck in.
 
+Every call denied this way right after upgrading from 0.13 to 0.14.0, with a large audit log? 0.14.0's first hook call copied the whole log to accept the `review` verdict and ran past the time limit, then started again on the next call. Upgrade to 0.15.0 or later, which changes the log's check in place ([0.15.0](/docs/releases/v0-15-0/)).
+
 ## `openmoat run` refuses on macOS 12
 
 `openmoat run` needs macOS 13 or later, and says so on earlier versions. The agent hooks still apply the policy to each tool call there.

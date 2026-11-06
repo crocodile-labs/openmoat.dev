@@ -78,11 +78,18 @@ With `on_failure: block`, goose blocks the call when the hook cannot start, time
 
 goose runs every call unchecked when it does not load OpenMoat's plugin: `disabledPlugins` naming `openmoat` in `~/.config/goose/settings.json` (or a project's `.config/goose/settings.json` or `settings.local.json`), `enabled: false` for it under `plugins` in `config.yaml`, a project plugin named `openmoat` that replaces it, or a `hooks.json` goose cannot read. `openmoat status` reports a `disabledPlugins` entry as not protected.
 
+From 0.15.0, `openmoat status` and `openmoat doctor` also report goose **not protected** in a directory whose `.agents/plugins/openmoat` replaces OpenMoat's plugin (any hook file but a byte-for-byte copy of OpenMoat's), name the directory to remove, and warn about the hooks of the project's other plugins:
+
+```bash
+cd ~/work/app
+openmoat status    # goose: not protected, with the directory to remove
+```
+
 ## Limits
 
 - No OS sandbox from OpenMoat: an allowed command runs with your permissions, and a script the session wrote needs review before it runs ([Code the agent wrote](/docs/session-written-code/)).
 - What a Code Mode script does is not checked; the `execute_javascript` call itself needs review.
-- A project's `.agents/plugins/` can add hooks or replace OpenMoat's plugin; `openmoat status` and `openmoat doctor` do not report that yet.
+- A project's `.agents/plugins/` can add hooks or replace OpenMoat's plugin. `openmoat status` and `openmoat doctor` report it for the directory they run in.
 - `list_functions` and `get_function_details` are not checked. The Windows shell is left to goose.
 - With `GOOSE_PATH_ROOT`, the moved plugin is pinned by the lock but not named in the default policy. A changed `hooks.json` is caught on the next call.
 

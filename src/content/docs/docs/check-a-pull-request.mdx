@@ -23,7 +23,9 @@ You want CI to flag a pull request that changes files an agent must not write, o
 - every added line that holds a known token format (GitHub, OpenAI and Anthropic, AWS access key ids, Slack, Google API, npm, GitLab), without printing the token;
 - symbolic links and where they point, submodule changes, and paths that leave the repository.
 
-Each file is decided by the policy's own rules, as a write from untrusted content, so the lists of protected files are the ones the hook uses.
+Each file is decided by the policy's own rules, as a write from untrusted content, so the lists of protected files are the ones the hook uses. With 0.15.0's default policy that includes the git hook folders `core.hooksPath` usually names (`.githooks/`, `.git-hooks/`, `githooks/`, `git-hooks/`, `scripts/git-hooks/`) and Cline's workspace hooks (`.clinerules/hooks/`, `.cline/hooks/`), reported for `review`.
+
+The check reads paths and added lines only: which files change, and whether an added line holds a known token format. It does not read what the rest of a changed file does.
 
 | Level | Exit code | Means |
 |---|---|---|
@@ -84,9 +86,9 @@ The source file is not listed: nothing the policy protects. `--format json` prin
            with:
              fetch-depth: 0             # the base and head commits and what they share
              persist-credentials: false
-         - uses: crocodile-labs/openmoat@<full commit SHA of the release tag> # v0.14.0
+         - uses: crocodile-labs/openmoat@<full commit SHA of the release tag> # v0.15.0
            with:
-             version: 0.14.0            # the same release, without the leading v
+             version: 0.15.0            # the same release, without the leading v
              fail-on: review            # review (default), deny or never
              # policy: ci/openmoat.yaml # read as the pull request's base has it
    ```

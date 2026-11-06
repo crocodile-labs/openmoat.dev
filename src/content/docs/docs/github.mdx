@@ -21,8 +21,9 @@ The agent commits, pushes, opens pull requests or reads issues.
 | `git push origin main`, `gh pr create --fill`, `gh api …` | defer: your agent's prompt |
 | `git push`, `gh pr create` of a commit that adds a token | deny: `push-secret` |
 | `git push`, `gh pr create` that changes a CI workflow, after the session read untrusted content or a secret | review: `push-runs-later` |
-| `git config core.hooksPath .h`, a write into `.git/hooks` | review: `git-internals` |
-| A write to `.github/workflows/ci.yml`, `.husky/pre-commit` | review: `runs-later`, CI or a commit runs it later |
+| `git config user.name`, `git config --global user.email`, `git config --get …` | allow: a read of one setting |
+| `git config core.hooksPath .h`, `git config user.name Bot`, a write into `.git/hooks` | review: `git-internals` |
+| A write to `.github/workflows/ci.yml`, `.husky/pre-commit`, `.githooks/pre-commit` | review: `runs-later`, CI or a commit runs it later |
 | `git push --force`, `git push origin :main`, `git reset --hard`, `git clean -fdx` | deny: `destructive` |
 | `git branch -D x` | review: `destructive-recoverable`, the reflog still holds the commits |
 | `git -c user.name=Bot commit -m x`, `GIT_EDITOR=true git commit --amend` | allow: an inert config key and a no-op editor change nothing |

@@ -33,7 +33,7 @@ A page or a message uses a word you have not met yet.
 | **defaults**, `default`, `default.net`, `default.fetch` | What decides when no rule matches; the rule shown is then `default`, or `default.net` for a host and `default.fetch` for a fetch. [The four verdicts](/docs/policy-file/verdicts/) |
 | **project**, `${project}` | The git repository the agent runs in, or the folder itself when there is none; never your home folder. [The project folder](/docs/the-project/) |
 | `project-fs`, `dev-shell` | The default rules that allow reading and editing the project, and builds, tests and everyday git. [Use it in your projects](/docs/your-projects/) |
-| `runs-later` | Holds for review a write to files something runs later, outside any sandbox: CI workflows, commit hooks, the agent's hooks, skills and MCP settings. [The project folder](/docs/the-project/) |
+| `runs-later` | Holds for review a write to files something runs later, outside any sandbox: CI workflows, commit hooks (`.git/hooks` and folders such as `.githooks/`), the agent's hooks (Cline's `.clinerules/hooks/` too), skills and MCP settings. [The project folder](/docs/the-project/) |
 | `approved-N` | A rule `openmoat allow --always`, `--dir` or `--site` added to `~/.moat/policy.d/approved.yaml`. [Every allow](/docs/allow-reference/) |
 | **session grant** | What `openmoat allow --last` gives: that one call, for that agent session, for 24 hours; a command only in its project. Shown as rule `approved-session`. [Every allow](/docs/allow-reference/) |
 | **repository policy**, `repo:<id>` | A repository's committed `.moat/policy.yaml`; its rules show up with the prefix `repo:`. [Repository policies](/docs/policy-file/repositories/) |

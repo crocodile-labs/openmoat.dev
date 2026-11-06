@@ -27,6 +27,8 @@ The default policy lets the agent read and edit everything inside the **project*
 
 OpenMoat starts at the folder the agent session runs in and walks up to the nearest folder that holds `.git`, the root of the git repository.
 
+The session's folder counts, not the folder a single tool call names. Codex's `workdir` and Cursor's `cwd` are chosen by the model, so from 0.15.0 a command run from outside the session's project is decided as running in the session's folder: a write from `~/Library/LaunchAgents` is checked as that path, not as a project file.
+
 | You start the agent in | The project is |
 |---|---|
 | `~/work/app` (a git repository) | `~/work/app` |
@@ -45,7 +47,7 @@ A project that is your home folder, or a folder above it, would let the agent ed
 
 ## What the project gives the agent
 
-<Impact opens={["Read and edit every file in the project", "Builds, tests and everyday git commands there (`dev-shell`)"]} keeps={["`.env`, `.envrc` and keys in the project stay denied", "Writes into `.git` (hooks, config) need review first: git runs them later, outside any sandbox", "Writes to CI workflows, `.husky/`, `.pre-commit-config.yaml` and `.vscode/tasks.json` need review first (`runs-later`): CI or a commit runs them later", "`.moat` and agent settings (`.claude/settings.json` and the like) stay denied", "An agent's hooks, skills, subagents, commands and MCP settings in the project (`.claude/hooks/`, `.claude/skills/`, `.mcp.json`, …) need review first (`runs-later`): the agent loads them next session"]} think={["A folder next to the project is outside it: see [Work across several repos](/docs/work-across-repos/)"]} />
+<Impact opens={["Read and edit every file in the project", "Builds, tests and everyday git commands there (`dev-shell`)"]} keeps={["`.env`, `.envrc` and keys in the project stay denied", "Writes into `.git` (hooks, config) need review first: git runs them later, outside any sandbox", "Writes to CI workflows, `.husky/`, the git hook folders `core.hooksPath` usually names (`.githooks/`, `.git-hooks/`, `githooks/`, `git-hooks/`, `scripts/git-hooks/`), `.pre-commit-config.yaml` and `.vscode/tasks.json` need review first (`runs-later`): CI or a commit runs them later. A folder merely named `hooks` stays an ordinary write", "`.moat` and agent settings (`.claude/settings.json` and the like) stay denied", "An agent's hooks, skills, subagents, commands and MCP settings in the project (`.claude/hooks/`, `.claude/skills/`, `.mcp.json`, Cline's `.clinerules/hooks/` and `.cline/hooks/`, …) need review first (`runs-later`): the agent loads them next session"]} think={["A folder next to the project is outside it: see [Work across several repos](/docs/work-across-repos/)"]} />
 
 ## Monorepos
 

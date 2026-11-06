@@ -25,7 +25,7 @@ It does no I/O and sends nothing anywhere: no network, no telemetry. The JavaScr
 | Package | Language | Where |
 |---|---|---|
 | `openmoat-sdk` | Rust | `crates/openmoat-sdk` in the OpenMoat repository; on crates.io from 0.12.0 |
-| `@openmoat/sdk` | JavaScript (Node 20 or later, or any runtime with WebAssembly; no dependencies) | `sdk/js` in the OpenMoat repository; the npm package follows once its publishing is set up |
+| `@openmoat/sdk` | JavaScript (Node 20 or later, or any runtime with WebAssembly; no dependencies) | on npm: `npm install @openmoat/sdk`, source in `sdk/js` in the OpenMoat repository |
 
 Both are released with the CLI, from the same commit and with the same version, and decide every conformance fixture exactly as `openmoat guard` of that version does.
 
@@ -67,6 +67,10 @@ cargo test -p openmoat-sdk --example agent_loop
 
 </TabItem>
 <TabItem label="JavaScript">
+
+```bash
+npm install @openmoat/sdk
+```
 
 ```js
 import { load, Session } from "@openmoat/sdk";
