@@ -10,7 +10,7 @@ tag: guide
 minutes: 6
 tags: ["Guide", "Secrets"]
 cover: "echo $GITHUB_TOKEN"
-coverResult: "⛔ deny  env-secrets"
+coverResult: "✕ deny  env-secrets"
 coverTone: deny
 ---
 

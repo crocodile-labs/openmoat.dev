@@ -21,7 +21,7 @@ That's prompt injection. And the moment it reads the page usually isn't where th
 
 If the agent edits `src/app.ts`, you'll see that in the diff. If it edits `.github/workflows/ci.yml`, a `Makefile`, the `scripts` in `package.json` or `CLAUDE.md`, that's a different kind of change. Those files run later, often with your CI secrets, or they quietly shape what the next agent session does. Whatever got planted there sticks around long after the session that read the page.
 
-I build OpenMoat, which checks each action a coding agent takes and stops the dangerous ones before they run. One part of it is aimed at exactly this, and it's called session taint.
+I build OpenMoat, the security layer between your AI coding agents and your machine: it checks each action an agent takes before it runs. One part of it is aimed at exactly this, and it's called session taint.
 
 ## Remembering what the session read
 

@@ -10,7 +10,7 @@ tag: explainer
 minutes: 6
 tags: ["Explainer", "Prompt injection", "Shell"]
 cover: "d=~/.ssh; cat $d/id_rsa"
-coverResult: "⛔ deny  secrets-paths"
+coverResult: "✕ deny  secrets-paths"
 coverTone: deny
 ---
 
