@@ -186,8 +186,11 @@ const parts = [
           <span style="white-space: pre-wrap; color: var(--muted)">  more   openmoat why --last · https://openmoat.dev/r/secrets-paths</span>
           <span style="margin-top: 10px">● Bash  openmoat allow --last</span>
           <span style="color: var(--deny)">OpenMoat blocked: changing or stopping OpenMoat itself</span>
-          <span style="white-space: pre-wrap; color: var(--muted)">  rule   moat: deny [kernel-self] — OpenMoat protects its own policy, hooks and binary …</span>
+          <span style="white-space: pre-wrap; color: var(--muted)">  call   openmoat allow --last</span>
+          <span style="white-space: pre-wrap; color: var(--muted)">  rule   moat: deny [kernel-self] — OpenMoat protects its own policy, hooks and binary: shell "openmoat allow --last"</span>
           <span style="white-space: pre-wrap; color: var(--muted)">  why    an agent that can change its own checks is no longer checked</span>
+          <span style="white-space: pre-wrap; color: var(--muted)">  next   if you need this, do it yourself in your own terminal</span>
+          <span style="white-space: pre-wrap; color: var(--muted)">  more   openmoat why --last · https://openmoat.dev/r/kernel-self</span>
           <span style="margin-top: 10px; color: var(--accent)">Your keys are fine. Every decision is in the local log: openmoat why --last explains it.</span>
         </div>
       </div>
