@@ -55,12 +55,13 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
    Your policy is kept as it is, so a rule the new default gained is offered, not forced. `openmoat` says "policy update available: N changes" and offers to show them.
 
    ```bash
-   openmoat policy upgrade --dry-run   # what the new default adds, as a diff; changes nothing
-   openmoat policy upgrade             # shows the diff, asks, keeps a backup and re-pins
+   openmoat policy upgrade --dry-run   # what the new default adds, grouped; changes nothing
+   openmoat policy upgrade --diff      # the same, then the full diff of the policy
+   openmoat policy upgrade             # shows the changes, asks, keeps a backup, re-pins and syncs the sandboxes
    openmoat policy upgrade --undo      # put the previous policy back
    ```
 
-   Lines you changed are never touched. What each line of the output means: [New default rules after an upgrade](/docs/change-the-rules/#new-default-rules-after-an-upgrade).
+   From 0.16.0 it groups what the new default changes (new protections, fewer interruptions, renames, comment updates counted); answer `d` at `[y/N/d]` for the full diff. Lines you changed are never touched. What each line of the output means: [New default rules after an upgrade](/docs/change-the-rules/#new-default-rules-after-an-upgrade).
 
 4. **Check the installation**
 
@@ -78,7 +79,7 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
    openmoat sandbox sync
    ```
 
-   It rewrites the agents' sandbox settings from the current policy and re-pins them. `openmoat status` shows ``differs from the policy; run `openmoat sandbox sync` `` until you do.
+   It rewrites the agents' sandbox settings from the current policy and re-pins them. From 0.16.0 `openmoat policy upgrade` does this itself after you answer yes; run it when you changed the policy another way, or when `openmoat status` shows ``differs from the policy; run `openmoat sandbox sync` ``.
 
 6. **Restart your agents**
 
@@ -105,6 +106,8 @@ Until you do, the old hooks keep working through `moat`. `openmoat doctor` says 
 
 | Upgrading to | Run |
 |---|---|
+| [0.17.0](/docs/releases/v0-17-0/) | `openmoat policy upgrade` (`managed-settings`, `container-host`, editor and package-manager configuration, virtual environments and dev containers, a `title` and `why` on every deny and review rule), then `openmoat init` once (Cursor's `beforeTabFileRead`, the Cline CLI's `PostToolUse` file, the VS Code extension's Claude Code); scripts matching `⛔`, `❓` or `✔`: match the verdict word or read `--format json` |
+| [0.16.0](/docs/releases/v0-16-0/) | `openmoat policy upgrade` (agent logins denied to sandboxed commands, `injected-input`, `mcp-cross-server`, more instruction files, `provenance-notes`, the `check_diff` content checks), then `openmoat init` once (Claude Code's `PostToolUse` entry); keep one OpenMoat installed (audit log schema 10) |
 | [0.15.0](/docs/releases/v0-15-0/) | `openmoat policy upgrade` (card ids no longer denied, git hook folders and Cline's workspace hooks need review, `git config <name>` reads allowed, `openmoat guard` from an agent denied); Codex users: `openmoat init` again, then trust OpenMoat's hook in Codex's `/hooks` |
 | [0.14.0](/docs/releases/v0-14-0/) | `openmoat policy upgrade` (renames `ask` to `review`, adds `card-egress`); `openmoat init` once for goose or the Cline CLI; scripts reading JSON: `asked`/`top_asks` are now `reviewed`/`top_reviews` ([Upgrading from ask to review](/docs/upgrade/ask-to-review/)) |
 | [0.13.0](/docs/releases/v0-13-0/) | If you wrap MCP servers: `openmoat mcp accept <server>` for any whose definition is new or changed; re-wrap to turn the sandbox on |

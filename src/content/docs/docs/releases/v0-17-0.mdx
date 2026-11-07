@@ -1,0 +1,58 @@
+---
+title: "OpenMoat 0.17.0"
+description: "Block messages that say what was stopped and why, openmoat watch and openmoat why, Claude Code in VS Code and JetBrains, Cursor's Tab checked, injected input for the Cline CLI and wrapped MCP servers and in other spellings, containers handed the host, the agents' system-wide settings, and one set of verdict marks."
+sidebar:
+  label: "0.17.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-07. [GitHub release v0.17.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.17.0).
+
+<Aside type="caution" title="Upgrading">
+
+- **Run `openmoat policy upgrade`** in your own terminal for the new and changed default rules: `managed-settings`, `container-host`, editor and package-manager configuration, virtual environments and dev containers in `runs-later` and `persistence`, and a `title` and `why` on every deny and review rule.
+- **Then run `openmoat init` once.** It adds Cursor's `beforeTabFileRead` hook and the Cline CLI's `PostToolUse` file, and finds the Claude Code the VS Code extension bundles. `openmoat doctor` reports a hook entry as out of date until then.
+- **Audit log:** the schema is unchanged.
+- **New optional policy settings:** a rule's `title:` and `why:`, and the `staging:` section. An older OpenMoat rejects a policy that uses them.
+- **Scripts that read text output:** verdicts are now marked `✓ allow`, `→ defer`, `? review` and `✕ deny`. A script that matched `⛔`, `❓` or `✔` should match the verdict word, or read `--format json`.
+- **Library crates (a break, hence 0.17.0):** `openmoat-core` `Decision` gains `notice`, `RuleGroup` gains `title` and `why`, `Policy` gains `staging`; `openmoat-hosts` `HostSpec` gains `bundled`. See the [changelog](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md).
+
+Every step after an upgrade: [Upgrade](/docs/upgrade/).
+
+</Aside>
+
+## Security
+
+- **Containers handed the host need review.** A `docker`, `podman` or `nerdctl` command that gives a container the host (`--privileged`, a host namespace, `--cap-add`, `--device`, `--security-opt`, the host's root or the Docker socket mounted in) needs review (`container-host`); other container runs still defer ([Code that runs later](/docs/runs-later/#containers-handed-the-host), [#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **Claude Code in VS Code and JetBrains.** `openmoat init` now finds the Claude Code the VS Code extension bundles (and the same extension in VS Code Insiders, VS Code Server, Cursor, Windsurf and VSCodium), so a person who uses only the extension gets a hook that blocks the call when it fails. `openmoat status` and `doctor` list each bundled copy and warn about one too old, and about Claude Code before 2.1.310 on Windows ([Editors](/docs/editors/), [#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **The editor tools are decided by what they do.** `getDiagnostics` reads the file its `uri` names, so a secret's diagnostics are denied like a `Read` of it; `executeCode`, which runs Python in the notebook's kernel, needs review ([#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **The editors' project configuration needs review.** An agent's writes to all of `.vscode/` (before, only `tasks.json`), `*.code-workspace`, all of `.idea/` and JetBrains' shared `*.run.xml` need review (`runs-later`), since the editor runs what they name. Reading them stays allowed ([#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **Cursor runs Claude Code's hooks too:** OpenMoat now reads such a call as Cursor's and answers a review there as a deny, since Cursor would run a call answered `ask` ([#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **Cursor's Tab is checked.** `openmoat init` installs `beforeTabFileRead`, which refuses Tab reading a secret and lets every other file through ([#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **Injected input for more agents.** The MCP gateway now keeps what a wrapped server's tool returned, for every agent, and the Cline CLI's new `PostToolUse` file reports what each call returned. A later call of the session that uses a host, path or command that untrusted output named needs review (`injected-input`) ([Injected input](/docs/injected-input/), [#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **Injected input in other spellings of the same request.** A host in other case or with a trailing dot, an IPv4 address in any numeric form (`3405803783` is `203.0.113.7`), an uncompressed IPv6 address, and a subdomain of a host a URL named (`collect.evil.example` after `https://evil.example/…`) are linked, unless your policy allows the parent. A planted command run through `sudo`, `env`, `nohup` or `sh -c`, or after `VAR=value`, is linked too; `rm -r -f x` is still not `rm -rf x` ([#755](https://github.com/crocodile-labs/openmoat/pull/755)).
+- **The agents' system-wide settings are denied.** Writes to Claude Code's managed settings folder, Gemini CLI's system settings and Codex's `/etc/codex`, which outrank yours and can turn every hook off, are denied (`managed-settings`) ([#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **Package-manager and build configuration that runs code** (`.npmrc`, `.yarnrc`, `.yarnrc.yml`, `.cargo/config.toml`, `.cargo/config`, `bunfig.toml`) needs review in a clean session too (`runs-later`), and so do pip's and uv's user configuration and `~/.bunfig.toml` (`persistence`) ([#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **Virtual environments and dev containers.** Writes to `.venv/bin/` and `venv/bin/`, which the editor's Python extension starts outside any sandbox, and to `.devcontainer/` or `.devcontainer.json`, whose `initializeCommand` runs on this machine, need review (`runs-later`) ([#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **Repository git configuration that runs a program.** `openmoat doctor` and `openmoat status` name the current repository's git settings that make git run a program (`core.fsmonitor`, a hooks path, a pager or editor, diff and merge drivers, filters, a credential helper, `!` aliases, includes), which background git runs before any hook ([#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+
+## Added
+
+- **Block messages that say why.** When OpenMoat denies a call or holds it for review, the agent and you read the rule's title, the call (secrets masked), the line earlier releases sent, why the rule exists, one next step for you, and `openmoat why --last` with the rule's page ([Something was blocked](/docs/blocked/#what-the-message-says), [#751](https://github.com/crocodile-labs/openmoat/pull/751)).
+- **`title:` and `why:` on rules.** Every deny and review rule of the default policy has both, and `openmoat policy upgrade` adds them to your policy. `openmoat policy lint` names the deny and review rules without a title ([#751](https://github.com/crocodile-labs/openmoat/pull/751)).
+- **`openmoat watch`** follows your agents' calls as they happen, one line each, in a second terminal: what ran, what was denied and what waits for you. `--host`, `--only deny|review`, `--session`, `--no-follow` ([Watch and why](/docs/see-what-happened/watch-and-why/), [#751](https://github.com/crocodile-labs/openmoat/pull/751)).
+- **`openmoat why`** explains one decision (`--last`, an event id or a time): the rules that decided it and where they are in your policy, how your policy decides each part of the call now, the session's context, and how to change it ([#751](https://github.com/crocodile-labs/openmoat/pull/751)).
+- **Collection before a send is recorded** (ADR-061, proposed). A send after the session read many files outside the project, or packed them, carries `@staging-egress <host>` in the audit log, and `openmoat report` counts these sends per session and per active hour. No default rule decides it, so no decision changes; the optional `staging:` section sets the thresholds ([Audit log](/docs/see-what-happened/#a-report), [#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+
+## Changed
+
+- **One set of verdict marks.** Every command shows `✓ allow`, `→ defer`, `? review`, `✕ deny` (`policy check`, `demo`, `show`, `replay` and `watch`). `audit verify`, `audit anchor` and `provenance --verify` mark a failure `✗`, as `status` and `doctor` do ([#761](https://github.com/crocodile-labs/openmoat/pull/761)).
+- **One `injected-input` reason per source**, naming each part once: "the command `…`, the host `…` and the path `…` came from the page fetched from …" ([#761](https://github.com/crocodile-labs/openmoat/pull/761)).
+- **Library crates:** `Decision` gains `notice`, `RuleGroup` gains `title` and `why`, `Policy` gains `staging`, `HostSpec` gains `bundled`. See the [changelog](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md) ([#751](https://github.com/crocodile-labs/openmoat/pull/751), [#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+
+## Fixed
+
+- **The Cline CLI's npm package is `cline`.** It was named as `@cline/cli`, Cline's separate experimental CLI. OpenMoat also recognises the compiled Cline binary the `cline` wrapper starts ([#754](https://github.com/crocodile-labs/openmoat/pull/754)).
+- **`openmoat policy upgrade` no longer refuses** a policy started from an older default with an edit near the top of a rule list ("the upgraded policy does not lint"). It now merges each rule with the same one in the new default; only a rule both you and the default changed is left for you ([#754](https://github.com/crocodile-labs/openmoat/pull/754)).
