@@ -1,6 +1,6 @@
 ---
 title: "Audit and diagnostic commands"
-description: "openmoat replay, report and audit (export, verify, anchor, report, evidence); openmoat doctor, bench and guard."
+description: "openmoat replay, report, watch, why, provenance and audit (export, verify, anchor, report, evidence); openmoat doctor, bench and guard."
 sidebar:
   label: "Audit and diagnostics"
   order: 6
@@ -13,7 +13,10 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 | Command | What it does | Example |
 |---|---|---|
 | `openmoat replay [--since <when>] [--session <id>]` | Each agent session as a timeline | `openmoat replay --since today` |
-| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts, top rules, reviews per active hour | `openmoat report --since 7d` |
+| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts, top rules, reviews per active hour, and sends after collecting outside the project (recorded only) | `openmoat report --since 7d` |
+| `openmoat watch` · `openmoat why --last` | Follow the agents' calls live · explain one deny or review ([Watch and why](/docs/see-what-happened/watch-and-why/)) | `openmoat why --last` |
+| `openmoat provenance [--range <rev-range>] [--format text\|json]` | Which files and lines of commits an agent session wrote, from this machine's log, and whether it had read untrusted content first ([Provenance](/docs/see-what-happened/provenance/)) | `openmoat provenance --range main..HEAD` |
+| `openmoat provenance --write-notes` · `--verify` | Keep a note per commit on `refs/notes/openmoat` (**terminal**) · check the notes against the log (exit 64 on a mismatch) | `openmoat provenance --write-notes` |
 | `openmoat audit export [--since <when>] [--host <id>] [--session <id>]` | Events as JSON Lines with their chain hashes, on stdout | `openmoat audit export --since 7d > week.jsonl` |
 | `openmoat audit verify <file> [--anchor <hash>] [--require-anchor]` | Check an export without the database | `openmoat audit verify week.jsonl` |
 | `openmoat audit verify --against <repo or file>` | Check the log against every anchor there; fails, naming the first anchor whose event is gone or changed | `openmoat audit verify --against ~/notes` |
@@ -27,7 +30,7 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 
 | Command | What it does | Example |
 |---|---|---|
-| `openmoat doctor [--verbose] [--format json]` | What drifted, hook and sandbox checks, MCP changes, warnings; `--verbose` lists where each sandbox is stricter or wider than the policy | `openmoat doctor` |
+| `openmoat doctor [--verbose] [--format json]` | What needs you first, each with its fix; then each agent and OpenMoat's own state: drift, hook and sandbox checks, MCP changes, agent versions with a security advisory, the repository's git settings that run a program; `--verbose` lists every check with its paths, each agent's known gaps and where each sandbox is stricter or wider than the policy | `openmoat doctor` |
 | `openmoat doctor --accept` | Accept the current policy and hook files and re-pin. **Terminal** | `openmoat doctor --accept` |
 | `openmoat doctor --bundle <file> [--bundle-events N]` | One local file to attach to a bug report: versions, hook states, checks and the last decisions without commands, paths or secrets; nothing is sent. Refused when an agent started it | `openmoat doctor --bundle report.json` |
 | `openmoat bench [--hook <command> --host <id>] [--verbose] [--format json]` | Score OpenMoat, or any hook, against the bundled MoatBench scenarios; the scenarios' commands never run | `openmoat bench --hook '<command>' --host claude-code` |

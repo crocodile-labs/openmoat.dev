@@ -1,0 +1,94 @@
+---
+title: "Which lines of a commit an agent wrote"
+description: "openmoat provenance maps your commits to the agent sessions that wrote each file and line, and whether they had read a web page or an MCP result first; --write-notes keeps it in git notes for reviewers."
+sidebar:
+  label: "Provenance"
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You are about to push or review commits and want to know which files an agent wrote, and whether it had read untrusted content before it did. New in 0.16.0.
+
+</Aside>
+
+**Protects against** agent-written code reaching a review unnoticed, above all code a session wrote after it read a web page, an issue or an MCP result.
+
+## What it does
+
+`openmoat provenance` reads this machine's audit log and shows which files of your commits an agent session wrote. Where one recorded write made the whole change, it also shows which added lines. For each file it names the agent, the session and the time, and says whether the session had read untrusted content first: a web page, an MCP tool's result, an unknown tool's result, or a file such a session wrote.
+
+## Example
+
+```text
+$ openmoat provenance --range main..HEAD
+9f2c41d0a7be
+  src/fetch.rs: claude-code session 3c9e1a7f02d4 wrote the whole change (12 added lines: 40-51), after reading web content (fetch docs.example.com); event 2a1, 2026-11-05 10:42
+  README.md: claude-code session 3c9e1a7f02d4 wrote the file after the parent commit (it may have changed since); event 2b0, 2026-11-05 10:44
+```
+
+| Evidence | Meaning |
+|---|---|
+| `lines` | the write turned the parent's content into the committed content, so every added line is the session's |
+| `content` | the committed content is what the write left; a person may have written some of it before |
+| `touched` | the session wrote the file after the parent commit (a shell write, or an edit the hook could not hash); the file may have changed since |
+
+## Share it with reviewers
+
+<Steps>
+
+1. **Keep a note per commit**, in your own terminal:
+
+   ```bash
+   openmoat provenance --write-notes            # one JSON note per commit on refs/notes/openmoat
+   ```
+
+   It writes nothing but notes and pushes nothing. An agent cannot run it (`kernel-self`).
+
+2. **Push the notes:**
+
+   ```bash
+   git push origin refs/notes/openmoat
+   git fetch origin '+refs/notes/openmoat:refs/notes/openmoat'   # on another clone
+   git log --notes=openmoat                                      # read them next to the log
+   ```
+
+3. **See them in the pull request check.** `openmoat policy check-diff` and its GitHub Action read the notes of the change's commits and add a review-level line per session. They never change the exit code ([Check a pull request](/docs/check-a-pull-request/#provenance-notes)):
+
+   ```text
+   review  provenance: 2 files / 12 lines written by claude-code (session 3c9e1a7f02d4, after reading web content (fetch docs.example.com))
+   ```
+
+</Steps>
+
+A note holds repository-relative paths, the host and session ids, the cited audit events with their chain hashes, the log's head, each claim and a digest. It holds no file contents.
+
+## Check the notes
+
+```bash
+openmoat provenance --verify                 # exit 0 when every note matches, 64 when one does not
+```
+
+A note fails when it was edited, cites events this log does not have, pins a write on an event that is not that session's, or leaves out what the log says now (a session, or that it had read untrusted content).
+
+## Agents cannot write the record
+
+An agent's `openmoat provenance --write-notes` is denied (`kernel-self`). Its `git notes` on the `openmoat` ref, `git update-ref` of `refs/notes/openmoat` and `git update-ref --stdin` need review (`provenance-notes`). Other notes refs and reading history are unchanged.
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat provenance [--range <rev-range>] [--format text\|json]` | The files and lines agent sessions wrote, for the commits the upstream lacks (or `HEAD`), or a range | `openmoat provenance --range main..HEAD` |
+| `openmoat provenance --write-notes` | Keep a note per commit on `refs/notes/openmoat`. **Terminal** | `openmoat provenance --write-notes` |
+| `openmoat provenance --verify` | Check the notes against this machine's log | `openmoat provenance --verify` |
+
+## Limits
+
+- **Only commits made on a machine with OpenMoat, and only what its hook saw.** A script, an editor, or an agent without OpenMoat leaves no record. Each session's newest write of a file is kept for 30 days.
+- **Lines only when one recorded write made the whole change.** Several edits of a file by one session keep only the last one.
+- **A missing note proves nothing.** Notes can be stripped, never pushed or not fetched, and a commit with no record is not shown to be a person's.
+- **Only the machine that wrote a note can check it.** In CI a note is a claim. Notes are not signed.
+
+The full page: [PROVENANCE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/PROVENANCE.md). The decision: [ADR-056](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-056-agent-provenance-for-commits.md).

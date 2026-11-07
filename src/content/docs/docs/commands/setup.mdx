@@ -1,6 +1,6 @@
 ---
 title: "Set up, remove and everyday commands"
-description: "openmoat init, openmoat uninstall, openmoat, status, show and demo."
+description: "openmoat init, openmoat uninstall, openmoat, status, show, watch, why and demo."
 sidebar:
   label: "Set up and everyday"
   order: 1
@@ -12,18 +12,20 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 
 | Command | What it does | Example |
 |---|---|---|
-| `openmoat init [--hosts <ids>] [--yes] [--dry-run] [--mcp-proxy]` | Install the policy, lock and log, pin the agents' MCP servers, and hook each agent found, asking for each. `--hosts` and `--yes` skip the questions; `--dry-run` shows what would change; `--mcp-proxy` wraps every stdio MCP server. Without a terminal and without `--hosts` or `--yes`, it changes no agent's files. Over an existing lock: **terminal** | `openmoat init --hosts claude-code,codex` |
+| `openmoat init [--hosts <ids>] [--yes] [--dry-run] [--verbose] [--mcp-proxy]` | Install the policy, lock and log, pin the agents' MCP servers, and hook each agent found, asking for each, but not about an agent whose files already have everything. It also finds the Claude Code the VS Code extension bundles. `--hosts` and `--yes` skip the questions; `--dry-run` shows what would change; `--verbose` prints each file written with its hook entries, the backups and the files the lock pins; `--mcp-proxy` wraps every stdio MCP server. Without a terminal and without `--hosts` or `--yes`, it changes no agent's files. Over an existing lock: **terminal** | `openmoat init --hosts claude-code,codex` |
 | `openmoat uninstall [--hosts <ids>] [--purge]` | Remove OpenMoat's hooks and sandbox settings and restore every backup; `--purge` also deletes `~/.moat` (not with `--hosts`). **Terminal** | `openmoat uninstall --hosts cursor` |
 
-Host ids for `--hosts` and `--host`: `claude-code`, `codex`, `cursor`, `openclaw`, `copilot-cli`, `pi`, `gemini-cli`.
+Host ids for `--hosts` and `--host`: `claude-code`, `codex`, `cursor`, `openclaw`, `copilot-cli`, `pi`, `gemini-cli`, `opencode`, `hermes`, `cline`, `goose`.
 
 ## Everyday
 
 | Command | What it does | Example |
 |---|---|---|
 | `openmoat` | Which agents are protected, today's decisions, and anything that needs you: a changed pinned file, a policy update, the last review. Its questions are asked only at a terminal | `openmoat` |
-| `openmoat status [--format json]` | Each agent's protection level (`hook + OS sandbox`, `hook only`, `not protected`) and what it does not cover (JSON: each agent's `limit`, and `other_hooks` for the Cline CLI's other hooks and plugins); run in a project, also its repository policy and project settings; exits 64 when something needs fixing | `openmoat status` |
+| `openmoat status [--format json]` | What needs you first, each with its fix after `→`; then each agent's protection level (`hook + OS sandbox`, `hook only`, `not protected`), each Claude Code the editors bundle, and OpenMoat's policy, lock and log (JSON: each agent's `limit`, `other_hooks` for the Cline CLI's other hooks and plugins, `repo_git_config` for the repository's git settings that run a program); run in a project, also its repository policy and project settings; exits 64 when something needs fixing | `openmoat status` |
 | `openmoat show [<id>] [--session <id>] [--since <when>] [--recent N]` | Recent events, one session, or one event in full | `openmoat show 1` |
+| `openmoat watch [--host <id>] [--only deny\|review] [--session <id>] [--recent N] [--no-follow]` | Follow the agents' calls live, one line each; reads the audit log only ([Watch and why](/docs/see-what-happened/watch-and-why/)) | `openmoat watch` |
+| `openmoat why [--last \| <id> \| HH:MM[:SS]] [--format json]` | Explain one deny or review: its rules and where they are, how the policy decides the call now, the context, how to change it | `openmoat why --last` |
 | `openmoat demo [--format json]` | The verdict, rule and reason for a fixed list of example agent calls, with your policy; nothing runs and nothing is changed | `openmoat demo` |
 
 See [Quick start](/docs/quickstart/), [Use it in your projects](/docs/your-projects/) and [Turn it off](/docs/turn-off/).

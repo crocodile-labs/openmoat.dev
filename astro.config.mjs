@@ -18,7 +18,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'OpenMoat',
-      description: 'Security for AI coding agents: checks every command, file access, web request and MCP call before it runs.',
+      description: 'The security layer between your AI coding agents and your machine: checks every tool call before it runs, keeps secrets and network out of reach, confines the code that does run, and records every decision.',
       logo: { src: './public/assets/logo.svg', alt: 'OpenMoat' },
       favicon: '/assets/logo.svg',
       social: [
@@ -41,14 +41,16 @@ export default defineConfig({
       ],
       sidebar: [
         group('Get started', ['index', 'quickstart', 'your-projects',
-          sub('Supported agents', 'agents', ['plugin-loading', 'openclaw', 'opencode', 'cline', 'goose']), 'how-it-decides']),
+          sub('Supported agents', 'agents', ['plugin-loading', 'openclaw', 'opencode', 'cline', 'goose']), 'editors',
+          'how-it-decides']),
         group('Features', ['shell-commands',
           sub('Secrets and .env files', 'env-files', ['agent-credentials', 'protected-contents', 'card-numbers']), 'allow-a-site',
-          sub('Code the agent wrote', 'session-written-code', ['opaque-code']),
+          sub('Code the agent wrote', 'session-written-code', ['opaque-code']), 'runs-later',
           sub('Token broker', 'keep-tokens-safe', ['token-egress', 'another-service', 'where-it-works', 'https-injection']),
-          sub('MCP pinning, gateway and browsers', 'mcp-servers', ['tool-pinning', 'gateway', 'browser-pages']),
+          sub('MCP pinning, gateway and browsers', 'mcp-servers', ['tool-pinning', 'gateway', 'cross-server', 'browser-pages']),
           sub('OS sandboxes and run', 'sandboxes', ['openmoat-run']),
-          sub('Egress proxy', 'egress-proxy', ['sessions']), 'self-protection', 'session-taint', 'see-what-happened',
+          sub('Egress proxy', 'egress-proxy', ['sessions']), 'self-protection', 'session-taint', 'injected-input',
+          sub('Audit log, watch and why', 'see-what-happened', ['watch-and-why', 'provenance']),
           'openmoat-bar']),
         group('For teams and CI', [sub('Team rules and packs', 'team-rules', ['repository-policy', 'policy-packs']),
           'check-a-pull-request', 'compliance-evidence', 'auto-approve-and-ci', 'sdk']),

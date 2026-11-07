@@ -109,11 +109,31 @@ OpenMoat pins the policy. A change no person accepted looks like tampering, so e
 `openmoat init` keeps your policy, so a rule a new release's default gained is offered, not forced. `openmoat`, `openmoat init` and `openmoat doctor` say "policy update available: N changes".
 
 ```bash
-openmoat policy upgrade --dry-run   # what the new default adds, as a diff; changes nothing, needs no terminal
-openmoat policy upgrade             # shows the diff, asks, keeps a backup and re-pins
+openmoat policy upgrade --dry-run   # what the new default adds, grouped; changes nothing, needs no terminal
+openmoat policy upgrade --diff      # the same, then the full diff of the policy
+openmoat policy upgrade             # shows the changes, asks, keeps a backup, re-pins and syncs the sandboxes
 openmoat policy upgrade --undo      # put the previous policy back, byte for byte
 ```
 
-`--dry-run` starts with `Policy update available: N changes from the OpenMoat <version> default`, or says `The policy has every change of the OpenMoat <version> default.` Lines you changed are never touched: a change that would overlap them is listed under `Not applied: you changed the policy at line N; the default now has:`, for you to make with `openmoat edit` if you want it. After applying, it prints `✔ … upgraded (N changes)`, `✔ lock re-pinned (N files)` and a reminder to run `openmoat sandbox sync`. Run it after each upgrade of the binary ([Upgrade](/docs/upgrade/)).
+From 0.16.0 the changes are grouped by what they do, read from the policy before and after:
+
+```text
+OpenMoat 0.15.0 has new default rules for your policy
+
+  New protections
+    + Denied: sends a payment card number to a host off this machine (`card-egress`)
+    + `secrets-paths` now also denies `~/.cline/data/secrets.json`
+  Fewer interruptions
+    − `dev-readonly` now also allows `git config user.name`
+  Renamed
+    ~ `ask` is now `review` (same behaviour)
+  + 24 comment and wording updates
+
+Apply these changes? [y/N/d]   (d = show the full diff)
+```
+
+A change it cannot name is counted as `Other changes: N (d to see)`. Lines you changed are never touched: from 0.17.0 it merges each rule (`- id:`) with the same one in the new default, so rules the default adds or moves arrive in its order, rules you added stay after the rule they followed, and only a rule both you and the default changed is left for you to make with `openmoat edit`. After a yes it re-pins the lock and writes the agents' sandbox settings, as `openmoat sandbox sync` does. Run it after each upgrade of the binary ([Upgrade](/docs/upgrade/)).
+
+From 0.17.0 it also adds a `title` and a `why` to each deny and review rule of the default, for the message the agent and you read when a call is stopped. Your own rules can have them too ([Titles and reasons for the block message](/docs/policy-file/other-keys/#titles-and-reasons-for-the-block-message)).
 
 The syntax of a rule: [The policy file](/docs/policy-file/). The full policy language and the default policy are in [POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md).

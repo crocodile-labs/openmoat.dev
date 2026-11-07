@@ -1,6 +1,6 @@
 ---
 title: "OpenMoat documentation"
-description: "OpenMoat checks every command, file access, web request and MCP call your coding agent makes, blocks the dangerous ones, and leaves everything else to your agent."
+description: "OpenMoat is the security layer between your AI coding agents and your machine: it checks every tool call before it runs, keeps your secrets and network out of reach, confines the code that does run, and records every decision."
 sidebar:
   label: "Introduction"
   order: 0
@@ -10,9 +10,27 @@ import { Aside, CardGrid, LinkCard, Steps, TabItem, Tabs } from '@astrojs/starli
 import AgentTable from '../../../components/AgentTable.astro';
 import { agentListOr } from '../../../data/agents';
 
-OpenMoat runs on your machine, next to {agentListOr()}. Before the agent runs a command, reads or writes a file, opens a web page or calls an MCP tool, OpenMoat checks it against one policy that you control. Normal work goes on as before; reading your keys, sending them out, destructive commands and switching OpenMoat off are blocked.
+OpenMoat is the security layer between your AI coding agents and your machine. It checks every tool call an agent makes before it runs, keeps your secrets and network out of reach, confines the code that does run, and records every decision, for {agentListOr()}, with one policy that stays on your machine. Normal work goes on as before; what the policy has no rule for goes to your agent's own prompt; effects that outlive the session wait for you; reading your keys, sending them out, destructive commands and switching OpenMoat off never run.
 
-## How it works
+## What OpenMoat is
+
+<img class="om-diagram light" src="/assets/overview-light.svg" alt="OpenMoat sits between your AI coding agents and your machine. Eleven agents send every tool call through OpenMoat. Its parts: a policy engine, OS sandboxes, an egress proxy, a secret broker, an MCP gateway, an audit trail, a merge check and a policy lock. It guards your files and secrets, shell and programs, network, MCP servers, and git, CI and editors." />
+<img class="om-diagram dark" src="/assets/overview-dark.svg" alt="" aria-hidden="true" />
+
+| Part | What it does | Start with |
+|---|---|---|
+| [Policy engine](/docs/how-it-decides/) | Decides every tool call before it runs, from what the call really does: it reads the shell the way a shell does and checks the files, hosts and programs a call touches. | `openmoat init` |
+| [OS sandboxes](/docs/sandboxes/) | Confine the code an allowed call runs: the agents' own sandboxes written from the same policy, or `openmoat run` for any agent. | `openmoat run` |
+| [Egress proxy](/docs/egress-proxy/) | Lets network from the sandbox reach only the hosts the policy lists. | `openmoat proxy` |
+| [Secret broker](/docs/keep-tokens-safe/) | Gives the agent a placeholder; the proxy adds your real token for one host only. | `openmoat secret add` |
+| [MCP gateway](/docs/mcp-servers/gateway/) | Starts only the MCP servers you accepted, pins each tool's description, and holds data from one server sent into another's writing tool. | `openmoat mcp wrap` |
+| [Audit trail](/docs/see-what-happened/) | Records every decision in a local, hash-chained log; explains any block, follows calls live, and shows which lines of a commit an agent wrote. | `openmoat watch`, `why`, `provenance` |
+| [Merge check](/docs/check-a-pull-request/) | Checks a pull request for what its changes do: CI and hook edits, agent settings, look-alike packages, new hosts. Runs in CI and as a GitHub Action. | `openmoat policy check-diff` |
+| [Policy lock](/docs/self-protection/) | Pins the policy and hook files: the agent cannot change the rules, approve its own blocked call or switch OpenMoat off. | `openmoat doctor` |
+
+It is one Rust binary for macOS, Linux and Windows. No AI model decides, and OpenMoat sends nothing off your machine.
+
+## How a call is decided
 
 <img class="om-diagram light" src="/assets/how-it-works-light.svg" alt="An AI coding agent wants to run a tool call. Through the agent's own hook, OpenMoat checks it against one local policy before it runs: npm test is allowed, a call with no rule is left to the agent's own prompt, a git hook write is held for your review, and reading ~/.ssh/id_rsa is denied. Allowed code still runs inside the OS sandbox and the egress proxy, and every decision goes into a local hash-chained audit log." />
 <img class="om-diagram dark" src="/assets/how-it-works-dark.svg" alt="" aria-hidden="true" />
@@ -23,7 +41,7 @@ The same policy is written into the agents' own OS sandboxes (Claude Code, Codex
 
 <AgentTable variant="intro" />
 
-`openmoat init` finds the ones you have and asks before setting up each; `openmoat status` shows the level each one has right now. What each agent's hook sees, where you answer a review and what it does not cover: [Supported agents](/docs/agents/).
+`openmoat init` finds the ones you have and asks before setting up each; `openmoat status` shows the level each one has right now. What each agent's hook sees, where you answer a review and what it does not cover: [Supported agents](/docs/agents/). In your editor, Claude Code's VS Code extension and JetBrains plugin use the same hook, and Cursor's Tab is refused secret files: [Editors](/docs/editors/).
 
 ## Quick start
 
@@ -77,7 +95,7 @@ The same policy is written into the agents' own OS sandboxes (Claude Code, Codex
    ```
 
    ```text
-   ⛔ deny
+   ✕ deny
       rules : secrets-paths
       reason: secret material: read /Users/you/.ssh/id_rsa
       also  : shell "cat ~/.ssh/id_rsa"
@@ -105,7 +123,12 @@ Already have projects? Every project you open with a protected agent is covered 
   <LinkCard title="Egress proxy" href="/docs/egress-proxy/" description="Refuses unlisted hosts, cloud metadata and private addresses for sandboxed commands, and serves agent sessions only." />
   <LinkCard title="Self-protection and the policy lock" href="/docs/self-protection/" description="Stops the agent editing the policy (with an editor too), approving itself, running OpenMoat's hook itself or switching OpenMoat off." />
   <LinkCard title="Session taint" href="/docs/session-taint/" description="After a web page or MCP result, writes to CI, build and agent files need review." />
+  <LinkCard title="Injected input" href="/docs/injected-input/" description="A command or write that uses a host, path or command a page or tool result named waits for you, with the source named." />
+  <LinkCard title="MCP data between servers" href="/docs/mcp-servers/cross-server/" description="Data one MCP server returned, sent into another server's writing tool, waits for you." />
+  <LinkCard title="Code that runs later" href="/docs/runs-later/" description="CI, git hooks, editor and package-manager configuration, virtual environments, dev containers and containers handed the host wait for you." />
   <LinkCard title="Audit log" href="/docs/see-what-happened/" description="Every decision in a local, hash-chained log, with passwords in commands masked: openmoat show, replay and report." />
+  <LinkCard title="Watch and why" href="/docs/see-what-happened/watch-and-why/" description="openmoat watch follows the agents' calls live; openmoat why --last explains a block." />
+  <LinkCard title="Provenance" href="/docs/see-what-happened/provenance/" description="Which files and lines of your commits an agent session wrote, kept in git notes for reviewers." />
   <LinkCard title="OpenMoat Bar" href="/docs/openmoat-bar/" description="A read-only menu bar and tray app: which agents are protected, what was blocked and why." />
 </CardGrid>
 
@@ -113,7 +136,7 @@ Already have projects? Every project you open with a protected agent is covered 
 
 <CardGrid>
   <LinkCard title="Team rules and signed policy packs" href="/docs/team-rules/" description="A repository's rules for everyone in it, and signed packs for every project." />
-  <LinkCard title="Check a pull request" href="/docs/check-a-pull-request/" description="openmoat policy check-diff and a GitHub Action report a change to CI, hooks, agent settings or a token before it is merged." />
+  <LinkCard title="Check a pull request" href="/docs/check-a-pull-request/" description="openmoat policy check-diff and a GitHub Action report a change to CI, hooks or agent settings, and what added lines do: look-alike dependencies, swapped lockfile hashes, CI takeovers, private keys, new hosts." />
   <LinkCard title="Compliance evidence" href="/docs/compliance-evidence/" description="openmoat audit evidence maps the audit log to OWASP LLM Top 10, SOC 2 and ISO 27001 controls. Evidence, not a certification." />
   <LinkCard title="Auto-approve and CI" href="/docs/auto-approve-and-ci/" description="What still stops a call when nobody is asked." />
   <LinkCard title="The SDK" href="/docs/sdk/" description="openmoat-sdk and @openmoat/sdk (on npm): the same decisions in your own agent, before each tool call runs." />

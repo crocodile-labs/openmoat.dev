@@ -35,7 +35,7 @@ openmoat policy check "https://docs.rs/serde" --kind fetch     # a web fetch, no
 openmoat policy check "~/.aws/credentials" --kind fs-read      # a file read by a file tool
 ```
 
-The first line of the output is the answer: `✔ allow`, `→ defer`, `❓ review` or `⛔ deny`.
+The first line of the output is the answer: `✓ allow`, `→ defer`, `? review` or `✕ deny` (before 0.17.0: `✔`, `→`, `❓`, `⛔`). A script should match the verdict word, or read `--format json`.
 
 ## In another project
 

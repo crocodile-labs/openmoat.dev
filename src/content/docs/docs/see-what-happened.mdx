@@ -36,6 +36,15 @@ Allow? [o]nce for this session / [a]lways / [n]o
 
 It shows what needs you first. When nothing does, it says `Nothing needs you.`
 
+### Live, and why
+
+```bash
+openmoat watch           # every agent's calls as they happen, one line each (Ctrl-C stops)
+openmoat why --last      # the newest deny or review: the rule, where it is in your policy, how to change it
+```
+
+Both are new in 0.17.0: [Watch and why](/docs/see-what-happened/watch-and-why/). Which files and lines of your commits an agent wrote: [Provenance](/docs/see-what-happened/provenance/).
+
 ## The latest decisions
 
 ```bash
@@ -65,6 +74,8 @@ openmoat report --since 7d
 ```
 
 Totals, the hosts the agents reached, the rules that fired most, and reviews per active hour. If calls are held for your review often, this shows which rule does it, so you know what to allow.
+
+From 0.17.0 it also counts, per session and per active hour, the sends of data after a session read many files outside the project, or packed them into an archive or an encoding (`@staging-egress`). This is recorded only: no default rule decides it, so no call is stopped for it, and the counts let you set the thresholds from real sessions first ([Other keys](/docs/policy-file/other-keys/#atoms-a-shell-rule-can-name), ADR-061, proposed).
 
 ## Export and verify
 
@@ -130,8 +141,11 @@ What the report holds, the map and its limits: [Compliance evidence](/docs/compl
 |---|---|---|
 | `openmoat` | One line of today's decisions, then anything that needs you | `openmoat` |
 | `openmoat show [id] [--session <id>] [--since <when>] [--recent N]` | Recent events, one session, or one event in full | `openmoat show --since today` |
+| `openmoat watch [--host <id>] [--only deny\|review] [--session <id>] [--no-follow]` | Follow the agents' calls live | `openmoat watch --only deny` |
+| `openmoat why [--last \| <id> \| HH:MM]` | Explain one deny or review | `openmoat why --last` |
+| `openmoat provenance [--range <revs>] [--write-notes] [--verify]` | Which files and lines of commits an agent session wrote | `openmoat provenance --range main..HEAD` |
 | `openmoat replay [--since <when>] [--session <id>]` | Each agent session as a tree of calls, verdicts and rules | `openmoat replay --since today` |
-| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts reached, top rules, reviews per active hour | `openmoat report --since 7d` |
+| `openmoat report [--since <when>] [--host <id>]` | Totals, hosts reached, top rules, reviews per active hour, sends after collecting outside the project | `openmoat report --since 7d` |
 | `openmoat audit export [--since …] [--host …] [--session …]` | Events as JSON Lines, with their chain hashes | `openmoat audit export --since 7d > week.jsonl` |
 | `openmoat audit verify <file> [--anchor <hash>] [--require-anchor]` | Check an export without the database | `openmoat audit verify week.jsonl` |
 | `openmoat audit verify --against <repo or file>` | Check the log against every anchor recorded there | `openmoat audit verify --against ~/notes` |

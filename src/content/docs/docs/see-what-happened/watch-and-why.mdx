@@ -1,0 +1,87 @@
+---
+title: "Watch the agents live, and explain a block"
+description: "openmoat watch follows every agent's calls as they happen; openmoat why explains one deny or review: the rule, where it is in your policy, and how to change it."
+sidebar:
+  label: "Watch and why"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You want to see what your agents do while they work, or know exactly why a call was stopped. New in 0.17.0.
+
+</Aside>
+
+Both read the audit log only, in your own terminal. They never wait on the hook nor make it wait.
+
+## Watch the agents live
+
+Run `openmoat watch` in a second terminal pane:
+
+```text
+$ openmoat watch
+OpenMoat 0.17.0 · watching Claude Code, Codex · policy 16 deny · 10 allow · 12 review
+
+10:42:01  claude-code  ✓ Bash   cargo test -p openmoat-core            allow · dev-shell
+10:42:07  claude-code  ✓ Edit   src/lib.rs                             allow · project-fs
+10:42:15  claude-code  ? Bash   git config core.pager less             review · git-internals
+                         ↳ changing git's config, hooks or refs · approve: openmoat allow --last
+10:42:31  claude-code  ✕ Read   ~/.ssh/id_ed25519                      deny · secrets-paths
+                         ↳ reading or changing your keys and credential files
+10:42:40  codex        → Bash   make deploy                            defer · agent asks
+```
+
+- `✓` allowed, `?` held for review, `✕` denied, `→` left to the agent's own prompt. Times are UTC, as in `openmoat show`.
+- A review or deny gets a second line: the rule's title, and for a review the command that approves it.
+- Fewer calls: `--host <id>`, `--only deny` or `--only review`, `--session <id>`. `--recent N` sets how many earlier calls it shows first (10); `--no-follow` stops after them.
+- Piped, each call is one plain line, for `grep`. Colour only on a terminal, never with `NO_COLOR`. Ctrl-C stops it.
+
+## Why was this blocked?
+
+`openmoat why` explains one decision: `--last` (the default) for the newest deny or review, an event id from `openmoat show` or `openmoat watch`, or a time today (UTC) as `watch` shows it, `10:42` or `10:42:31`.
+
+```text
+$ openmoat why --last
+OpenMoat blocked: reading or changing your keys and credential files
+  event   1f · 2026-11-06 10:42:31 UTC · claude-code · session 7c1e4b2a
+  call    Read ~/.ssh/id_ed25519
+  answer  moat: deny [secrets-paths] — secret material: read ~/.ssh/id_ed25519
+
+Rules that decided it
+  deny secrets-paths  reading or changing your keys and credential files
+      why     a key or token that leaves this machine cannot be taken back
+      reason  secret material: read ~/.ssh/id_ed25519
+      from    your policy, ~/.moat/policy.yaml:17
+
+Your policy now decides each part of the call as
+  deny    read ~/.ssh/id_ed25519  (secrets-paths)
+
+How to change it
+  · `secrets-paths` is a deny rule of your policy (~/.moat/policy.yaml:17); only you can change it, with `openmoat edit`. An allow rule never overrides a deny
+
+More: https://openmoat.dev/r/secrets-paths
+```
+
+| Section | What it says |
+|---|---|
+| Rules that decided it | each rule's title, `why`, the recorded reason, and where it is: your policy and line, your `openmoat allow` rules, the repository's `.moat/policy.yaml`, a policy pack, the policy's `defaults:` (no rule matched), or a built-in check |
+| Your policy now decides | the call decided again, part by part, with the policy as it is now; if you changed the policy since, what would happen now |
+| Context | what else shaped it: session taint, code the session wrote, text from another MCP server, a changed MCP server, OpenMoat's own files changed |
+| How to change it | `openmoat edit` for a deny of your policy, `openmoat allow --last` (or `--always`) for the newest review, the repository's owners for its rules |
+
+`--format json` prints the same as one document (`rules`, `decided_now`, `context`, `change`, `page`).
+
+## Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat watch [--host <id>] [--only deny\|review] [--session <id>] [--recent N] [--no-follow]` | Follow the agents' calls live, one line each | `openmoat watch --only deny` |
+| `openmoat why [--last \| <id> \| HH:MM[:SS]] [--format json]` | Explain one deny or review | `openmoat why --last` |
+
+## Limits
+
+- Only what the hooks and the proxy recorded is shown: a call no hook reports is not in the log.
+- `why` decides the call again with today's policy; a policy changed since may decide it differently, and it says so.
+
+The full reference: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#watch-the-agents-live). The block message itself: [Something was blocked](/docs/blocked/#what-the-message-says).

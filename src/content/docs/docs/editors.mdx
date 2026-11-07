@@ -1,0 +1,83 @@
+---
+title: "Editors: VS Code, JetBrains and Cursor"
+description: "Claude Code in VS Code and JetBrains uses the same hook as the CLI; openmoat init finds the Claude Code the VS Code extension bundles. Cursor's Tab is refused secret files."
+sidebar:
+  label: "Editors"
+  order: 3
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You use Claude Code from the VS Code extension or the JetBrains plugin, or Cursor's editor, and want to know what OpenMoat checks there. New in 0.17.0.
+
+</Aside>
+
+**Protects against** an agent in your editor doing what it could not do in the terminal: Claude Code in the editor runs the same tools, and the editor itself runs what its project configuration names.
+
+| Editor | What protects it |
+|---|---|
+| VS Code, JetBrains | Claude Code's extension and plugin use the same `claude-code` hook as the CLI: every tool call goes through OpenMoat, and a hook that fails to start, crashes or times out blocks the call. There is no separate host to set up. |
+| Cursor | Cursor's own hooks for the agent ([Supported agents](/docs/agents/#cursor)), and Tab, Cursor's inline completion, is refused secret files. |
+
+## Set it up
+
+<Steps>
+
+1. **Run `openmoat init`**
+
+   ```bash
+   openmoat init        # finds the VS Code extension's Claude Code too
+   ```
+
+   The VS Code extension bundles its own Claude Code and puts no `claude` on your search path. OpenMoat reads the extension's version from `extensions.json` in the extensions folder of VS Code, VS Code Insiders, VS Code Server (remote hosts), Cursor, Windsurf and VSCodium. It runs nothing there. For Cursor, `openmoat init` also installs `beforeTabFileRead`.
+
+2. **Check it**
+
+   ```bash
+   openmoat status      # lists each Claude Code it found
+   ```
+
+   Each copy gets a line such as `Claude Code 2.1.318 bundled by the VS Code extension at ~/.vscode/extensions/anthropic.claude-code-2.1.318-darwin-arm64`.
+
+3. **Run `openmoat init` again after an old extension updates**
+
+   `openmoat init` writes `onFailure: "block"` (a failed hook blocks the call) only when every Claude Code it finds is 2.1.295 or later, since an older copy may reject the key and drop every hook in the file. If an old extension is left over, update or remove it, then run `openmoat init`. `openmoat doctor` says when.
+
+</Steps>
+
+**JetBrains:** the plugin bundles no Claude Code. It runs the `claude` on your search path, or the command set in **Settings → Tools → Claude Code [Beta] → Claude command**. OpenMoat does not read that setting, so if you set one, point it at the same `claude` that is on your search path.
+
+## What is checked
+
+| In the editor | How OpenMoat decides it |
+|---|---|
+| Every Claude Code tool (`Bash`, `Read`, `Edit`, `WebFetch`, MCP tools, …) | as in the terminal |
+| `getDiagnostics` (`mcp__ide__getDiagnostics`, `mcp__claude-vscode__getDiagnostics`): the editor's errors and warnings, which quote the file's lines | a read of the file its `uri` names: a secret's diagnostics are denied, a project file's are left to Claude Code |
+| `executeCode` (`mcp__ide__executeCode`, VS Code): Python run in the open notebook's kernel | needs review; the editor still asks Execute or Cancel |
+| A write to `.vscode/`, `*.code-workspace`, `.idea/`, JetBrains' shared `*.run.xml` | needs review (`runs-later`): the editor runs the tasks, launch configurations, MCP servers and programs they name. Reading them stays allowed |
+| A write to `.venv/bin/` or `venv/bin/` | needs review (`runs-later`): the editor's Python extension and test runners start them outside any sandbox |
+| A write to `.devcontainer/` or `.devcontainer.json` | needs review (`runs-later`): its `initializeCommand` runs on this machine when the editor opens the folder |
+| Cursor's Tab reading a file | refused for a file the policy refuses an agent (a secret, another agent's login); every other file as before |
+
+Try it against your policy:
+
+```bash
+openmoat policy check "$PWD/.vscode/tasks.json" --kind fs-write   # exit 3: review (runs-later)
+openmoat policy check "$PWD/src/main.rs" --kind fs-write          # exit 0: allow (project-fs)
+openmoat policy check "$PWD/.vscode/tasks.json" --kind fs-read    # exit 0: allow
+```
+
+**Cursor and Claude Code's hooks.** Cursor also runs Claude Code's hooks from `~/.claude/settings.json` by default. OpenMoat reads such a call with Cursor's field names and answers a review there as a deny, since Cursor would run a call answered `ask`. That hook is not Cursor's protection: Cursor runs it fail-open and ranks its own hooks above it. With both set up, a call is in the audit log twice.
+
+## Limits
+
+- **A repository's own git configuration.** `.git/config` can name programs git runs (`core.fsmonitor` on every `git status`, a hooks folder, a pager, filters, `!` aliases). The editor's git extension and the agent run git in the background when the folder opens, before any hook, so OpenMoat cannot stop it. `openmoat status` and `openmoat doctor` name each such key of the current repository.
+- **The editor selection and the open file.** Claude Code adds the text you select, and the path of the open file, to each prompt. That is no tool call, so no hook sees it. VS Code's `claudeCode.attachSelection` and `attachOpenFile` turn it off.
+- **A process wrapper.** VS Code's `claudeCode.claudeProcessWrapper` runs another program as Claude Code; OpenMoat checks only what that program sends the hook.
+- **A project that turns hooks off.** A repository's `.claude/settings.json` with `disableAllHooks: true` turns OpenMoat's hook off for that project in the editor as in the terminal. `openmoat status` and `openmoat doctor` report it ([Project settings that turn hooks off](/docs/blocked/#project-settings-that-turn-hooks-off)).
+- **Windows before Claude Code 2.1.310.** Without Git for Windows or Git Bash, a hook's block could still let the call through; `status` and `doctor` warn about such a copy.
+- **Cursor:** cloud agents do not load your user hooks, so OpenMoat does not check them. Cursor's hook docs name no browser, web or memory tool; a tool that reaches `preToolUse` is decided, one that does not is not checked.
+
+The full page: [IDE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/IDE.md). The decision: [ADR-060](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-060-claude-code-in-editors.md).
