@@ -39,7 +39,7 @@ export const agents: Agent[] = [
     protectionShort: 'hook + OS sandbox', protectionSub: 'hook only on Windows',
     answer: "Cursor's prompt for shell and MCP calls; <code>openmoat allow --last</code> for file tools",
     homeAnswer: "Cursor's prompt for shell and MCP; <code>openmoat allow --last</code> for files",
-    note: 'some commands run outside its sandbox (Run Everything, Auto-review)',
+    note: 'some commands run outside its sandbox (Run Everything, Auto-review); Tab is refused secret files',
   },
   {
     name: 'OpenClaw', inList: 'OpenClaw', host: 'openclaw', docs: '/docs/agents/#openclaw', sandbox: false,
@@ -80,7 +80,7 @@ export const agents: Agent[] = [
   },
   {
     name: 'Cline CLI', inList: 'the Cline CLI', host: 'cline', docs: '/docs/agents/cline/', sandbox: false,
-    protection: 'hook only (a hook script)', protectionShort: 'hook only',
+    protection: 'hook only (<code>PreToolUse</code> and <code>PostToolUse</code> hook scripts)', protectionShort: 'hook only',
     answer: "the call is denied, which ends Cline's run; run <code>openmoat allow --last</code>",
     homeAnswer: 'the call stops; run <code>openmoat allow --last</code>',
     note: 'the Cline VS Code extension, <code>--yolo</code> runs and native Windows are not covered',

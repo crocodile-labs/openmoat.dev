@@ -34,6 +34,9 @@ body { font-family: 'Geist Sans', system-ui, sans-serif; color: var(--fg); line-
   .tab { font-family: 'Geist Mono', monospace; font-size: 13px; padding: 8px 14px; border-radius: 6px; border: 0; cursor: pointer; min-height: 36px; background: transparent; color: var(--muted-2); }
   .tab[aria-selected='true'] { background: var(--panel-2); color: var(--fg); }
   .agent-row code { font-family: 'Geist Mono', monospace; color: var(--fg-2); }
+  /* diagrams: one image per theme, as in the docs */
+  .om-diagram { display: block; width: 100%; max-width: 980px; height: auto; margin: 0 auto; }
+  :root:not([data-theme='light']) .om-diagram.light, :root[data-theme='light'] .om-diagram.dark { display: none; }
   @media (max-width: 760px) {
     [style*="repeat(4, minmax(0, 1fr))"], [style*="repeat(5, minmax(0, 1fr))"], [style*="repeat(3, minmax(0, 1fr))"] { grid-template-columns: 1fr !important; }
     main section { padding-left: 20px !important; padding-right: 20px !important; }
