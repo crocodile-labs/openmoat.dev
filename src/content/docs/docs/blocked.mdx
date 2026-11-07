@@ -14,12 +14,41 @@ Your agent says a call was denied or held for review, or you keep seeing a promp
 
 </Aside>
 
+## What the message says
+
+From 0.17.0, when OpenMoat denies a call or holds it for review, the agent and you read what was stopped, why, and the one thing you can do, in every agent:
+
+```text
+OpenMoat blocked: reading or changing your keys and credential files
+  call   cat ~/.ssh/id_rsa
+  rule   moat: deny [secrets-paths] — secret material: read /Users/you/.ssh/id_rsa
+  why    a key or token that leaves this machine cannot be taken back
+  next   if you need this, do it yourself in your own terminal
+  more   openmoat why --last · https://openmoat.dev/r/secrets-paths
+```
+
+A review reads `OpenMoat is holding this for you: …` and shows in the agent's own prompt where it has one.
+
+- The first line is the rule's `title`, and `why` is the rule's `why`. A rule without a title, and OpenMoat's own checks (`kernel-integrity`, `session-taint`, `default.net`, …), send only the `rule` line.
+- The `rule` line is the line earlier releases sent: `moat: <verdict> [<rule ids>] — <reasons>`. The table below goes by it, and scripts that look for it still find it.
+- The call is shown with secrets masked, on one line. `next` is one step for you; it never tells the agent another way to do the same thing, since the agent reads it too.
+- `openmoat why --last` explains it in full: the rules, where they are in your policy, and how to change it ([Watch and why](/docs/see-what-happened/watch-and-why/)).
+
+Your own rules can carry a `title:` and `why:` for the message ([Other keys](/docs/policy-file/other-keys/#titles-and-reasons-for-the-block-message)).
+
+## Find the message
+
 Find the message you saw, then run the command next to it **in your own terminal**. Agents are denied every one of these commands, so a prompt injection cannot run them for you.
 
 | You saw | It means | Run |
 |---|---|---|
+| `moat: review [injected-input] — the host … came from the page fetched from …` | A command or write uses a host, path or command that untrusted output (a page, an issue, an MCP result) named earlier in the session. | Check it is what you asked for, then approve it, or `openmoat allow --last`, see [Injected input](/docs/injected-input/) |
+| `moat: review [mcp-cross-server] — this call to MCP server … writes or sends text that MCP server … returned` | Data one MCP server returned is sent into another server's tool that writes or sends. | Approve it if you meant it, see [MCP data between servers](/docs/mcp-servers/cross-server/) |
+| `moat: review [container-host] — …` | A `docker`, `podman` or `nerdctl` command hands the container the host (`--privileged`, a host namespace, the host's root or the Docker socket). | Approve it if you need it, see [Code that runs later](/docs/runs-later/#containers-handed-the-host) |
+| `moat: deny [managed-settings] — …` | A write to an agent's system-wide settings, which can turn every hook off. | Nothing. An administrator changes those files |
+| `moat: deny [agent-credentials] — …` | Another agent's login, or the agent's own. | Nothing, see [Agent logins and keys](/docs/env-files/agent-credentials/) |
 | `moat: deny [default.net] — no rule matched net docs.rs` | A host the policy does not list, for a command that can send data there (a body, a header, `curl -L`, a `curl` without `-q` first). | `openmoat allow --site docs.rs` |
-| `moat: review [git-internals] — …` or `[runs-later]` | A call whose effect outlives the session: a git hook, a CI workflow, an agent's skills, hooks or MCP settings that load next session. | Approve it in the prompt, or `openmoat allow --last` |
+| `moat: review [git-internals] — …` or `[runs-later]` | A call whose effect outlives the session: a git hook, a CI workflow, the editor's `.vscode/` or `.idea/`, a `.venv/bin/` script, a dev container, an agent's skills, hooks or MCP settings that load next session ([Code that runs later](/docs/runs-later/)). | Approve it in the prompt, or `openmoat allow --last` |
 | `moat: review [unchecked] — …` | OpenMoat sees the call but cannot check all of it: a search pattern that may climb out of its folder, a search of every workspace folder, text typed into a running shell. | Approve it if it is what you expect, or ask the agent to name the folder or run the command in one call |
 | Your agent's own prompt, for a file outside the project | OpenMoat has no rule for it and left it to your agent. | `openmoat allow --dir <folder>`, see [Work across several repos](/docs/work-across-repos/) |
 | `moat: deny [secrets-paths] — secret material: read …` | A key, token or `.env`. This is the block working. | Nothing. If the agent needs a token, see [Keep a token from the agent](/docs/keep-tokens-safe/) |

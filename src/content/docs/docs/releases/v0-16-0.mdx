@@ -1,0 +1,47 @@
+---
+title: "OpenMoat 0.16.0"
+description: "Agent logins denied inside every OS sandbox, instructions planted in what Claude Code read held for review, MCP data carried from one server into another held for review, content checks in the pull request check, which lines of a commit an agent wrote, and one readable layout for init, status and doctor."
+sidebar:
+  label: "0.16.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-06. [GitHub release v0.16.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.16.0).
+
+<Aside type="caution" title="Upgrading">
+
+- **Run `openmoat policy upgrade`** in your own terminal for the new and changed default rules: agent logins denied to sandboxed commands, `injected-input`, the MCP cross-server flow, more instruction files, `provenance-notes` and the `check_diff` content checks. It now groups what changes, then asks.
+- **Then run `openmoat init` once.** It adds Claude Code's `PostToolUse` entry, which links later calls to untrusted output. `openmoat doctor` reports it as needed until then.
+- **Audit log:** it moves to schema 10 on first use; rows written before keep verifying. An older OpenMoat refuses the upgraded log, so keep one OpenMoat installed.
+- **New optional policy settings:** `check_diff.levels` and `mcp.flow_trusted`. An older OpenMoat rejects a policy that uses them.
+- **Library crates (a break, hence 0.16.0):** `openmoat-core` `McpSettings` gains `flow_trusted` and `Policy` gains `check_diff`. See the [changelog](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md).
+
+Every step after an upgrade: [Upgrade](/docs/upgrade/).
+
+</Aside>
+
+## Security
+
+- **Agent logins are denied inside every OS sandbox.** The agents' login and key files (`agent-credentials`) are now denied to the commands an agent runs, so a test, package script or downloaded binary can no longer read another agent's token, or the agent's own under Claude Code's, Codex's and Cursor's sandboxes. The agents still sign in. `openmoat run`, which holds the agent itself, keeps the login of the agent it starts readable (`run.own-login`) and denies the others'. `openmoat sandbox show` lists both ([Agent logins](/docs/env-files/agent-credentials/), [#735](https://github.com/crocodile-labs/openmoat/pull/735)).
+- **Instructions planted in what the agent read need review.** When Claude Code reports what a call returned (the new `PostToolUse` entry) and the output is untrusted (a fetched page, web search results, an MCP result, `gh issue view`, a `curl` of an unlisted host), OpenMoat keeps fingerprints of its hosts, outside paths and commands, never the text. A later shell command or write that uses one of them, such as `curl` to the host an issue body named, needs review (`injected-input`), and the reason names the source. What the policy allows on its own stays allowed ([Injected input](/docs/injected-input/), [#737](https://github.com/crocodile-labs/openmoat/pull/737)).
+- **More instruction files after untrusted content.** After the session read untrusted content, writes to `.agents/skills/**`, `.windsurfrules`, `.windsurf/rules/**` and `.github/instructions/**` need review, as `CLAUDE.md` and `AGENTS.md` already did. In a clean session they stay ordinary edits ([#737](https://github.com/crocodile-labs/openmoat/pull/737)).
+- **MCP data carried from one server into another needs review.** `openmoat mcp proxy` keeps hashed pieces of each wrapped server's results (addresses, email addresses, long tokens, runs of eight words). A later call that carries one into another server's tool that writes or sends needs review (`mcp-cross-server`), naming both servers. `mcp: { flow_trusted: [...] }` exempts a server ([MCP data between servers](/docs/mcp-servers/cross-server/), [#733](https://github.com/crocodile-labs/openmoat/pull/733)).
+- **A repository's review no longer softens your deny.** A committed `.moat/policy.yaml` with `review: [{net: ['*']}]` turned every host your `net: deny` default refuses into a review a person could approve; per action the stricter of the two policies now wins ([#734](https://github.com/crocodile-labs/openmoat/pull/734)).
+- **The pull request check reads what added lines do**, offline, each finding with a rule id, its level and the line: near-miss and off-registry dependencies, install scripts, lockfile hashes changed while the version stays, GitHub workflows a pull request can take over, printed secrets, downloaded or decoded code that runs, `.pth` startup files, Dockerfile `ADD` of a URL without a checksum, long base64 blobs, private keys, real-looking `.env` values, and every new host your network allow list does not name. `check_diff.levels` sets any of them to `deny`, `review` or `off` ([Check a pull request](/docs/check-a-pull-request/#content-checks), [#736](https://github.com/crocodile-labs/openmoat/pull/736)).
+- **Agents cannot write OpenMoat's provenance record.** `openmoat provenance --write-notes` from an agent is denied (`kernel-self`); an agent's `git notes` on the `openmoat` ref and `git update-ref` of `refs/notes/openmoat` need review (`provenance-notes`) ([#738](https://github.com/crocodile-labs/openmoat/pull/738)).
+- **`openmoat policy check-diff`** no longer reads a diff cut off right after a hunk header as complete; such a diff is now an error ([#734](https://github.com/crocodile-labs/openmoat/pull/734)).
+- **`openmoat mcp proxy`** drops a server response that has no `id`, which the agent could take for the answer to any request it was waiting for ([#734](https://github.com/crocodile-labs/openmoat/pull/734)).
+
+## Added
+
+- **Which lines of a commit an agent wrote.** `openmoat provenance` shows which files of your commits an agent session wrote, from this machine's audit log, and where one recorded write made the whole change, which added lines. For each file it names the agent, the session and the time, and whether the session had read web content, an MCP result or a file such a session wrote first. `--write-notes` keeps a note per commit on `refs/notes/openmoat`; `--verify` checks the notes against the log. The pull request check and its Action show the notes as review-level lines that never change the exit code ([Provenance](/docs/see-what-happened/provenance/), [#738](https://github.com/crocodile-labs/openmoat/pull/738)).
+
+## Changed
+
+- **One readable layout for `openmoat doctor`, `status` and `init`:** what needs you first, each with its fix after `→`, one line per agent, then OpenMoat's own state, with the same marks everywhere (`✔ ! ✗ · –`) and paths as `~/…`. `--verbose` shows each check with its paths, each agent's known gaps and the hook entries `init` writes (`openmoat init --verbose` is new). `--format json` and exit codes are unchanged ([#732](https://github.com/crocodile-labs/openmoat/pull/732)).
+- **`openmoat init` asks less.** It no longer asks about an agent whose files already have everything, and ends with the agents protected and only the steps left to you, such as trusting the changed hook in Codex ([#732](https://github.com/crocodile-labs/openmoat/pull/732)).
+- **`openmoat policy upgrade` groups the changes** (new protections, fewer interruptions, renames, comment updates counted) instead of printing the whole diff; `d` at the question, or the new `--diff`, shows the diff. After applying it writes the agents' sandboxes as `openmoat sandbox sync` does ([#732](https://github.com/crocodile-labs/openmoat/pull/732)).
+- **Brace patterns reach the sandboxes as separate paths:** `~/.codex/{auth.json,.credentials.json}` becomes two paths in Claude Code's `denyRead` and Codex's profile ([#735](https://github.com/crocodile-labs/openmoat/pull/735)).
+- **Library crates:** `openmoat-core` `McpSettings` gains `flow_trusted` and `Policy` gains `check_diff`, with the new `mcp_flow` and `diffscan` modules. See the [changelog](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md) ([#733](https://github.com/crocodile-labs/openmoat/pull/733), [#736](https://github.com/crocodile-labs/openmoat/pull/736)).

@@ -31,6 +31,7 @@ Through the gateway:
 - **A call passes only when the hook decided exactly that call.** The gateway matches each `tools/call` to the hook's decision for the same tool and arguments, made within the hour, and uses each decision once. A call the hook never saw, or one whose arguments changed after the hook checked them, is refused (error -32001, rule `mcp-unattributed`). So is a call the hook denied, or held for review where no person could answer.
 - **The policy decides the arguments the server receives.** Paths and URLs in a call's arguments are checked as the hook checks them (`fs.read`, `fs.write`, `net`), under the name `mcp__<server>__<tool>`, so a rule on that name holds at the gateway whatever name the agent gives the tool. `resources/read` is checked too: a `file:` URI as the file it names, an `https:` one as the host.
 - **Each call is tied to the session that made it.** The gateway's audit row (host `mcp-proxy`) carries the session and call id of the hook's decision, so the session's taint applies: after the session read a secret, its MCP calls need review, and the gateway passes one only after the person said yes.
+- **One server's result carried into another server's action needs review** (from 0.16.0). The gateway keeps hashed pieces of each result; a later call of another server's tool that writes or sends and carries one is held for review (`mcp-cross-server`), naming both servers ([MCP data between servers](/docs/mcp-servers/cross-server/)). From 0.17.0 what a wrapped server returned also feeds [injected input](/docs/injected-input/), for every agent.
 - **Only what it read goes through.** Every message the gateway sends, to the server or to the agent, is the one it parsed, written again by itself, so a key given twice, a `\r` inside a line or a line separator inside a string cannot carry an unchecked message past it. A line from the server it cannot read is dropped. A response from the server reaches the agent only when it answers a request the agent sent.
 
 ## Example
@@ -105,7 +106,7 @@ Every call through the gateway is an audit row with host `mcp-proxy`: `mcp-proxy
 ## Limits
 
 - **Stdio servers only.** A remote (HTTP) server is checked by the hook alone. Claude Code plugin servers and managed MCP settings are not covered.
-- **Tool results pass as the server sent them.** They mark the session as having read untrusted content ([Session taint](/docs/session-taint/)); the gateway does not read them.
+- **Tool results pass as the server sent them.** They mark the session as having read untrusted content ([Session taint](/docs/session-taint/)); the gateway does not change them, and keeps only hashed pieces and fingerprints of them for the cross-server and injected-input checks. A result it cannot record reaches the agent as an error.
 - **The server still starts** when the agent's session begins. Only `--sandbox` or `openmoat run` confines what it does at start.
 - **A call from a program with no OpenMoat hook is refused**, by design: a tool that used a wrapped server directly gets `mcp-unattributed`. Unwrap the server if that is what you need.
 

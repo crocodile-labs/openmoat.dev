@@ -1,6 +1,6 @@
 ---
 title: "Other keys"
-description: "executables, sandbox, secrets, taint, require_signed_repo_policy and mcp, and the @pii-egress atoms a shell rule can name."
+description: "executables, sandbox, secrets, taint, staging, require_signed_repo_policy, mcp and check_diff; a rule's title and why for the block message; and the atoms a shell rule can name."
 sidebar:
   label: "Other keys"
   order: 3
@@ -14,12 +14,35 @@ sandbox:                          # what the OS sandboxes may read beyond the ru
 secrets: []                       # brokered secrets: openmoat secret add
 taint:
   protected_writes: ["**/deploy/**"]
+staging:                          # since 0.17.0: when a session counts as collecting outside the project
+  outside_reads: 25               #   default 25; 0 turns this trigger off
+  outside_folders: 2              #   default 2; 0 turns this trigger off
+  ignore: ["~/code/**"]           #   reads that never count
 require_signed_repo_policy: false # trust a repository policy only when signed
 mcp:
   trust_first_sight: false
+  flow_trusted: []                # since 0.16.0: servers whose results may reach other servers' acting tools unreviewed
+check_diff:                       # since 0.16.0: levels of the pull request check's content checks
+  levels:
+    diff-ci-unpinned: off
 ```
 
-See [OS sandboxes](/docs/sandboxes/#settings), [Token broker](/docs/keep-tokens-safe/), [Session taint](/docs/session-taint/#settings), [Signed policy packs](/docs/team-rules/policy-packs/#require-a-signature-on-repository-policies) and [MCP](/docs/mcp-servers/).
+See [OS sandboxes](/docs/sandboxes/#settings), [Token broker](/docs/keep-tokens-safe/), [Session taint](/docs/session-taint/#settings), [Signed policy packs](/docs/team-rules/policy-packs/#require-a-signature-on-repository-policies), [MCP](/docs/mcp-servers/), [MCP data between servers](/docs/mcp-servers/cross-server/#settings) and [Check a pull request](/docs/check-a-pull-request/#setting-the-levels). An OpenMoat older than the release named rejects a policy that sets `staging`, `flow_trusted` or `check_diff`.
+
+## Titles and reasons for the block message
+
+Since 0.17.0 a rule can say `title:` and `why:`. They change no decision. When a `deny` or `review` rule with a `title` decides a call, the agent and you read `OpenMoat blocked: <title>` (`OpenMoat is holding this for you: <title>` for a review), the call, the `moat:` line, `why`, one next step and `openmoat why --last` ([What the message says](/docs/blocked/#what-the-message-says)).
+
+```yaml
+deny:
+  - id: secrets-paths
+    reason: secret material
+    title: reading or changing your keys and credential files        # at most 80 characters
+    why: a key or token that leaves this machine cannot be taken back  # at most 160 characters
+    fs.read: ["~/.ssh/**", "**/.env"]
+```
+
+Every deny and review rule of the default policy has both, and `openmoat policy upgrade` adds them to a policy made from an earlier default. `openmoat policy lint` names the deny and review rules without a title. A repository policy may write them, but they are dropped when it is merged: only your own policy and your packs head the message an agent reads.
 
 ## Atoms a shell rule can name
 
@@ -33,6 +56,15 @@ review:
 ```
 
 Use `deny:` instead to refuse them. Details: [Card numbers sent out](/docs/env-files/card-numbers/).
+
+**Data sent after collection** (since 0.17.0, ADR-061, proposed). A send after the session read at least `staging.outside_reads` files or `staging.outside_folders` folders outside the project, or one that names a file packed from them (`tar`, `zip`, `base64`, …), carries `@staging-egress <host>`. No default rule names it, so it changes no decision; it is recorded, and `openmoat report` counts these sends. To act on it:
+
+```yaml
+review:
+  - id: staging-egress
+    reason: sends data after this session collected or packed files from outside the project
+    shell: ["@staging-egress *"]
+```
 
 ## Reserved keys
 

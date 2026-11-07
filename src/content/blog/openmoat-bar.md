@@ -16,7 +16,7 @@ coverTone: ok
 
 We built a small companion app for OpenMoat, so you can see what it decides without opening a terminal 🐊
 
-OpenMoat checks every command, file access, web request and MCP call your coding agent makes, and blocks the dangerous ones before they run. All of that happens quietly in the agent's hook. Until now, the only way to see it was a terminal: `openmoat` for today's picture, `openmoat show` for the calls, `openmoat status` for each agent's protection.
+OpenMoat is the security layer between your AI coding agents and your machine: it checks every command, file access, web request and MCP call before it runs. All of that happens quietly in the agent's hook. Until now, the only way to see it was a terminal: `openmoat` for today's picture, `openmoat show` for the calls, `openmoat status` for each agent's protection.
 
 That works when you go looking. It doesn't tell you the moment something changes: an agent update that dropped OpenMoat's hook, a project settings file that switches hooks off, an MCP server that changed overnight. OpenMoat Bar is for that.
 

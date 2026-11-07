@@ -21,7 +21,7 @@ From 0.14.0 the verdict `ask` is called `review`, everywhere OpenMoat shows or s
 | A default verdict | `"*": ask` | `"*": review` (`ask` still read) |
 | The reason the agent shows | `moat: ask [git-internals] — …` | `moat: review [git-internals] — …` |
 | `openmoat` | `… 1 denied, 1 asked` | `… 1 denied, 1 reviewed` |
-| `openmoat policy check` | `❓ ask` | `❓ review` |
+| `openmoat policy check` | `❓ ask` | `❓ review` (`? review` from 0.17.0) |
 | `openmoat report` | asks per active hour, top asks | reviews per active hour, top reviews |
 | `--format json` | `"verdict": "ask"`, `asked`, `top_asks` | `"verdict": "review"`, `reviewed`, `top_reviews` |
 | SDKs | `Verdict::Ask`, `"ask"` | `Verdict::Review`, `"review"` (`"ask"` still read) |

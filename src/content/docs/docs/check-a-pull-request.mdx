@@ -1,6 +1,6 @@
 ---
 title: "Check a pull request"
-description: "openmoat policy check-diff and the GitHub Action: report a change that adds a CI workflow, a git hook, agent settings, a .env file or a token, before it is merged."
+description: "openmoat policy check-diff and the GitHub Action: report a change to CI, git hooks, agent settings, the policy or secret files, and what its added lines do (look-alike dependencies, swapped lockfile hashes, CI takeovers, decoded code that runs, private keys, new hosts), before it is merged."
 sidebar:
   label: "Check a pull request"
 ---
@@ -9,7 +9,7 @@ import { Aside, Steps } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
-You want CI to flag a pull request that changes files an agent must not write, or files that run later outside any sandbox, whether an agent, a person or a fork wrote it. New in 0.14.0.
+You want CI to flag a pull request that changes files an agent must not write, or files that run later outside any sandbox, or adds lines that do something risky, whether an agent, a person or a fork wrote it. New in 0.14.0; the content checks and provenance notes since 0.16.0.
 
 </Aside>
 
@@ -21,16 +21,18 @@ You want CI to flag a pull request that changes files an agent must not write, o
 
 - every file it adds, edits, deletes or renames that the policy protects: CI workflows, git hooks and hook managers, build and package files (`package.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, …), agent instructions, settings, hooks and MCP server lists (`CLAUDE.md`, `.claude/`, `.mcp.json`, `.cursor/`, …), OpenMoat's own files (`.moat/`) and secret files (`.env`);
 - every added line that holds a known token format (GitHub, OpenAI and Anthropic, AWS access key ids, Slack, Google API, npm, GitLab), without printing the token;
-- symbolic links and where they point, submodule changes, and paths that leave the repository.
+- symbolic links and where they point, submodule changes, and paths that leave the repository;
+- what the added lines do ([content checks](#content-checks), since 0.16.0): a typo-squatted or off-registry dependency, an install script, a lockfile hash swapped for the same version, a CI workflow a pull request can take over, a script downloaded or decoded and run, a private key, and every new host the code connects to that your network allow list does not name;
+- what [provenance notes](#provenance-notes) say agents wrote in the change.
 
-Each file is decided by the policy's own rules, as a write from untrusted content, so the lists of protected files are the ones the hook uses. With 0.15.0's default policy that includes the git hook folders `core.hooksPath` usually names (`.githooks/`, `.git-hooks/`, `githooks/`, `git-hooks/`, `scripts/git-hooks/`) and Cline's workspace hooks (`.clinerules/hooks/`, `.cline/hooks/`), reported for `review`.
+Each file is decided by the policy's own rules, as a write from untrusted content, so the lists of protected files are the ones the hook uses: the git hook folders `core.hooksPath` usually names, Cline's workspace hooks and, from 0.17.0, all of `.vscode/` and `.idea/`, `.venv/bin/`, `.devcontainer/` and package-manager configuration that runs code, reported for `review` ([Code that runs later](/docs/runs-later/)).
 
-The check reads paths and added lines only: which files change, and whether an added line holds a known token format. It does not read what the rest of a changed file does.
+It runs offline: nothing is looked up on the network, so the same change gives the same report everywhere.
 
 | Level | Exit code | Means |
 |---|---|---|
-| `deny` | 2 | the policy denies an agent this write (`kernel-self`, `secrets-paths`), the change adds a token, or a path leaves the repository |
-| `review` | 3 | a person should look before merging: a file that CI, a build, a commit hook or an agent runs or reads later, a link, a submodule, a policy file |
+| `deny` | 2 | the policy denies an agent this write (`kernel-self`, `secrets-paths`), the change adds a token or a private key, a path leaves the repository, or a content check finds what should never be merged unnoticed (a swapped lockfile hash, a CI takeover, decoded code that runs) |
+| `review` | 3 | a person should look before merging: a file that CI, a build, a commit hook or an agent runs or reads later, a link, a submodule, a policy file, or a content check's review finding (a near-miss dependency, an unpinned action, a new host) |
 | clean | 0 | nothing the policy protects |
 | error | 64 | the change or a policy could not be read; never reported as clean |
 
@@ -62,6 +64,65 @@ deny: 1 deny, 2 review in 4 changed files (checked against the default policy)
 
 The source file is not listed: nothing the policy protects. `--format json` prints one document with `result`, `files`, `policy`, `repository_policy` and `findings` (each with `level`, `path`, `line` for an added line, `rules` and `reasons`).
 
+## Content checks
+
+From 0.16.0 each added line is also read for what it does. Each finding names the file and the line, a stable rule id, a level and a short reason; a secret's value is never printed.
+
+```text
+review  web/package.json:14 [diff-package-near-miss]
+        adds the npm dependency `lodahs`, one typo or trick away from the popular `lodash`, as typo-squats and made-up names are; check which one is meant
+deny    package-lock.json:2041 [diff-lock-integrity]
+        changes a package's integrity hash while its version stays: the next install accepts other code under the same version (…)
+deny    .github/workflows/greet.yml:12 [diff-ci-injection]
+        expands `${{ github.event.issue.title }}`, text a pull request's or issue's author writes, into a script, where it runs as code; pass it through `env:` and use the variable instead
+```
+
+| Area | Rule id | Level |
+|---|---|---|
+| Supply chain | `diff-package-near-miss`: a dependency one typo away from a popular one | review |
+| | `diff-install-script`: `package.json` sets `preinstall`, `install`, `postinstall` or `prepare` | review |
+| | `diff-package-source`: a dependency or locked package from git, a URL or another host than its registry | review |
+| | `diff-lock-integrity`: a lockfile hash changed or removed while the version stays | deny |
+| CI takeover | `diff-ci-pr-target`: `pull_request_target` with a checkout of the pull request's code | deny |
+| | `diff-ci-permissions`: write permissions | review |
+| | `diff-ci-unpinned`: `uses:` without a full commit SHA | review |
+| | `diff-ci-injection`: an author's text (an issue title, a branch name) expanded into a script | deny |
+| | `diff-ci-secret-out`: `${{ secrets.* }}` printed in a script | deny |
+| Backdoors | `diff-pipe-to-shell`: `curl … \| sh` and the like | review |
+| | `diff-decode-exec`: decoded text run as code | deny (review in a test folder) |
+| | `diff-python-startup`: a `.pth` file with an `import` line | deny (review in a test folder) |
+| | `diff-docker-remote-add`: a Dockerfile `ADD` of a URL without `--checksum` | review |
+| | `diff-encoded-blob`: a long base64 blob in source code | review |
+| Secrets | `diff-private-key`: a PEM or PuTTY private key | deny (review in a test fixture or marked fake) |
+| | `diff-env-secret`: a real-looking value in a `.env` file | review |
+| Network | `diff-new-host`: one finding per new host your network allow list does not name | review |
+
+### Setting the levels
+
+Set any content rule to `deny`, `review` or `off` in the policy the check reads (`--policy`, or your own policy file):
+
+```yaml
+version: 1
+check_diff:
+  levels:
+    diff-ci-unpinned: off        # this repository pins actions by tag on purpose
+    diff-new-host: deny          # nothing may add an endpoint unnoticed
+    diff-package-source: off     # our packages come from a private registry
+```
+
+`openmoat policy lint` rejects a rule id that is not a content check and warns about each rule set to `off`. A repository's `.moat/policy.yaml` cannot set levels: it only adds rules.
+
+## Provenance notes
+
+When the change's commits carry [provenance notes](/docs/see-what-happened/provenance/) on `refs/notes/openmoat`, the check adds a line per agent session:
+
+```text
+review  provenance: 2 files / 12 lines written by claude-code (session 3c9e1a7f02d4, after reading web content (fetch docs.example.com))
+        1 of 3 commits have a note on refs/notes/openmoat; notes are claims from the machine that wrote them (`openmoat provenance --verify` there checks them), and a commit without one proves nothing
+```
+
+They never change the exit code or fail the check. `--provenance info` shows them as notices, `--provenance off` hides them; the Action's `provenance` input does the same.
+
 ## On GitHub
 
 <Steps>
@@ -86,9 +147,9 @@ The source file is not listed: nothing the policy protects. `--format json` prin
            with:
              fetch-depth: 0             # the base and head commits and what they share
              persist-credentials: false
-         - uses: crocodile-labs/openmoat@<full commit SHA of the release tag> # v0.15.0
+         - uses: crocodile-labs/openmoat@<full commit SHA of the release tag> # v0.17.0
            with:
-             version: 0.15.0            # the same release, without the leading v
+             version: 0.17.0            # the same release, without the leading v
              fail-on: review            # review (default), deny or never
              # policy: ci/openmoat.yaml # read as the pull request's base has it
    ```
@@ -113,6 +174,7 @@ The source file is not listed: nothing the policy protects. `--format json` prin
 | `fail-on` | `review` | fail the step on anything found (`review`), only on `deny`, or `never` |
 | `policy` | the default policy | a policy file in the repository, read as the base has it |
 | `base`, `head` | the pull request's base and head commits | the revisions to compare |
+| `provenance` | `review` | what provenance notes say the change's agents wrote: warnings (`review`), notices (`info`) or nothing (`off`); never fails the step. The Action fetches `refs/notes/openmoat` from `origin` first; with `persist-credentials: false` that works only for a public repository |
 | `token` | `github.token` | what `gh attestation verify` reads the attestation with |
 
 Use the `pull_request` event, not `pull_request_target`: the check needs no secrets, and `pull_request_target` runs with the base repository's token while it reads code from the pull request. Under GitHub Actions, `--format github` (workflow annotations) is the default.
@@ -142,12 +204,15 @@ Paths are compared without letter case and as Windows opens them (trailing dots 
 | `openmoat policy check-diff` (diff on stdin) | Check any unified diff | `git diff main \| openmoat policy check-diff` |
 | `--policy <file>` | Check against that policy instead of the shipped default | `--policy ci/openmoat.yaml` |
 | `--format text\|json\|github` | Text, one JSON document, or workflow annotations | `--format json` |
+| `--provenance review\|info\|off` | How provenance notes are shown (default `review`); never changes the exit code | `--provenance info` |
 
 ## Limits
 
-- It checks which files change and what lines are added, not what a program does. A source file a build or a test runs is code like any other and is not flagged, nor is a script that a flagged file (`package.json`) already named before the change.
+- It reads the text a change adds (and the lockfile lines it removes), offline, not a parse of each language: a payload built from pieces at run time, a script the change does not touch, and a package's age or owner are not checked, and a benign line can match (set its level in `check_diff.levels`).
+- A source file a build or a test runs is code like any other and is not flagged by path, nor is a script that a flagged file (`package.json`) already named before the change.
 - Binary files are not searched for tokens; their paths are checked.
-- Only token formats with a vendor prefix are found: a password, a private key or a token without a known prefix is not. Commit messages are not searched.
+- Tokens are found by their vendor prefix, private keys by their PEM or PuTTY header, and passwords only as values of `.env` files. Commit messages are not searched.
+- GitLab, CircleCI, Azure and Jenkins files get the path rules and the backdoor checks, not the GitHub workflow checks.
 - A submodule's code, and what a symbolic link points to outside the repository, are not read.
 - `~/` rules do not apply to repository paths, so a dotfiles repository is checked as an ordinary project. Windows short names (`GITHUB~1`) are not expanded.
 - The action runs on Linux and macOS runners.

@@ -40,7 +40,7 @@ A repository's committed `.moat/policy.yaml` adds `deny` and `review` rules for 
 
 2. **Everyone gets the deny and review rules at once**
 
-   They apply to everyone who works in the repository, whatever agent they use, and show up as `repo:<id>`, such as `repo:no-prod-config`.
+   They apply to everyone who works in the repository, whatever agent they use, and show up as `repo:<id>`, such as `repo:no-prod-config`. Per action the stricter of the two policies wins: from 0.16.0 a repository's `review` rule never softens a `deny` your own policy gives, so `review: [{net: ['*']}]` cannot turn the hosts your `net: deny` default refuses into reviews a person could approve.
 
 3. **Each person trusts the allow rules**
 

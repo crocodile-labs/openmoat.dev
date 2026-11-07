@@ -18,6 +18,10 @@ A call can be decided more strictly because of what the same agent session did b
 | A secret (only when your policy lets secret reads run; the default denies them) | Network to any host but the secret's own, every MCP call, web search and unmapped tool |
 | Untrusted content: a web page, a web search, a `curl` or `wget` download, a browser MCP call that opens a page, an MCP tool's result | Writes to CI workflows, git hooks, build files (`package.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, `Dockerfile`, …) and agent instructions and settings (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json`, the Cline CLI's `.cline` and `.clinerules`, goose's `.goosehints`, …) |
 
+From 0.16.0 the instruction and skills files the next agent session obeys count too: `.agents/skills/**`, `.windsurfrules`, `.windsurf/rules/**` and `.github/instructions/**`, beside `CLAUDE.md` and `AGENTS.md`.
+
+Taint knows that untrusted content came in; [injected input](/docs/injected-input/) (from 0.16.0) also knows what it said: a later command or write that uses a host, path or command the page or tool result named needs review, with the source named.
+
 Taint follows files too. When a tainted session writes a file, the audit log records it; a later session that reads or runs that file (`cat`, `source run.sh`, `./run.sh`, `python x.py`) is tainted as well.
 
 A push from a tainted session that changes a file `runs-later` names needs review (`push-runs-later`). After a secret read, a URL a fetch, network or MCP tool opens that carries 80 or more characters of base64 or hex is denied (`encoded-egress`, new in 0.12.0): a person reviewing the call can judge a short URL, not a few hundred characters of encoded text. Under `openmoat run`, the run's proxy cannot prompt, so after a secret read it refuses requests to every other host, registries included; a new run starts clean. The standalone `openmoat proxy` does the same for Claude Code's sessions from 0.12.0, since each sends its own credential ([Agent sessions only](/docs/egress-proxy/sessions/)).

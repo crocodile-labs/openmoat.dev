@@ -17,6 +17,7 @@ A repository's `.moat/policy.yaml` (at the project's root, the folder `${project
 Any later change to the file drops it back to deny and review only, until you trust it again. A file that does not parse denies every call in the project until it is fixed. Repository rules apply in the hook, not in the agents' OS sandboxes. A signed policy pack's rules show up as `pack:<name>:<id>`: its deny rules join yours, its review rules come before your allow rules, and its allow rules after yours.
 
 - **Only `version`, `deny`, `review` and `allow`.** (`ask`, the name before 0.14.0, is still read; a file with both `ask` and `review` is invalid.) `defaults`, `executables` and `sandbox` stay yours; any other key makes the file invalid (`kernel-error` on every call in the project).
+- **Its review rules never soften your deny** (from 0.16.0): per action the stricter of the two policies wins, so a repository's `review: [{net: ['*']}]` leaves the hosts your `net: deny` default refuses denied.
 - **Its review rules come before your allow rules**, so a rule you added with `openmoat allow --always` does not silence a `repo:` review. `openmoat allow --last` (that session) does, and so does answering the prompt.
 - **Trusted allow rules come after yours**, so your deny rules (`secrets-paths`, `kernel-self`, …) still win. They can widen your `review` rules and defaults: read them before you trust.
 - **Ids are prefixed** (`repo:no-prod-config`) in messages, the audit log and `openmoat show`, so a repository rule cannot pose as one of yours.

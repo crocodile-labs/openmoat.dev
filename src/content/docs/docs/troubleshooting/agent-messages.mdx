@@ -6,7 +6,7 @@ sidebar:
   order: 1
 ---
 
-A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`. The reason is the rule's own, from the default policy. Run the fix in your own terminal; agents are denied every one of these commands.
+A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`. From 0.17.0 that line sits inside a short message headed `OpenMoat blocked: <the rule's title>` (or `OpenMoat is holding this for you: …` for a review), with why the rule exists and one next step ([What the message says](/docs/blocked/#what-the-message-says)); `openmoat why --last` explains it in full. The reason is the rule's own, from the default policy. Run the fix in your own terminal; agents are denied every one of these commands.
 
 | Message starts with | Means | Run |
 |---|---|---|
@@ -20,6 +20,11 @@ A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`. The
 | `moat: deny [kernel-self] — OpenMoat protects its own policy, hooks and binary` | The agent touched OpenMoat's files or ran a person-only `openmoat` command | Nothing; run the command yourself ([Self-protection](/docs/self-protection/)) |
 | `moat: deny [agent-folders] — renaming or removing this folder moves agent settings OpenMoat protects` | `mv .github …`, `rm -r .github` | Rename it yourself |
 | `moat: deny [shell-rc] — edits persist into every future shell session` | A write to `~/.zshrc`, `~/.bashrc`, `~/.curlrc`, … | Edit the file yourself |
+| `moat: deny [managed-settings] — …` | A write to an agent's system-wide settings (Claude Code's managed settings, Gemini CLI's system settings, `/etc/codex`) | Nothing; an administrator changes them ([Code that runs later](/docs/runs-later/)) |
+| `moat: review [injected-input] — the host … came from …` | A command or write uses what untrusted output named earlier in the session | Approve it if you asked for it ([Injected input](/docs/injected-input/)) |
+| `moat: review [mcp-cross-server] — this call to MCP server …` | Data one MCP server returned, sent into another's writing tool | Approve it if you meant it ([MCP data between servers](/docs/mcp-servers/cross-server/)) |
+| `moat: review [container-host] — …` | A container given the host: `--privileged`, a host namespace, the host's root or the Docker socket | Approve it if you need it ([Code that runs later](/docs/runs-later/#containers-handed-the-host)) |
+| `moat: review [provenance-notes] — …` | The agent writes OpenMoat's provenance notes ref | Write notes yourself with `openmoat provenance --write-notes` ([Provenance](/docs/see-what-happened/provenance/)) |
 | `moat: deny [cloud-metadata] — instance metadata and link-local services hand out cloud credentials` | `169.254.169.254`, `metadata.google.internal` | Nothing |
 | `moat: deny [token-egress] — sends a known kind of token to a host that is not its service's` | A GitHub, OpenAI, AWS, … token on its way to another host | Nothing; see [tokens sent to the wrong host](/docs/keep-tokens-safe/token-egress/) |
 | `moat: deny [card-egress] — sends a payment card number to a host off this machine` | A card number in a URL, a web search or what a command sends, to any host but this machine | Take the number out; processors' published test numbers are allowed ([Card numbers sent out](/docs/env-files/card-numbers/)) |

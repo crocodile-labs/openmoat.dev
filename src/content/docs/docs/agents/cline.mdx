@@ -1,6 +1,6 @@
 ---
 title: "Cline CLI"
-description: "OpenMoat checks the Cline CLI's tool calls through a PreToolUse hook script it owns in ~/.cline/hooks. A review is a deny you approve with openmoat allow --last."
+description: "OpenMoat checks the Cline CLI's tool calls through PreToolUse and PostToolUse hook scripts it owns in ~/.cline/hooks. A review is a deny you approve with openmoat allow --last."
 sidebar:
   label: "Cline CLI"
 ---
@@ -9,7 +9,7 @@ import { Aside, Steps } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
-You use the Cline CLI (`cline`, npm `@cline/cli`) and want OpenMoat to check its tool calls. New in 0.14.0.
+You use the Cline CLI (`cline`, npm `cline`) and want OpenMoat to check its tool calls. New in 0.14.0; the `PostToolUse` file since 0.17.0. Releases before 0.17.0 named the npm package `@cline/cli`, which is Cline's separate experimental CLI.
 
 </Aside>
 
@@ -31,7 +31,9 @@ The Cline **VS Code extension** runs its own hook layer, with another payload, a
    openmoat init --hosts cline
    ```
 
-   It writes OpenMoat's script to `~/.cline/hooks/PreToolUse` (`$CLINE_DIR/hooks/` when that is set: run `openmoat init` with the same `CLINE_DIR` Cline runs with), and pins the MCP servers in Cline's `cline_mcp_settings.json`. A file of yours with that name is backed up first, `openmoat init` says that it moved it aside, and `openmoat uninstall` gives it back.
+   It writes OpenMoat's script to `~/.cline/hooks/PreToolUse` and, from 0.17.0, the same script to `~/.cline/hooks/PostToolUse` (`$CLINE_DIR/hooks/` when that is set: run `openmoat init` with the same `CLINE_DIR` Cline runs with), and pins the MCP servers in Cline's `cline_mcp_settings.json`. A file of yours with either name is backed up first, `openmoat init` says that it moved it aside, and `openmoat uninstall` gives it back.
+
+   Cline runs `PostToolUse` after each call with what the call returned. OpenMoat keeps fingerprints of untrusted output, so a later call of the session that uses a host, path or command it named needs review ([Injected input](/docs/injected-input/)). That file never blocks: it prints nothing, since Cline would stop the whole run on a cancel after the call. After upgrading, `openmoat status` shows Cline's hook out of date until `openmoat init` adds it.
 
 2. **Start a new Cline session**
 

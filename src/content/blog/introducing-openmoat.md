@@ -1,6 +1,6 @@
 ---
 title: Introducing OpenMoat
-description: OpenMoat checks each action an AI coding agent takes on your computer and stops the dangerous ones before they run.
+description: OpenMoat is the security layer between your AI coding agents and your machine. It checks each action an agent takes before it runs.
 summary: What OpenMoat is, the problem it solves, how it decides, what it protects, where it stops, and how to try it in two commands.
 date: 2026-10-15T08:00:00Z
 author: Dhanasekaran Kathiresan
@@ -10,7 +10,7 @@ tag: announcement
 minutes: 6
 tags: ["Announcement", "Overview"]
 cover: "openmoat policy check \"cat ~/.ssh/id_rsa\""
-coverResult: "⛔ deny  secrets-paths"
+coverResult: "✕ deny  secrets-paths"
 coverTone: deny
 ---
 
@@ -28,7 +28,7 @@ I build OpenMoat to close that gap.
 
 ## What OpenMoat is
 
-OpenMoat checks each action an AI coding agent takes on your computer and stops the dangerous ones before they run. That covers every command, file access, web request and MCP call the agent makes through its hooks. It works with Claude Code, Codex and Cursor.
+OpenMoat is the security layer between your AI coding agents and your machine: it checks each action an agent takes before it runs. That covers every command, file access, web request and MCP call the agent makes through its hooks. It works with Claude Code, Codex and Cursor.
 
 It is one Rust binary that runs on your machine. No AI model makes the decision: written rules do. The same call, policy, files and session always get the same answer. Nothing leaves your machine unless you export it.
 
@@ -39,7 +39,7 @@ openmoat policy check "cat ~/.ssh/id_rsa"
 ```
 
 ```text
-⛔ deny
+✕ deny
    rules : secrets-paths
    reason: secret material: read /Users/you/.ssh/id_rsa
    also  : shell "cat ~/.ssh/id_rsa"

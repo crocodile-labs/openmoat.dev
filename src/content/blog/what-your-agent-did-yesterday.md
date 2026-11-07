@@ -21,7 +21,7 @@ You let an agent work through a long task, or you ran one in the background over
 
 What it does not tell you: which commands it ran to get there, which files it read, which hosts it tried to reach, and which of those were stopped. The terminal scrollback is gone or a thousand lines long. And the summary is written by the agent itself, the same agent that may have read a web page or an issue telling it to do something else.
 
-OpenMoat checks each action an AI coding agent takes on your computer and stops the dangerous ones before they run. Every one of those decisions is written to a local log. This post shows how to read it, and what it can and can't prove.
+OpenMoat is the security layer between your AI coding agents and your machine: it checks each action an agent takes before it runs. Every one of those decisions is written to a local log. This post shows how to read it, and what it can and can't prove.
 
 ## What gets recorded
 

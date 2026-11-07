@@ -1,0 +1,61 @@
+---
+title: "Code that runs later"
+description: "Writes to what runs after the session ends, outside any sandbox (CI, git hooks, editor and package-manager configuration, virtual environments, dev containers, login items, PATH folders), need review; containers handed the host need review; the agents' system-wide settings and shell startup files are denied."
+sidebar:
+  label: "Code that runs later"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+A write was held with `runs-later`, `persistence` or `container-host`, or denied with `managed-settings` or `shell-rc`. The editor, package-manager, virtual environment and dev container paths, `container-host` and `managed-settings` are new in 0.17.0.
+
+</Aside>
+
+**Protects against** an agent leaving behind something that runs after the session ends, with your permissions and outside any sandbox: a git hook on your next commit, a CI workflow with the repository's secrets, an editor task, a program earlier on your `PATH`.
+
+## What it does
+
+| Rule | Verdict | What it covers |
+|---|---|---|
+| `runs-later` | review | CI (`.github/workflows/`, `.gitlab-ci.yml`, `.circleci/`, …); git hooks and hook managers (`.git/hooks`, `.githooks/`, `.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`); Cline's workspace hooks; what an agent host starts next session (`.claude/hooks/`, `.mcp.json`, `~/.claude.json`, …); and, since 0.17.0: all of `.vscode/`, `*.code-workspace`, all of `.idea/` and JetBrains' `*.run.xml`; `.venv/bin/` and `venv/bin/`; `.devcontainer/` and `.devcontainer.json`; package-manager and build configuration that runs code (`.npmrc`, `.yarnrc`, `.yarnrc.yml`, `.cargo/config.toml`, `.cargo/config`, `bunfig.toml`), in the project or the home |
+| `persistence` | review | `~/Library/LaunchAgents`, `~/.gitconfig`, `~/.config/systemd/user`, folders on `PATH` (`~/.local/bin`, `/usr/local/bin`, …), `crontab` and `at`; since 0.17.0 pip's and uv's user configuration and `~/.bunfig.toml`, where every later install fetches packages from |
+| `container-host` | review | since 0.17.0: a `docker`, `podman` or `nerdctl` command that hands a container the host (below) |
+| `shell-rc` | deny | shell startup files (`~/.zshrc`, `~/.bashrc`, …), which run in every terminal you open |
+| `managed-settings` | deny | since 0.17.0: the agents' system-wide settings, which outrank yours and can turn every hook off: Claude Code's managed settings folder (`managed-settings.json`, `managed-settings.d/`, `managed-mcp.json`), Gemini CLI's system settings, Codex's `/etc/codex` |
+
+Reading these files stays allowed. `runs-later` and `persistence` hold the agent's own writes; an editor (`vim`, `nano`, `code`) on one of these files counts as a write too.
+
+## Example
+
+```bash
+openmoat policy check "$PWD/.vscode/tasks.json" --kind fs-write   # exit 3: review (runs-later)
+openmoat policy check "$PWD/.devcontainer/devcontainer.json" --kind fs-write   # exit 3: review (runs-later)
+openmoat policy check "echo x >> ~/.zshrc"                        # exit 2: deny (shell-rc)
+openmoat policy check "docker run --privileged -it alpine sh"     # exit 3: review (container-host)
+```
+
+Approve a review in the agent's prompt, or with `openmoat allow --last`, once you have looked at what it writes.
+
+## Containers handed the host
+
+`container-host` holds for review a `docker`, `podman` or `nerdctl` command line that shows:
+
+- `--privileged`, `--cap-add`, `--device` or `--security-opt`;
+- a host namespace: `--pid`, `--ipc`, `--uts`, `--userns`, `--cgroupns`, or `--net`/`--network` set to `host`;
+- the host's root mounted in (`-v /:…`, `--volume=/:…`, `--mount …source=/`), or the Docker socket.
+
+Other container runs still defer to your agent's prompt. A key folder mounted in is decided by its path, as a read of it would be.
+
+## Settings
+
+These are rule groups of your policy: narrow one with `openmoat edit`, or allow one call with `openmoat allow --last`. Run `openmoat policy upgrade` to take the 0.17.0 paths into a policy from an earlier release.
+
+## Limits
+
+- **Only the agent's own writes.** A script the agent runs in its sandbox may still write these files, and a test runner or build tool running files the session wrote is not held.
+- **`container-host` reads the flags as written.** Another spelling, or the same options in a compose file or a script, is not caught by it.
+- **Build files are ordinary edits.** `package.json` scripts and a `Makefile` run when you next build, without a question; the [pull request check](/docs/check-a-pull-request/) reports them.
+
+Every path: [POLICY.md §6](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#6-the-default-policy-in-one-table). Editors in detail: [Editors](/docs/editors/).
