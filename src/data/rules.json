@@ -1,0 +1,219 @@
+[
+  {
+    "id": "secrets-paths",
+    "verdict": "deny",
+    "reason": "secret material",
+    "title": "reading or changing your keys and credential files",
+    "why": "a key or token that leaves this machine cannot be taken back"
+  },
+  {
+    "id": "build-credentials",
+    "verdict": "deny",
+    "reason": "build tool credentials",
+    "title": "reading or changing your build tools' credentials",
+    "why": "these files hold the passwords and tokens that publish under your name"
+  },
+  {
+    "id": "agent-credentials",
+    "verdict": "deny",
+    "reason": "an AI agent's own login, API keys or OAuth tokens",
+    "title": "reading or changing an AI agent's login or API keys",
+    "why": "with them anyone can act as that agent, on your account"
+  },
+  {
+    "id": "env-secrets",
+    "verdict": "deny",
+    "reason": "secret environment variable",
+    "title": "reading a secret environment variable",
+    "why": "its value is a credential, and once printed it stays in the agent's context"
+  },
+  {
+    "id": "env-dump",
+    "verdict": "deny",
+    "reason": "prints every environment variable, secrets included",
+    "title": "printing every environment variable",
+    "why": "the output includes every secret the environment holds"
+  },
+  {
+    "id": "env-poison",
+    "verdict": "deny",
+    "reason": "changes how later commands resolve or load code",
+    "title": "changing how later commands find or load code",
+    "why": "a changed PATH, preload or editor makes later commands run other code"
+  },
+  {
+    "id": "pipe-to-shell",
+    "verdict": "deny",
+    "reason": "executes remote or decoded content",
+    "title": "running downloaded or decoded code",
+    "why": "what runs is not what anyone read"
+  },
+  {
+    "id": "destructive",
+    "verdict": "deny",
+    "reason": "irreversible damage",
+    "title": "something that cannot be undone",
+    "why": "it erases work, history or a disk, or runs as the administrator, with no way back"
+  },
+  {
+    "id": "kernel-self",
+    "verdict": "deny",
+    "reason": "OpenMoat protects its own policy, hooks and binary",
+    "title": "changing or stopping OpenMoat itself",
+    "why": "an agent that can change its own checks is no longer checked"
+  },
+  {
+    "id": "agent-folders",
+    "verdict": "deny",
+    "reason": "renaming or removing this folder moves agent settings OpenMoat protects",
+    "title": "moving or removing an agent's settings folder",
+    "why": "it would take settings OpenMoat protects out of its sight"
+  },
+  {
+    "id": "managed-settings",
+    "verdict": "deny",
+    "reason": "an agent's system-wide settings outrank the user's and can turn OpenMoat's hooks off; an administrator deploys them",
+    "title": "changing an agent's system-wide settings",
+    "why": "they outrank your own and can switch OpenMoat's hooks off for every later session"
+  },
+  {
+    "id": "shell-rc",
+    "verdict": "deny",
+    "reason": "edits persist into every future shell session",
+    "title": "editing your shell's start-up files",
+    "why": "what is written there runs in every shell you open from now on"
+  },
+  {
+    "id": "cloud-metadata",
+    "verdict": "deny",
+    "reason": "instance metadata and link-local services hand out cloud credentials",
+    "title": "reaching the cloud metadata service",
+    "why": "it hands out this machine's cloud credentials"
+  },
+  {
+    "id": "token-egress",
+    "verdict": "deny",
+    "reason": "sends a known kind of token to a host that is not its service's",
+    "title": "sending a token to a host that is not its service's",
+    "why": "whoever receives a token can use it"
+  },
+  {
+    "id": "placeholder-egress",
+    "verdict": "deny",
+    "reason": "sends a brokered secret's placeholder to a host the proxy does not put that secret in",
+    "title": "sending a brokered secret's placeholder to another host",
+    "why": "the placeholder stands for a secret only its own host may receive"
+  },
+  {
+    "id": "encoded-egress",
+    "verdict": "deny",
+    "reason": "sends a long encoded value in a URL after the session read secret material",
+    "title": "sending a long encoded value after reading a secret",
+    "why": "it may be that secret, encoded so it is not recognised"
+  },
+  {
+    "id": "card-egress",
+    "verdict": "deny",
+    "reason": "sends a payment card number to a host off this machine",
+    "title": "sending a payment card number off this machine",
+    "why": "a card number an agent sends out cannot be taken back"
+  },
+  {
+    "id": "git-internals",
+    "verdict": "review",
+    "reason": "git runs what its config, hooks and refs name, later and outside any sandbox",
+    "title": "changing git's config, hooks or refs",
+    "why": "git runs what they name later, outside any sandbox"
+  },
+  {
+    "id": "provenance-notes",
+    "verdict": "review",
+    "reason": "OpenMoat's provenance notes record what agents wrote; a person writes them with `openmoat provenance --write-notes`",
+    "title": "rewriting OpenMoat's record of what agents wrote",
+    "why": "the notes are your record of which changes an agent made; an agent that edits them can hide its own work"
+  },
+  {
+    "id": "destructive-recoverable",
+    "verdict": "review",
+    "reason": "deletes local work that the reflog still holds for a while",
+    "title": "deleting local work",
+    "why": "git keeps it for a while only, in the reflog"
+  },
+  {
+    "id": "runs-later",
+    "verdict": "review",
+    "reason": "CI, commit hooks, the editor or the agent host run this later, outside any sandbox",
+    "title": "changing something that runs later, outside any sandbox",
+    "why": "CI, commit hooks, your editor or the agent run it later with your permissions"
+  },
+  {
+    "id": "persistence",
+    "verdict": "review",
+    "reason": "runs again later, outside this session",
+    "title": "setting up something that runs again later",
+    "why": "a scheduled job or service keeps running after this session ends"
+  },
+  {
+    "id": "stops-openmoat",
+    "verdict": "review",
+    "reason": "stops a running OpenMoat process, such as the egress proxy service",
+    "title": "stopping a running OpenMoat process",
+    "why": "its protection, such as the egress proxy, stops with it"
+  },
+  {
+    "id": "home-sweep",
+    "verdict": "review",
+    "reason": "reads the whole home folder, secrets included",
+    "title": "reading your whole home folder",
+    "why": "your secrets are in it too"
+  },
+  {
+    "id": "other-home",
+    "verdict": "review",
+    "reason": "names another user's home, which OpenMoat cannot place",
+    "title": "touching another user's home folder",
+    "why": "OpenMoat cannot tell what is in it"
+  },
+  {
+    "id": "secret-names",
+    "verdict": "review",
+    "reason": "names a secret's file in a directory OpenMoat cannot see",
+    "title": "naming a secret's file in a folder OpenMoat cannot see",
+    "why": "the file there may be a secret your policy denies"
+  },
+  {
+    "id": "opaque-code",
+    "verdict": "review",
+    "reason": "a program OpenMoat cannot read may open any file or variable",
+    "title": "running a program OpenMoat cannot read",
+    "why": "it may open any file or variable"
+  },
+  {
+    "id": "package-near-miss",
+    "verdict": "review",
+    "reason": "looks like a typo of a popular package's name, as typo-squats and made-up names do; check which one you meant",
+    "title": "installing a package whose name looks like a typo",
+    "why": "typo-squats and made-up names are how malicious packages get installed"
+  },
+  {
+    "id": "docker-secrets",
+    "verdict": "review",
+    "reason": "hands secrets, the SSH agent or the host to a build",
+    "title": "handing secrets or this machine to a container build",
+    "why": "the build can read and keep what it is given"
+  },
+  {
+    "id": "container-host",
+    "verdict": "review",
+    "reason": "gives a container the host's root, devices, namespaces or Docker socket, so it can change this machine outside any sandbox",
+    "title": "giving a container the host's root, devices or Docker socket",
+    "why": "code in that container can change this machine outside any sandbox, as root where the daemon runs as root"
+  },
+  {
+    "id": "agent-token",
+    "verdict": "review",
+    "reason": "makes a new login token for an AI agent and prints it",
+    "title": "making a new login token for an AI agent",
+    "why": "the command prints a long-lived token into the agent's context"
+  }
+]

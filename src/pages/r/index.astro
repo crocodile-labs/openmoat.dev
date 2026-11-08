@@ -1,0 +1,41 @@
+---
+// Every rule id an OpenMoat block message can link to.
+import Page from '../../layouts/Page.astro';
+import { rules } from '../../data/rules';
+
+const groups = [
+  { name: 'Denied', note: 'Never offered for approval.', items: rules.filter((r) => r.source === 'policy' && r.verdict === 'deny') },
+  { name: 'Held for review', note: 'You approve or refuse each call.', items: rules.filter((r) => r.source === 'policy' && r.verdict === 'review') },
+  { name: 'OpenMoat\'s own checks', note: 'Built in, not in the policy file.', items: rules.filter((r) => r.source === 'builtin') },
+];
+---
+<Page title="Rules · OpenMoat" description="Every rule OpenMoat's block messages name: what it stops and why.">
+  <main class="rules">
+    <p class="eyebrow">RULES</p>
+    <h1>What each rule stops, and why</h1>
+    <p class="lead">Every message OpenMoat sends when it blocks or holds a call ends with a link here. Rules from a policy pack or a repository's own policy are in that policy file.</p>
+    {groups.map((g) => (
+      <section>
+        <h2>{g.name}</h2>
+        <p class="note">{g.note}</p>
+        <ul>
+          {g.items.map((r) => (
+            <li><a href={`/r/${r.id}/`}><code>{r.id}</code></a> {r.title}</li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </main>
+</Page>
+
+<style>
+  .rules { max-width: 860px; margin: 0 auto; padding: 48px 24px 72px; color: var(--fg); font-family: 'Geist Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.6; }
+  .eyebrow { margin: 0 0 12px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.14em; color: var(--accent); font-weight: 600; }
+  .rules h1 { margin: 0 0 12px; font-size: 40px; line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; }
+  .rules h2 { margin: 36px 0 4px; font-size: 22px; font-weight: 600; }
+  .lead, .note, .rules li { color: var(--muted); }
+  .note { font-size: 14px; margin: 0 0 8px; }
+  .rules ul { padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+  .rules code { font-family: 'Geist Mono', monospace; font-size: 0.9em; }
+  .rules a { color: var(--accent); }
+</style>

@@ -1,0 +1,58 @@
+---
+// One page per rule id an OpenMoat block message links to ("more  openmoat why --last · https://openmoat.dev/r/<id>").
+import Page from '../../layouts/Page.astro';
+import { rules, type Rule } from '../../data/rules';
+
+export function getStaticPaths() {
+  return rules.map((rule) => ({ params: { rule: rule.id }, props: { rule } }));
+}
+const { rule } = Astro.props as { rule: Rule };
+const heading = rule.verdict === 'deny' ? 'OpenMoat blocked' : 'OpenMoat is holding this for you';
+const title = `${rule.id}: ${rule.title} · OpenMoat`;
+const description = `What OpenMoat's ${rule.id} rule stops, why, and what you can do.`;
+const code = (text: string) => text.split('`').map((part, i) => ({ part, code: i % 2 === 1 }));
+---
+<Page title={title} description={description}>
+  <main class="rule">
+    <p class="eyebrow">RULE · {rule.verdict.toUpperCase()}{rule.source === 'builtin' ? ' · BUILT-IN CHECK' : ''}</p>
+    <h1><code>{rule.id}</code></h1>
+    <p class="lead">{heading}: {rule.title}</p>
+
+    <h2>Why</h2>
+    <p>{rule.why[0].toUpperCase() + rule.why.slice(1)}.</p>
+
+    <h2>What you can do</h2>
+    {rule.next ? (
+      <p>{code(rule.next).map((p) => (p.code ? <code>{p.part}</code> : p.part))}</p>
+    ) : rule.verdict === 'deny' ? (
+      <p>A deny is never offered for approval, so the agent cannot talk its way past it. If you need this, do it yourself in your own terminal. If the rule is wrong for your work, change your policy: <code>openmoat why --last</code> shows where the rule is.</p>
+    ) : (
+      <p>Check the call is what you asked for, then approve it in your agent's prompt, or run <code>openmoat allow --last</code> in your own terminal.</p>
+    )}
+    <p>Run these in your own terminal, not through the agent: agents are denied every command that changes OpenMoat.</p>
+    <ul>
+      <li><code>openmoat why --last</code>: the full reason, and where the rule is in your policy</li>
+      <li><code>openmoat show</code>: the latest decisions</li>
+    </ul>
+
+    <h2>More</h2>
+    <ul>
+      <li><a href="/docs/blocked/">Something was blocked</a>: every message and the command that gets you moving</li>
+      {rule.source === 'policy' && <li><a href="/docs/policy-file/">The policy file</a>: this rule is in the default policy, and you can change it</li>}
+      <li><a href="/r/">Every rule</a></li>
+    </ul>
+  </main>
+</Page>
+
+<style>
+  .rule { max-width: 760px; margin: 0 auto; padding: 48px 24px 72px; color: var(--fg); font-family: 'Geist Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.6; }
+  .eyebrow { margin: 0 0 12px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.14em; color: var(--accent); font-weight: 600; }
+  .rule h1 { margin: 0 0 12px; font-size: 36px; line-height: 1.15; font-weight: 600; }
+  .rule h2 { margin: 32px 0 8px; font-size: 22px; font-weight: 600; }
+  .lead { color: var(--muted); font-size: 18px; margin: 0; }
+  .rule p, .rule ul { color: var(--muted); }
+  .rule ul { padding-left: 20px; }
+  .rule code { font-family: 'Geist Mono', monospace; font-size: 0.9em; color: var(--fg-2); }
+  .rule h1 code { color: var(--fg); font-size: 1em; }
+  .rule a { color: var(--accent); }
+</style>

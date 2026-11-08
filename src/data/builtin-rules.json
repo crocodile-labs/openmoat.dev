@@ -1,0 +1,18 @@
+[
+  { "id": "injected-input", "verdict": "review", "title": "acting on a command, host or path from content the agent read", "why": "it may follow an instruction planted in a page or a file, not one you gave" },
+  { "id": "session-taint", "verdict": "review", "title": "writing or sending after the session read untrusted content or a secret", "why": "what the agent read can steer it, and a secret it read can leave with the next send" },
+  { "id": "session-written-code", "verdict": "review", "title": "running code this session wrote, with no OS sandbox below the hook", "why": "the hook sees the command that starts the code, not what the code does" },
+  { "id": "mcp-cross-server", "verdict": "review", "title": "passing one MCP server's output to another server's tool", "why": "a tool result can carry instructions that send your data somewhere else" },
+  { "id": "mcp-server-changed", "verdict": "deny", "title": "using an MCP server whose definition changed since you accepted it", "why": "a changed server can run other code, or offer other tools than the ones you checked" },
+  { "id": "kernel-integrity", "verdict": "deny", "title": "any call while OpenMoat's own files differ from their pins", "why": "a changed policy, hook or setting may not be the one you set up, so nothing runs" },
+  { "id": "kernel-error", "verdict": "deny", "title": "a call OpenMoat could not check", "why": "a call that cannot be checked or recorded is not let through" },
+  { "id": "unparseable", "verdict": "review", "title": "a call OpenMoat could not read in full", "why": "what OpenMoat cannot read, it cannot check" },
+  { "id": "unchecked", "verdict": "review", "title": "a call the agent showed OpenMoat only in part", "why": "OpenMoat cannot check the part the hook does not show" },
+  { "id": "protected-contents", "verdict": "review", "title": "acting on a folder that holds files your policy denies", "why": "a copy, move or archive of the folder takes those files with it" },
+  { "id": "executables", "verdict": "deny", "title": "running a program from somewhere other than where it was pinned", "why": "a program planted under a known name runs with the trust that name has" },
+  { "id": "push-secret", "verdict": "deny", "title": "pushing commits that hold a secret", "why": "a push publishes every commit it sends, and a published secret cannot be taken back" },
+  { "id": "push-runs-later", "verdict": "review", "title": "pushing changes CI runs, after the session read untrusted content or a secret", "why": "CI or a tool runs what the push changes later, with the repository's secrets" },
+  { "id": "push-unchecked", "verdict": "review", "title": "a push OpenMoat could not check", "why": "OpenMoat could not see what the commits it sends hold" },
+  { "id": "project-settings", "verdict": "deny", "title": "loading project settings that could turn OpenMoat off or run a program", "why": "a project's settings file is input the agent or a repository can write" },
+  { "id": "ungoverned", "verdict": "review", "title": "using a tool OpenMoat does not check", "why": "OpenMoat cannot tell what this tool does" }
+]
