@@ -14,5 +14,6 @@
   { "id": "push-runs-later", "verdict": "review", "title": "pushing changes CI runs, after the session read untrusted content or a secret", "why": "CI or a tool runs what the push changes later, with the repository's secrets" },
   { "id": "push-unchecked", "verdict": "review", "title": "a push OpenMoat could not check", "why": "OpenMoat could not see what the commits it sends hold" },
   { "id": "project-settings", "verdict": "deny", "title": "loading project settings that could turn OpenMoat off or run a program", "why": "a project's settings file is input the agent or a repository can write" },
-  { "id": "ungoverned", "verdict": "review", "title": "using a tool OpenMoat does not check", "why": "OpenMoat cannot tell what this tool does" }
+  { "id": "ungoverned", "verdict": "review", "title": "using a tool OpenMoat does not check", "why": "OpenMoat cannot tell what this tool does" },
+  { "id": "protection-required", "verdict": "deny", "title": "any call while this agent runs below the protection level the policy requires", "why": "without what is missing, fewer of OpenMoat's checks hold, and the policy says that is not enough", "next": "In your own terminal, take the step the block message names after `to meet it` (for example `openmoat sandbox sync` or `openmoat run`), then run `openmoat status` to check the agent meets the level." }
 ]
