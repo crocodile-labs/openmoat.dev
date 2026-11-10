@@ -55,7 +55,7 @@ export default defineConfig({
           sub('Egress proxy', 'egress-proxy', ['sessions']), 'self-protection', 'session-taint', 'injected-input',
           sub('Audit log, watch and why', 'see-what-happened', ['watch-and-why', 'provenance']),
           'openmoat-bar']),
-        group('For teams and CI', [sub('Team rules and packs', 'team-rules', ['repository-policy', 'policy-packs']),
+        group('For teams and CI', [sub('Team rules and packs', 'team-rules', ['repository-policy', 'policy-packs', 'required-protection']),
           'check-a-pull-request', 'compliance-evidence', 'auto-approve-and-ci', 'sdk']),
         group('Policy', [sub('The policy file', 'policy-file', ['verdicts', 'patterns', 'other-keys', 'repositories']),
           'change-the-rules']),

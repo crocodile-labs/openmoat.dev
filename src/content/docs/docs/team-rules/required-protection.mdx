@@ -1,0 +1,79 @@
+---
+title: "Required protection level"
+description: "Say how much protection is enough with a require: section. An agent below its level has every call denied, so it cannot keep working with less than you asked for."
+sidebar:
+  label: "Required protection level"
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You, or your team, have decided the hook alone is not enough for some agent, and you would rather stop that agent than notice later.
+
+</Aside>
+
+`openmoat status` shows how much of the policy is enforced for each agent: `hook + OS sandbox`, `hook only`, `not protected` or `not set up`. A `require:` section says how much is enough. Without the section, which is the default, nothing is required.
+
+```yaml
+require:
+  protection: hook-and-os-sandbox   # every agent
+  agents:
+    gemini-cli: hook-only           # this agent: OpenMoat writes no OS sandbox for it
+```
+
+| Level | Met when |
+|---|---|
+| `hook-only` | OpenMoat's hook decides the agent's calls |
+| `hook-and-os-sandbox` | the hook decides, and an OS sandbox from OpenMoat holds the commands the agent runs: the agent's own sandbox as OpenMoat set it up (Claude Code, Codex and Cursor; not on native Windows), or `openmoat run` |
+
+An entry in `agents` (a host id, as `openmoat status --format json` names it) takes the place of `protection` for that agent. An id OpenMoat does not know is an error, so a typo cannot drop an agent's level.
+
+## Set it
+
+```bash
+openmoat edit                # add `require:` to your policy
+openmoat status              # each agent's level and whether it meets it
+openmoat sandbox sync        # put OpenMoat's sandbox settings back for Claude Code, Codex, Cursor
+openmoat run -- gemini       # start an agent OpenMoat writes no sandbox for in an OS sandbox
+```
+
+## Below the level
+
+Every call is denied with `protection-required`, tools OpenMoat does not govern included. The message names what is missing and the step that fixes it:
+
+```text
+moat: deny [protection-required] — your policy requires hook + OS sandbox for Gemini CLI;
+this call has hook only: OpenMoat writes no OS sandbox for Gemini CLI; to meet it, start
+Gemini CLI with `openmoat run`
+```
+
+The step depends on what is missing:
+
+| What is missing | The step |
+|---|---|
+| OpenMoat's sandbox settings for the agent are missing or differ from the policy | `openmoat sandbox sync` |
+| OpenMoat writes no sandbox for the agent | `openmoat run` |
+| No OS sandbox exists on this system | `openmoat edit`, to lower that agent's line |
+
+**`openmoat run` refuses to start** a program it cannot bring to the level: any program when it has no sandbox on this system and `hook-and-os-sandbox` is required, a program that is no agent OpenMoat knows (no hook of OpenMoat's would check its calls, and only `protection` applies to it), and an agent whose hook does not run. Calls inside the run meet `hook-and-os-sandbox`.
+
+**`openmoat status` and `openmoat doctor`** add a row under the agent: `required: hook + OS sandbox (your policy), met`, or `…, not met, so every call is denied: <what is missing>; to meet it, <step>`. An unmet level is a problem (exit 64), and the home screen says `below the required …`. With `--format json` each agent has a `required` object (`level`, `by`, `met`, `missing`, `fix`). They show the level in force in the current directory, the repository policy's included.
+
+## Where the level comes from
+
+Your policy, the project's [repository policy](/docs/team-rules/repository-policy/) and the installed [policy packs](/docs/team-rules/policy-packs/) can each have a `require:` section. An agent must be at the highest level any of them asks for, and the message names who asks: `your policy`, `the repository policy` or `the policy pack <name>`.
+
+A repository or a pack can raise the level and never lower it: its `hook-only`, for every agent or for one, leaves your `hook-and-os-sandbox` in force, trusted or not. Like its deny rules, a repository's level needs no `openmoat trust`.
+
+Taking the section out of the policy is a change to a pinned file: every call is denied (`kernel-integrity`) until you re-pin.
+
+## Limits
+
+- **A hook that does not run cannot deny.** A hook the agent's settings turn off, a plugin the agent did not load, or an agent that runs a call when the hook fails sends no call to deny. `openmoat status` and `openmoat doctor` show such an agent as below the level, and `openmoat run` refuses it; nothing stops the agent started on its own.
+- **`hook-and-os-sandbox` means what `openmoat status` means.** Claude Code's sandbox holds its shell commands, not its file tools, `WebFetch` or MCP servers, and Cursor runs some commands outside its sandbox. The level says OpenMoat's sandbox settings are in force, not that every call is confined.
+- **The answer is as strong as the state directory.** The lock and the kept sandbox answer live in `~/.moat`, which `kernel-self` keeps from the agent's tool calls and every OS sandbox keeps from its commands. A program that runs as you outside any sandbox can rewrite them, as it can rewrite the policy.
+- **The SDK and the WebAssembly module** read `require:` and keep it, but they decide and do not enforce, so they do not apply it.
+
+More in [Limits](/docs/limits/). The rules in full: [POLICY.md §9.2](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#92-required-protection-level-require) and [ADR-064](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-064-required-protection-level.md).
