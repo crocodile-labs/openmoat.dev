@@ -92,6 +92,12 @@ export const agents: Agent[] = [
     homeAnswer: 'the call stops; run <code>openmoat allow --last</code>',
     note: "Code Mode's <code>execute_javascript</code> needs review, since the tool calls it makes skip the hook",
   },
+  {
+    name: 'Antigravity CLI', inList: 'the Antigravity CLI', host: 'antigravity-cli', docs: '/docs/agents/#antigravity-cli', sandbox: false,
+    protection: 'hook only', protectionShort: 'hook only',
+    answer: "Antigravity CLI's own prompt, asked every time", homeAnswer: "Antigravity CLI's own prompt",
+    note: 'built from its documentation and not yet checked on a running <code>agy</code>; what happens when a hook crashes is not documented',
+  },
 ];
 
 // "A, B and C", with each agent's sentence form.
@@ -107,7 +113,7 @@ export const agentListOr = (list: Agent[] = agents): string => {
 };
 
 const words = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen'];
-// "eleven": how many agents OpenMoat checks, as a word.
+// "twelve": how many agents OpenMoat checks, as a word.
 export const agentCount: string = words[agents.length] ?? String(agents.length);
 
 export const sandboxed: Agent[] = agents.filter((a) => a.sandbox);
