@@ -1,7 +1,7 @@
 // Logos for the agents and platforms OpenMoat works with: 24x24 SVG paths from
 // Simple Icons (simple-icons 15.22.0, CC0; the marks belong to their owners and
 // are shown only to name what OpenMoat works with). Agents with no mark in the
-// set get a glyph; OpenCode, Hermes Agent, Cline CLI, goose and Windows are shown by name only.
+// set get a glyph; OpenCode, Hermes Agent, Cline CLI, goose, Antigravity CLI and Windows are shown by name only.
 // The agent list itself (names, protection, notes) is data/agents.ts.
 // Regenerate, do not edit by hand.
 export type Logo = { name: string; path: string | null; glyph: string | null };
@@ -18,6 +18,7 @@ export const agents: Logo[] = [
   { name: "Hermes Agent", path: null, glyph: null },
   { name: "Cline CLI", path: null, glyph: null },
   { name: "goose", path: null, glyph: null },
+  { name: "Antigravity CLI", path: null, glyph: null },
 ];
 
 export const platforms: Logo[] = [

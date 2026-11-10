@@ -1,6 +1,6 @@
 ---
 title: "Supported agents"
-description: "The eleven agents OpenMoat checks (and the Continue CLI, not yet), how well each one is protected, where you answer a review, and what each one does not cover."
+description: "The twelve agents OpenMoat checks (and the Continue CLI, not yet), how well each one is protected, where you answer a review, and what each one does not cover."
 sidebar:
   label: "Supported agents"
   order: 2
@@ -134,6 +134,12 @@ goose, the open-source agent from Block, CLI and desktop app. Setup, the tools i
 - **Setup:** restart goose (the CLI or the desktop app) after `openmoat init`; it loads plugins when it starts.
 - **If the hook fails:** with `on_failure: block`, which `openmoat init` sets, a hook that cannot start, times out or answers wrongly blocks the call. goose runs every call unchecked when it does not load the plugin.
 - **Not checked:** what Code Mode's `execute_javascript` does (its tool calls skip the hook, so the call itself needs review), and hooks a project's `.agents/plugins/` adds. `openmoat status` and `openmoat doctor` report goose not protected in a directory whose `.agents/plugins/openmoat` replaces OpenMoat's plugin, name the directory to remove, and warn about the hooks of the project's other plugins.
+
+### Antigravity CLI
+
+A `PreToolUse` command hook, under the name `openmoat` in `~/.gemini/config/hooks.json`. Protection is hook only. Every documented tool is mapped by what it does, and a tool not listed is treated as unknown. A review asks in Antigravity CLI's own prompt every time, and is a deny when its settings say `always-proceed`. An entry set to `"enabled": false` shows as not protected, and `openmoat init` turns it back on.
+
+This support is built from Antigravity CLI's documentation and has not been checked on a running `agy`. What it does when a hook crashes or times out is not documented, so a call may run then; `openmoat status` and `openmoat doctor` say so. For an OS sandbox use `openmoat run -- agy`.
 
 ### Continue CLI
 
