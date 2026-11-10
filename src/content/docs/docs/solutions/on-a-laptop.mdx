@@ -1,0 +1,73 @@
+---
+title: "A developer with an agent on a laptop"
+description: "Set up OpenMoat for the agents on your machine, see a verdict, and know what it does and does not stop."
+sidebar:
+  label: "On a laptop"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## The problem
+
+Your agent runs shell commands, edits files, fetches web pages and calls MCP tools with your permissions. After the hundredth prompt you click yes, and a README, an issue or a web page can carry an instruction the agent may follow.
+
+## The commands
+
+```bash
+brew install crocodile-labs/tap/openmoat     # macOS and Linux
+openmoat init                                # asks before it sets up each agent it finds
+openmoat policy check "cat ~/.ssh/id_rsa"    # a verdict, without running anything
+```
+
+Then start your agent in a new session and work as usual. On Windows, and for other ways to install, see the [Quick start](/docs/quickstart/).
+
+Example output of the last command:
+
+```text
+✕ deny
+   rules : secrets-paths
+   reason: secret material: read /Users/you/.ssh/id_rsa
+   also  : shell "cat ~/.ssh/id_rsa"
+```
+
+While you work, in your own terminal:
+
+```bash
+openmoat status          # each agent's protection and what to fix
+openmoat watch           # follow the agents' calls live
+openmoat why --last      # explain the newest deny or review
+openmoat allow --last    # allow the call an agent was just stopped on
+```
+
+`openmoat uninstall` puts back every file `openmoat init` changed.
+
+<Aside type="caution" title="Antigravity CLI">
+
+Antigravity CLI support is written from its documentation and has not been checked against a running `agy`. What `agy` does when the hook fails is not documented, so treat a failing hook as letting the call run.
+
+</Aside>
+
+## What it stops
+
+- **Secrets read or sent.** SSH keys, `.env`, cloud credentials, every agent's login files and secret variables are denied, however the path is spelt.
+- **Data leaving the machine.** Sending to a host the policy does not list is denied.
+- **Downloaded or hidden code.** Piping a download or a decoded payload into a shell is denied.
+- **Destructive commands.** `git push --force`, `git reset --hard` and `rm -rf ~` are denied.
+- **Code that runs later.** CI workflows, git hooks and login items wait for you. Shell startup files are denied.
+- **Look-alike packages.** A name one typo away from a popular package waits for you.
+- **OpenMoat switched off.** The agent cannot edit the policy, approve its own block or uninstall OpenMoat.
+
+Normal work such as `git status --short`, `cargo test` and `npm test` is allowed without a prompt. What the policy has no rule for goes to your agent's own prompt, as it would without OpenMoat.
+
+## What it does not stop
+
+- **A deferred call runs if your agent lets it.** In auto-approve modes only `deny` and `review` stop a call.
+- **Outside an OS sandbox, the hook decides alone.** On a hook-only agent an allowed call runs with your permissions, so a classifier mistake is a bypass. `openmoat status` shows each agent's level, and `openmoat run` adds a sandbox (macOS 13 or later, Linux).
+- **Allowed code is not inspected.** An allowed `npm test` runs whatever it contains, and an allowed host can receive data from an allowed command.
+- **Some agents run a call when the hook fails** or is not loaded, and agent settings can turn hooks off. `openmoat status` and `openmoat doctor` report what they can see.
+- **Tools no hook exposes are not seen,** and a repository's git configuration can run a program before any hook.
+- **A program that runs as you outside any sandbox** can change the policy and recompute the lock.
+
+## Read more
+
+[Quick start](/docs/quickstart/) · [Supported agents](/docs/agents/) · [Limits](/docs/limits/)

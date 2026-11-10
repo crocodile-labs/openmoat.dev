@@ -1,0 +1,57 @@
+---
+title: "People connecting MCP servers"
+description: "Start only the MCP servers you accepted, pin what each tool says it does, and hold data carried from one server into another."
+sidebar:
+  label: "MCP servers"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## The problem
+
+An agent starts its MCP servers when a session begins, with your permissions, and a server's definition or tool descriptions can change after you added it. One server's result can also end up in another server's writing tool.
+
+## The commands
+
+In your own terminal:
+
+```bash
+openmoat mcp wrap github          # or: openmoat init --mcp-proxy, for every stdio server
+openmoat mcp accept github        # after the agent first starts it: read each tool, accept
+openmoat status                   # lists the servers that start outside OpenMoat
+```
+
+`openmoat mcp unwrap github` and `openmoat uninstall` put the server's configuration back. A wrapped server runs in `openmoat run`'s sandbox where that can sandbox (macOS 13 or later, Linux).
+
+What the agent's MCP list shows when a definition changed:
+
+```text
+OpenMoat did not start MCP server `github`: MCP server `github` in ~/.claude.json changed
+    command: "npx" → "sh"; OpenMoat starts it only once a person has reviewed it: run
+    `openmoat mcp accept github` in a terminal
+```
+
+Run `openmoat mcp accept github`, then restart the agent's session.
+
+## What it stops
+
+- **A new or changed server.** Its tool calls are refused until you accept it, and a wrapped server does not start at all.
+- **A changed tool.** A tool nobody accepted, or one whose description, schemas or annotations changed, is left out of the agent's tool list and its calls are refused.
+- **Changed server text.** New or changed instructions, prompts and resources are held until `openmoat mcp accept` shows you what changed.
+- **Files and hosts named in arguments.** Paths and URLs in a call's arguments are checked by the policy, as the hook checks any file or host.
+- **Data carried between servers.** A later call of another server's tool that writes or sends text one server returned is held for review (`mcp-cross-server`).
+
+## What it does not stop
+
+- **Unwrapped servers start before any call is checked.** A changed or new server's tool calls are denied, but its command has already run once, with your permissions.
+- **The hook sees an MCP call's arguments, not what the server then does.** A server started without `--sandbox`, or where no sandbox is available, can read any file you can and write anywhere.
+- **The gateway covers stdio servers only.** A remote (HTTP) server is checked by the hook alone.
+- **The flow check sees wrapped servers and exact text only.** Results of a server not run through `openmoat mcp wrap` are not recorded, and text the agent rewrites, encodes, splits or shortens below eight words is not found. A tool's own annotations or its name decide whether it writes or sends.
+- **A browser goes where the page sends it.** OpenMoat checks the URL a call names, not where the page's scripts, links and redirects lead next.
+- **Tool results reach the model as the server sent them.** They mark the session untrusted.
+
+Antigravity CLI support is written from its documentation and has not been checked against a running `agy`.
+
+## Read more
+
+[The MCP gateway](/docs/mcp-servers/gateway/) · [Tool pinning](/docs/mcp-servers/tool-pinning/) · [MCP data between servers](/docs/mcp-servers/cross-server/) · [Limits](/docs/limits/)

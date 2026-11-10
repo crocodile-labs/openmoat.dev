@@ -1,0 +1,86 @@
+---
+title: "CI and pull request checks"
+description: "Report what a change does before it merges, whoever wrote it, with openmoat policy check-diff and the GitHub Action."
+sidebar:
+  label: "CI and pull requests"
+---
+
+## The problem
+
+A pull request holds what an agent wrote, on a machine with OpenMoat or without it, and what people and forks wrote. The hook checks tool calls while an agent works, so it did not see work done elsewhere.
+
+## The commands
+
+Locally:
+
+```bash
+openmoat policy check-diff --base origin/main             # this branch against main
+git diff main | openmoat policy check-diff                # any unified diff on stdin
+```
+
+On GitHub, add this as `.github/workflows/openmoat.yml`. Pin the action to the full commit SHA of an OpenMoat release tag, and set `version` to that release:
+
+```yaml
+name: openmoat
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  merge-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0             # the base and head commits and what they share
+          persist-credentials: false
+      - uses: crocodile-labs/openmoat@<full commit SHA of the release tag> # v<version>
+        with:
+          version: <version>         # the same release, without the leading v
+          fail-on: review            # review (default), deny or never
+          # policy: ci/openmoat.yaml # read as the pull request's base has it
+```
+
+Use the `pull_request` event, not `pull_request_target`. The check needs no secrets, and `pull_request_target` runs with the base repository's token while it reads code from the pull request.
+
+Example output, for a pull request that changes a workflow trigger, sets hooks in `.claude/settings.json`, adds a `postinstall` script and edits one source file:
+
+```text
+review  .github/workflows/ci.yml [runs-later, session-taint]
+        CI, commit hooks, the editor or the agent host run this later, outside any sandbox: write .github/workflows/ci.yml
+        CI, a build or test tool, a commit hook or an AI agent runs or reads this file later
+deny    .claude/settings.json [kernel-self]
+        OpenMoat protects its own policy, hooks and binary: write .claude/settings.json
+review  package.json [session-taint]
+        CI, a build or test tool, a commit hook or an AI agent runs or reads this file later
+deny: 1 deny, 2 review in 4 changed files (checked against the default policy)
+```
+
+Running an agent inside CI as well? See [Agents running unattended](/docs/solutions/unattended-agents/).
+
+## What it stops
+
+A finding is a report. It holds a merge only where the job is a required status check, so make it one. It reports:
+
+- **Protected files:** CI workflows, git hooks and hook managers, build and package files, agent instructions and settings, MCP server lists, OpenMoat's own files and secret files.
+- **Secrets in added lines:** known token formats and private keys, without printing them.
+- **Risky added lines:** a typo-squatted or off-registry dependency, an install script, a lockfile hash swapped for the same version, a CI workflow a pull request can take over, a script downloaded or decoded and run.
+- **New hosts** the code connects to that your network allow list does not name.
+- **Links and paths:** symbolic links, submodule changes and paths that leave the repository.
+
+The change cannot loosen its own check: with `--base`, the policy files are read as the base revision has them. The check runs offline, so the same change gives the same report everywhere.
+
+## What it does not stop
+
+- **It reads added lines, not programs.** A payload built from pieces at run time and a script the change does not touch are not checked, and a benign line can match (set its level in `check_diff.levels`).
+- **Nothing is looked up online.** A package's age or owner, whether a dependency exists and what a URL serves are not checked.
+- **Passwords and tokens without a known format.** Tokens are found by their vendor prefix and passwords only as values of `.env` files. Commit messages are not searched.
+- **Binary files** are not searched for tokens, and **submodule code and link targets outside the repository** are not read.
+- **Other CI systems.** GitLab, CircleCI, Azure and Jenkins files get the path rules and the backdoor checks, not the GitHub workflow checks.
+- **The action runs on Linux and macOS runners** only.
+
+## Read more
+
+[Check a pull request](/docs/check-a-pull-request/) · [Limits](/docs/limits/)

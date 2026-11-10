@@ -1,0 +1,75 @@
+---
+title: "Agents running unattended"
+description: "Auto-approve, background and overnight runs: what still stops a call when nobody is there, how to put the whole agent in a sandbox, and what to read afterwards."
+sidebar:
+  label: "Unattended agents"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## The problem
+
+With auto-approve, in the background or overnight, nobody is there to answer a prompt. A call the policy has no rule for then simply runs, and code inside an allowed command can do whatever it contains.
+
+## The commands
+
+Put the whole agent and everything it starts in one sandbox, with network only through OpenMoat's proxy:
+
+```bash
+openmoat run --write ~/.claude --write ~/.claude.json -- claude
+openmoat run --isolate --write ~/.claude --write ~/.claude.json -- claude    # Linux, bubblewrap
+```
+
+The two `--write` paths are Claude Code's own state, which it must write to run. Whatever follows the agent's name goes to the agent, so an auto-approve flag goes there. With `--isolate` the agent sees only the project, the policy's read roots, its own executable, the `--write` paths and an empty temp directory.
+
+- `openmoat run` needs macOS 13 or later, or Linux. On macOS 12 and earlier it refuses to start and says so. On Windows it refuses too: for OS confinement, run the agent and `openmoat` inside WSL2.
+- Turn the agent's own sandbox off inside, because sandboxes do not nest. Credentials must not come from the keychain: use an API key or `apiKeyHelper`.
+
+Afterwards, read what happened:
+
+```bash
+openmoat replay --since today    # one tree per agent session: every call, verdict and rule
+openmoat report --since 7d       # totals, hosts, top rules, reviews per active hour
+openmoat why --last              # the newest deny or review, explained in full
+```
+
+What the agent is told when a call is denied:
+
+```text
+OpenMoat blocked: reading or changing your keys and credential files
+  call   cat ~/.ssh/id_rsa
+  rule   moat: deny [secrets-paths] — secret material: read /Users/you/.ssh/id_rsa
+  why    a key or token that leaves this machine cannot be taken back
+  next   if you need this, do it yourself in your own terminal
+  more   openmoat why --last · https://openmoat.dev/r/secrets-paths
+```
+
+## What it stops
+
+| Verdict | With a prompt | Nobody answering |
+|---|---|---|
+| allow | runs | runs |
+| defer | your agent asks you | **runs** |
+| review | waits for you | stopped |
+| deny | never runs | never runs |
+
+- **Everything the policy denies stays denied:** secrets read or sent, data sent to unlisted hosts, a download piped into a shell, destructive commands, changes to OpenMoat.
+- **A review stops the call.** Agents that cannot prompt receive it as a deny that says how to approve the call (`openmoat allow --last`).
+- **Under `openmoat run`,** the operating system confines what an allowed command does, the network goes only through the proxy, and npm and uv skip package versions published in the last 7 days.
+
+## What it does not stop
+
+- **Deferred calls run.** `npm install left-pad` and `git push origin main` have no rule, so in auto-approve nothing asks.
+- **Some modes answer or skip the check.** OpenCode 2's `--auto` approves OpenMoat's reviews, and OpenMoat's plugin cannot tell. The Cline CLI's `--yolo` runs no hooks. Hermes Agent's in-session `/yolo` approves a review unseen.
+- **Antigravity CLI.** `--dangerously-skip-permissions` approves its requests unseen, which OpenMoat cannot see. OpenMoat assumes a call runs there when its hook fails. All of this comes from Antigravity's documentation and has not been checked against a running `agy`.
+- **Some agents run a call when the hook fails** or is not loaded. `openmoat status` reports what it can see.
+- **Without a sandbox, the hook decides alone.** On a hook-only agent an allowed call runs with your permissions.
+- **Under `openmoat run`, the agent's own login is readable** to the commands it runs. An API-key login can go through the broker instead; an OAuth login cannot.
+- **Under `openmoat run`, tool commands of some agents still receive the relay token.** Under Codex, Cursor, GitHub Copilot CLI, Gemini CLI, the Cline CLI and the Antigravity CLI, a script or a test runner can send the run calls the agent never made.
+- **On Linux, plain `openmoat run` does not protect files inside the project,** such as `.env`, `.git/hooks` and `.moat`. Use `--isolate`.
+- **An allowed host can receive data.** The proxy checks the host, not what is sent inside HTTPS.
+- **Sending what a session collected is recorded, not stopped.** It appears in the audit log and in `openmoat report`.
+
+## Read more
+
+[Auto-approve and CI](/docs/auto-approve-and-ci/) · [openmoat run](/docs/sandboxes/openmoat-run/) · [Limits](/docs/limits/)

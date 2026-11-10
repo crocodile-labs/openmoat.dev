@@ -43,6 +43,9 @@ export default defineConfig({
         group('Get started', ['index', 'quickstart', 'your-projects',
           sub('Supported agents', 'agents', ['plugin-loading', 'openclaw', 'opencode', 'cline', 'goose']), 'editors',
           'how-it-decides']),
+        group('Solutions', [{ label: 'Overview', slug: 'docs/solutions' },
+          ...['on-a-laptop', 'unattended-agents', 'mcp-servers', 'team-policy', 'ci-and-pull-requests', 'audit-evidence', 'agent-products']
+            .map((p) => `solutions/${p}`)]),
         group('Features', ['shell-commands',
           sub('Secrets and .env files', 'env-files', ['agent-credentials', 'protected-contents', 'card-numbers']), 'allow-a-site',
           sub('Code the agent wrote', 'session-written-code', ['opaque-code']), 'runs-later',
@@ -67,7 +70,7 @@ export default defineConfig({
         {
           label: 'Releases',
           collapsed: true,
-          items: ['docs/releases', ...['v0-17-0', 'v0-16-0', 'v0-15-0', 'v0-14-0', 'v0-13-0', 'v0-12-1', 'v0-12-0', 'v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
+          items: ['docs/releases', ...['v0-19-0', 'v0-18-0', 'v0-17-0', 'v0-16-0', 'v0-15-0', 'v0-14-0', 'v0-13-0', 'v0-12-1', 'v0-12-0', 'v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
             .map((v) => `docs/releases/${v}`)],
         },
       ],
