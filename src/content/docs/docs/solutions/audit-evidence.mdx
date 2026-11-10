@@ -1,0 +1,82 @@
+---
+title: "Audit and compliance evidence"
+description: "Records of what your agents were allowed and denied, mapped to OWASP LLM Top 10, SOC 2 and ISO 27001 controls. Evidence, not a certification."
+sidebar:
+  label: "Audit evidence"
+---
+
+## The problem
+
+A security reviewer or auditor asks how you control what your coding agent does. You need records of what it was allowed and denied, and a way to show those records were not changed.
+
+## The commands
+
+Run these from your own terminal: an agent's sandbox cannot read the audit log. Nothing is sent anywhere.
+
+```bash
+openmoat audit evidence --since 2026-10-01 --until 2026-11-01 > evidence-october.md
+openmoat audit evidence --since 30d --format json > evidence.json
+```
+
+To show a reviewer the events were not changed, give them an export with the hash from the report:
+
+```bash
+openmoat audit export --since 2026-10-01 > window.jsonl
+openmoat audit verify window.jsonl --anchor <the hash from the report>
+```
+
+To record the log's head outside the log:
+
+```bash
+openmoat audit anchor --git ~/notes
+openmoat audit verify --against ~/notes
+```
+
+Example output, shortened, for a log of six decisions (the unit tests' fixture; hashes cut):
+
+```markdown
+# OpenMoat evidence report
+
+Evidence, not a certification. This report lists what OpenMoat recorded about an agent's tool calls on this machine and which framework controls those records relate to. It does not show that any control is met, and using OpenMoat does not make anyone compliant.
+
+- Window: 2026-10-01T00:00:00Z to 2026-11-01T00:00:00Z (UTC, end not included)
+- Generated: 2026-11-04T09:12:40Z
+- Decisions: 6 (allow 1 · defer 1 · review 1 · deny 3)
+
+## Audit log
+
+- Hash chain: intact over 6 events, head `3f1c…`
+- This window: events 1 to 6; the newest has hash `3f1c…`. …
+
+## Controls
+
+### OWASP Top 10 for LLM Applications 2025
+
+| Control | Rule groups | Decisions | allow | defer | review | deny |
+|---|---|---|---|---|---|---|
+| LLM02:2025 Sensitive Information Disclosure | secrets, secret-egress | 2 | 0 | 0 | 0 | 2 |
+| LLM03:2025 Supply Chain | packages, mcp | 1 | 0 | 0 | 1 | 0 |
+…
+```
+
+## What it stops
+
+Nothing by itself: the report reads what the hook already decided. What it gives you, for a time window:
+
+- **Controls** of OWASP Top 10 for LLM Applications 2025, SOC 2 common criteria CC6 to CC8 and ISO/IEC 27001:2022 Annex A, each with the rule groups that relate to it and the decisions by verdict.
+- **Whether the hash chain verifies,** its head, and the window's first and last event ids.
+- **The policy, lock and protections** when the report was made, with each agent's protection level.
+- **Every decision accounted for,** including rules that map to no control. Sample events are stored redacted.
+
+## What it does not stop
+
+- **It is evidence, not a certification.** It does not show that a control is met, and using OpenMoat does not make anyone compliant. No number in the report says a control is designed or operating effectively.
+- **Only what reached OpenMoat is in the log.** An agent that is not set up, a hook that failed open, a tool outside the hook or a command inside an allowed script is not there. Zero denies can mean nothing was attempted or that nothing was checked.
+- **State, not history.** The policy, lock and protections are read when you run the report. The audit log does not record which policy decided each call.
+- **One machine per report.** For several machines, export each log and combine them with `openmoat audit report`, which does not map controls.
+- **Not every risk is mapped.** LLM01 Prompt Injection is not mapped, on purpose: OpenMoat limits what an injected instruction can make the agent do, but does not detect injection.
+- **Provenance notes are local evidence of what the hook saw.** They are not signed and can be stripped or left unpushed, so a missing note proves nothing.
+
+## Read more
+
+[Compliance evidence](/docs/compliance-evidence/) · [Audit log, watch and why](/docs/see-what-happened/) · [Limits](/docs/limits/)

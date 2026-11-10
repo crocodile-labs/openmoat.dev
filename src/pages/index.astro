@@ -28,6 +28,16 @@ const parts = [
   { name: 'Merge check', what: 'Checks a pull request for what its changes do: CI and hook edits, agent settings, look-alike packages, new hosts. Runs in CI and as a GitHub Action.', cmd: 'openmoat policy check-diff', href: '/docs/check-a-pull-request/' },
   { name: 'Policy lock', what: 'Pins the policy and hook files: the agent cannot change the rules, approve its own blocked call or switch OpenMoat off.', cmd: 'openmoat doctor', href: '/docs/self-protection/' },
 ];
+// The situations of the Solutions section of the docs.
+const situations = [
+  { name: 'A developer with an agent on a laptop', what: 'Check every tool call before it runs, in the agents you already use.', cmd: 'openmoat init', href: '/docs/solutions/on-a-laptop/' },
+  { name: 'Agents running unattended', what: 'Auto-approve, background and overnight runs, when nobody is there to answer a prompt.', cmd: 'openmoat run', href: '/docs/solutions/unattended-agents/' },
+  { name: 'People connecting MCP servers', what: 'Start only the servers you accepted, and pin what each tool says it does.', cmd: 'openmoat mcp wrap', href: '/docs/solutions/mcp-servers/' },
+  { name: 'A team that wants one policy', what: 'Rules in the repository, signed policy packs and a required protection level.', cmd: 'openmoat policy install', href: '/docs/solutions/team-policy/' },
+  { name: 'CI and pull request checks', what: 'Report what a change does before it merges, whoever wrote it.', cmd: 'openmoat policy check-diff', href: '/docs/solutions/ci-and-pull-requests/' },
+  { name: 'Audit and compliance evidence', what: 'Records of what agents were allowed and denied. Evidence, not a certification.', cmd: 'openmoat audit evidence', href: '/docs/solutions/audit-evidence/' },
+  { name: 'People building an agent product', what: 'The same decisions in your own agent, from Rust or JavaScript and WebAssembly.', cmd: 'npm install @openmoat/sdk', href: '/docs/solutions/agent-products/' },
+];
 ---
 <!doctype html>
 <html lang="en">
@@ -114,6 +124,25 @@ const parts = [
         <div style="display: grid; grid-template-columns: minmax(220px, 1.1fr) minmax(200px, 1fr) minmax(260px, 1.4fr); font-size: 14px; border-top: 1px solid var(--line-2)"><span style="padding: 12px 16px; color: var(--fg-2)">Several agents</span><span style="padding: 12px 16px; color: var(--muted)">a different setup in each</span><span style="padding: 12px 16px; color: var(--muted)">one policy and one audit log</span></div>
       </div></div>
       <p style="margin: 14px 0 0; color: var(--muted); font-size: 14px; max-width: 820px">OpenMoat does not replace the agent's prompt or sandbox: what the policy has no rule for goes back to the agent's own prompt, and the same policy writes the agents' own OS sandboxes.</p>
+    </section>
+
+    <section id="where-it-fits" style="border-top: 1px solid var(--line); padding: 56px 48px">
+      <p style="margin: 0 0 12px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.14em; color: var(--accent); font-weight: 600">WHERE IT FITS</p>
+      <h2 style="margin: 0 0 8px; font-size: 36px; font-weight: 600; letter-spacing: -0.02em">Start from your situation.</h2>
+      <p style="margin: 0 0 24px; color: var(--muted); max-width: 720px">Each page gives the commands, what they stop and what they do not stop.</p>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line)">
+        {situations.map((s) => (
+          <a href={s.href} style="display: block; text-decoration: none; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 20px">
+            <p style="margin: 0 0 8px; font-weight: 600; color: var(--fg)">{s.name}</p>
+            <p style="margin: 0 0 10px; color: var(--muted); font-size: 14px">{s.what}</p>
+            <code style="font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--accent)">{s.cmd}</code>
+          </a>
+        ))}
+        <a href="/docs/solutions/" style="display: block; text-decoration: none; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 20px">
+          <p style="margin: 0 0 8px; font-weight: 600; color: var(--accent)">All situations →</p>
+          <p style="margin: 0; color: var(--muted); font-size: 14px">The overview of where OpenMoat fits and how to use it.</p>
+        </a>
+      </div>
     </section>
 
     <section id="install" style="border-top: 1px solid var(--line); padding: 56px 48px">

@@ -1,0 +1,62 @@
+---
+title: "People building an agent product"
+description: "OpenMoat's decision engine as a library, from Rust or from JavaScript and WebAssembly: decide before each tool call runs, then enforce it yourself."
+sidebar:
+  label: "Agent products (SDK)"
+---
+
+## The problem
+
+Your own agent product runs the shell commands, file writes, network calls and MCP tools a model asks for. You need a decision before each one runs, the same one `openmoat guard` makes for the same policy.
+
+## The commands
+
+```bash
+npm install @openmoat/sdk
+```
+
+The package has no dependencies and needs Node 20 or later, or any runtime with WebAssembly. From Rust, the crate is `openmoat-sdk` on crates.io.
+
+```js
+import { load, Session } from "@openmoat/sdk";
+
+const openmoat = await load(); // in a browser: load({ wasm: bytes })
+const engine = openmoat.compile({
+  policy: openmoat.defaultPolicy,
+  context: { home: "/home/me", cwd: "/home/me/app", project: "/home/me/app" },
+});
+
+const d = engine.decide({ type: "shell", command: "cat ~/.ssh/id_rsa" });
+// { verdict: "deny", rules: ["secrets-paths"], reasons: [...], reason: "...", context: [], action: {...} }
+```
+
+What your loop does with each verdict:
+
+| Verdict | What your loop does |
+|---|---|
+| `deny` | Does not run the call, and tells the model why. Never offers it for approval. |
+| `review` | Shows a person the call and the reason, and runs it only if they approve this call. |
+| `defer` | Runs its own permission flow. A product without one treats `defer` as `review`. |
+| `allow` | Runs the call. |
+
+## What it stops
+
+Nothing by itself: **the SDK decides; you enforce.** A call it denies must not run, and if your code runs it anyway, nothing stops it. What the decision covers:
+
+- **The same decisions as `openmoat guard`,** from the same code, for shell commands, file reads and writes, network hosts and MCP tool calls.
+- **Session rules.** After a session reads secret material, network to any other host needs review. After it reads untrusted content, a write to a protected path needs review.
+- **Repository policies,** which you read yourself and merge. They can only add restrictions unless a person trusted that exact file.
+
+It does no I/O and sends nothing anywhere: no network, no telemetry. The JavaScript package's WebAssembly module imports nothing from its host, so it cannot.
+
+## What it does not stop
+
+- **It is not a sandbox.** It starts, stops and confines nothing. An allowed call runs whatever it contains, and an allowed host can receive data from it. Where you need an operating-system boundary as well, run the agent under `openmoat run` (macOS 13 or later, Linux), a container or a VM.
+- **The check and the call are two moments.** A file or link that changes between the decision and the call is not seen, so resolve facts just before deciding and run just after.
+- **Only what you tell it.** The engine never looks at a disk: program pins, symlinks and globs are checked only from the facts you pass in.
+- **The rest stays with the CLI.** The policy lock and drift checks, approvals, the audit log, MCP server pins, host hooks, the OS sandboxes and the egress proxy are not in the SDK.
+- **No injected-input check.** A `Session` does not take what a call returned, so a later command that uses a host a page named is not linked to the page.
+
+## Read more
+
+[The SDK](/docs/sdk/) · [Limits](/docs/limits/)

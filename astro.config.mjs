@@ -43,6 +43,9 @@ export default defineConfig({
         group('Get started', ['index', 'quickstart', 'your-projects',
           sub('Supported agents', 'agents', ['plugin-loading', 'openclaw', 'opencode', 'cline', 'goose']), 'editors',
           'how-it-decides']),
+        group('Solutions', [{ label: 'Overview', slug: 'docs/solutions' },
+          ...['on-a-laptop', 'unattended-agents', 'mcp-servers', 'team-policy', 'ci-and-pull-requests', 'audit-evidence', 'agent-products']
+            .map((p) => `solutions/${p}`)]),
         group('Features', ['shell-commands',
           sub('Secrets and .env files', 'env-files', ['agent-credentials', 'protected-contents', 'card-numbers']), 'allow-a-site',
           sub('Code the agent wrote', 'session-written-code', ['opaque-code']), 'runs-later',

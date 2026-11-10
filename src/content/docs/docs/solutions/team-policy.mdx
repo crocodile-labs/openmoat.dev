@@ -1,0 +1,82 @@
+---
+title: "An engineering team that wants one policy"
+description: "Commit rules to a repository, share a signed policy pack for every project, and require a minimum protection level."
+sidebar:
+  label: "One policy for a team"
+---
+
+## The problem
+
+Every agent has its own settings format and sandbox, so three agents mean three setups to keep in step. A team needs one place to say what agents may do, and a repository must not be able to loosen anyone's own rules.
+
+## The commands
+
+**Rules for one repository.** Commit `.moat/policy.yaml`. Its `deny` and `review` rules apply to everyone who works there, whatever agent they use:
+
+```yaml
+version: 1
+deny:
+  - id: no-prod-deploy
+    shell: ["./scripts/deploy.sh prod*"]
+review:
+  - id: migrations
+    fs.write: ["${project}/db/migrations/**"]
+```
+
+Its `allow` rules apply only after a person reviews and trusts that exact file:
+
+```bash
+openmoat trust                   # in the repository; prints the allow rules it lets in
+openmoat trust --revoke
+```
+
+**Rules for every project.** Sign a policy pack with an SSH key, and each person installs it once:
+
+```bash
+# whoever maintains the pack signs it
+ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n openmoat-pack team.yaml   # writes team.yaml.sig
+
+# each person trusts the maintainer's public key once, then installs the pack
+openmoat policy trust-key alice.pub --name alice@example.com
+openmoat policy install team.yaml               # the signature defaults to team.yaml.sig
+```
+
+**A minimum protection level.** Set `require:` in a policy. A repository or pack can raise the level and never lower it:
+
+```yaml
+require:
+  protection: hook-and-os-sandbox   # every agent
+  agents:
+    gemini-cli: hook-only           # this agent: OpenMoat writes no OS sandbox for it
+```
+
+What an agent below the level is told, on every call:
+
+```text
+moat: deny [protection-required] — your policy requires hook + OS sandbox for Gemini CLI;
+this call has hook only: OpenMoat writes no OS sandbox for Gemini CLI; to meet it, start
+Gemini CLI with `openmoat run`
+```
+
+## What it stops
+
+- **Different rules in the same repository.** Repository rules apply with any agent, and show up as `repo:<id>`.
+- **A repository loosening your policy.** By itself a repository policy can only make yours stricter. Any later change to the file drops it back to deny and review only, until someone trusts it again.
+- **A broken rules file being ignored.** A file that does not parse denies every call in the project until it is fixed.
+- **A tampered pack.** A pack whose signature does not verify against a key you trusted is refused, and a pack changed after you installed it stops every call until you look (`openmoat doctor`).
+- **An agent changing the rules.** Writes to `**/.moat/**` are denied to agents (`kernel-self`).
+- **Working below the required level.** An agent whose hook runs but is below the level has every call denied, and `openmoat run` refuses a program it cannot bring to the level.
+
+## What it does not stop
+
+- **Repository rules apply in the hook.** The agents' own sandboxes and the standalone `openmoat proxy` are generated from each person's policy, so a repository deny is not enforced there. `openmoat run` adds the repository's deny rules to the hosts its proxy decides.
+- **A required level is checked where the hook runs.** A hook that does not run (turned off in the agent's settings, a plugin the agent did not load, an agent that runs a call when the hook fails) gets no call to deny. `openmoat status` and `openmoat doctor` show those agents as below the level, but an agent started on its own keeps running.
+- **Antigravity CLI** has no documented setting that blocks a call when its hook fails, so OpenMoat assumes the call runs there, and a required level cannot see that. Its support is written from its documentation and has not been checked against a running `agy`.
+- **`hook-and-os-sandbox` means OpenMoat's sandbox settings are in force, not that every call is confined.** Claude Code's file tools, `WebFetch` and MCP servers run outside its sandbox.
+- **A program that runs as you outside any sandbox** can change the policy and recompute the lock.
+- **Agent settings can turn hooks off.** `openmoat status` and `openmoat doctor` report the settings they can see.
+- **A pack reaches only the machines that installed it.** Each person installs it once.
+
+## Read more
+
+[Team rules and policy packs](/docs/team-rules/) · [Repository policy](/docs/team-rules/repository-policy/) · [Required protection level](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#92-required-protection-level-require) · [Limits](/docs/limits/)
