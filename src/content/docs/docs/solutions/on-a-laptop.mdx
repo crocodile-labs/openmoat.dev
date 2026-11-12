@@ -43,7 +43,7 @@ openmoat allow --last    # allow the call an agent was just stopped on
 
 <Aside type="caution" title="Antigravity CLI">
 
-Antigravity CLI support is written from its documentation and has not been checked against a running `agy`. What `agy` does when the hook fails is not documented, so treat a failing hook as letting the call run.
+A real `agy` ran OpenMoat's hook on Linux and macOS in the weekly run of the agents' latest releases, and blocked the call when the hook was missing or exited with an error. On Windows it is preview. What `agy` does when the hook times out is not documented, so treat a hook that times out as letting the call run.
 
 </Aside>
 

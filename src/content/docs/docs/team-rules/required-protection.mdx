@@ -69,6 +69,42 @@ A repository or a pack can raise the level and never lower it: its `hook-only`, 
 
 Taking the section out of the policy is a change to a pinned file: every call is denied (`kernel-integrity`) until you re-pin.
 
+## Require openmoat run's full boundary
+
+**New in 0.20.0.** Where it cannot get all of its boundary, `openmoat run` normally starts anyway and warns. With `require.run: full-boundary` it refuses instead (ADR-077):
+
+```yaml
+require:
+  run: full-boundary
+```
+
+| On this system | Without the setting | With it |
+|---|---|---|
+| No OS sandbox: macOS before 13, a missing backend, Windows | refused | refused, naming the policy that asks |
+| Linux where the Isolated tier cannot start (bubblewrap missing or blocked) | starts the Lightweight tier, network restricted by port only, warns and records it | refused; install bubblewrap |
+| Linux, `openmoat run --no-isolate` | starts the Lightweight tier, records it | refused |
+
+On Linux the full boundary is the [Isolated tier](/docs/sandboxes/linux-tiers/), which `openmoat run` starts by default where bubblewrap works. No `--netns` value and no `--no-isolate` lowers it. Your policy, a repository policy and a pack can each turn it on; none can turn it off. `openmoat status` and `openmoat doctor` say whether it holds here, and an unmet requirement is a problem (exit 64). It is about `openmoat run`, so an agent started without it is not refused: use `require.protection` above for that.
+
+**Environment.** Under the setting only an allowlist of inherited variables reaches what `openmoat run` starts, so a cloud credential in your shell does not reach the agent: the built-in basics (`PATH`, `HOME`, `TERM`, locale, temp directories), the agent's own API key names and configuration folder variable, the names you add, and what `openmoat run` sets itself.
+
+```yaml
+sandbox:
+  env_allow: [JAVA_HOME, CARGO_HOME]
+```
+
+```bash
+openmoat run --env NPM_TOKEN -- claude     # one more name, for this run only
+openmoat run --verbose -- claude           # names what it withheld, never a value
+openmoat doctor                            # lists the names it would withhold here
+```
+
+Names only: `NAME=value` and patterns such as `AWS_*` are errors. `env_allow` is read from your own policy; a repository policy or pack can turn the requirement on but cannot add a name. A brokered secret never reaches the agent even if you name it. If you run an agent through Amazon Bedrock or Google Cloud, add those credential names yourself. Without the setting everything is inherited, and one line says how many variables look like credentials.
+
+**MCP servers.** `openmoat status` and `openmoat doctor` show every MCP server OpenMoat can read as protected or unprotected, with why. Under the setting a local server left unprotected (not run through `openmoat mcp proxy`, or a definition you have not accepted) fails the requirement. This is a report: the agent starts its servers itself, so `openmoat run` cannot refuse one.
+
+Which agents run a call when their hook fails, and so most need this: [Protection by agent and OS](/docs/agents/protection/#if-the-hook-fails).
+
 ## Limits
 
 - **A hook that does not run cannot deny.** A hook the agent's settings turn off, a plugin the agent did not load, or an agent that runs a call when the hook fails sends no call to deny. `openmoat status` and `openmoat doctor` show such an agent as below the level, and `openmoat run` refuses it; nothing stops the agent started on its own.
@@ -76,4 +112,4 @@ Taking the section out of the policy is a change to a pinned file: every call is
 - **The answer is as strong as the state directory.** The lock and the kept sandbox answer live in `~/.moat`, which `kernel-self` keeps from the agent's tool calls and every OS sandbox keeps from its commands. A program that runs as you outside any sandbox can rewrite them, as it can rewrite the policy.
 - **The SDK and the WebAssembly module** read `require:` and keep it, but they decide and do not enforce, so they do not apply it.
 
-More in [Limits](/docs/limits/). The rules in full: [POLICY.md §9.2](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#92-required-protection-level-require) and [ADR-064](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-064-required-protection-level.md).
+More in [Limits](/docs/limits/). The rules in full: [POLICY.md §9.2](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#92-required-protection-level-require), [§9.3](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#93-requiring-openmoat-runs-full-boundary-requirerun), [ADR-064](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-064-required-protection-level.md) and [ADR-077](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-077-enforced-run-boundary.md).

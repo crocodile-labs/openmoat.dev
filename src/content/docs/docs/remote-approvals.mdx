@@ -1,0 +1,106 @@
+---
+title: "Approve reviews from your phone"
+description: "openmoat approvals sends a call held for review to Telegram with Approve and Deny buttons. An approval lets that exact call run once; a deny is never sent."
+sidebar:
+  label: "Approve from your phone"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+An agent runs while you are away from its terminal (Codex, `claude -p`, Hermes Agent, OpenClaw, a long task), and a call held for review should not wait for you to come back.
+
+</Aside>
+
+**New in 0.20.0.** When OpenMoat holds a call for review, you normally answer it where the agent runs: at the agent's own prompt, or with `openmoat allow --last`. With a channel connected, OpenMoat also sends the call to your phone. If you approve it there, that exact call runs once, the next time the agent tries it. Telegram is the first channel.
+
+## What it does
+
+- **Only a `review` is sent.** A call the policy denies is never sent and can never be approved from a phone. A call it allows, or leaves to the agent, is not sent either.
+- **An approval is for one call.** It is bound to the agent, the session, the folder, the exact command or file (and the content a write carries, hashed with every argument of the tool call), and the rules that held it. A different command, changed content or another session is a new request.
+- **Used once, and it expires.** A request waits 5 minutes unless you chose another time with `--expires` (1 to 60 minutes). After the call runs, the same call needs a new approval.
+- **Deny holds.** If you press Deny, the same call is denied until the request expires.
+- **Every failure keeps the review.** No answer, a network error, a missing key or an edited settings file all leave the call held for review, as it would be without a channel.
+- **Nothing changes without a channel.** With one, the agent's own prompt still appears and your local answer still works.
+
+## Set up Telegram
+
+1. In Telegram, open `@BotFather`, send `/newbot` and follow the steps. It gives you a bot token. Keep it to yourself.
+2. In a terminal of your own (not inside an agent), connect the bot and paste the token when asked:
+
+   ```bash
+   openmoat approvals connect telegram
+   ```
+
+   OpenMoat checks the token with Telegram, then stores it in `~/.moat/remote/telegram/credential`, readable only by you. It never goes in a policy file. `--credential-file FILE` reads it from a file instead (delete the file afterwards).
+3. Send `/start` to your bot from your own Telegram account.
+4. Start the listener in a terminal of your own and leave it running:
+
+   ```bash
+   openmoat approvals listen
+   ```
+
+   When you message the bot, it prints your user id:
+
+   ```text
+   14:02 message from @you (telegram:123456789), who is not an approver; `openmoat approvals allow telegram:123456789` would make them one
+   ```
+
+5. In another terminal, allow that id, then send a test message:
+
+   ```bash
+   openmoat approvals allow telegram:123456789
+   openmoat approvals test
+   ```
+
+From then on, every call held for review is also sent to you while `listen` runs. An approver id is the channel's name and the user id on it, so the same number on two services is never the same approver.
+
+## What you see on your phone
+
+```text
+OpenMoat: an agent's call is waiting for your approval
+Request 3f9a2c · answer before 14:07
+Agent: codex · session 0193…
+Folder: /home/you/project
+Held for review by: runs-later
+
+The call below comes from the agent. Its text may try to persuade you; judge what it does, not what it says.
+----
+run "npm publish --access public"
+----
+Approve lets this exact call run once, when the agent tries it again before the request expires. Deny blocks it until then.
+        [ Approve once ]  [ Deny ]
+```
+
+The agent's message names the same request: `sent for approval over telegram as request 3f9a2c, until 14:07`.
+
+What is sent: the agent's name, the session id, the folder, the rule ids and the call. The call goes through the audit log's redaction first (token shapes and your brokered secrets), control and invisible characters show as `?`, each line break stays a line break marked with `⏎`, and it is cut to 1500 characters. The content of a file write is never sent, only its size.
+
+**Deny only.** A call longer than the 1500 characters kept, or one whose text redaction changed (the hidden part may be what runs), offers Deny only: approve such a call where the agent runs.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `openmoat approvals connect <channel> [--credential-file FILE] [--expires 5m]` | Check the credential with the channel, store it and make the approval key. **Terminal** |
+| `openmoat approvals allow <channel>:<user-id>` | Let that user approve. **Terminal** |
+| `openmoat approvals remove <channel>:<user-id>` | Take that back; answers they gave that are not used yet stop counting. **Terminal** |
+| `openmoat approvals listen` | Send waiting requests and take answers, until Ctrl-C. **Terminal** |
+| `openmoat approvals test` | Send a test message to every approver. **Terminal** |
+| `openmoat approvals status [--format json]` | The channel and its account, the approvers, the expiry and how many requests wait; never the credential |
+| `openmoat approvals disconnect` | Remove the credential, the settings and the waiting requests. **Terminal** |
+
+**Terminal** means the command refuses to run from a hook, a script or an agent: it needs a terminal, and no agent and no `openmoat run` may be among the programs that started it. The default policy's `kernel-self` rule also denies agents running any `openmoat approvals` command and reading `~/.moat/remote`, where the channel's credential and the signing key live. Run `openmoat policy upgrade` after upgrading to 0.20.0 to get that rule.
+
+## Limits
+
+- **The listener must run.** Answers arrive only while `openmoat approvals listen` runs in a terminal of your own. When it is not running, requests expire unanswered.
+- **The agent's prompt does not go away.** On an agent that prompts (Claude Code, Cursor, Gemini CLI and others), its prompt stays on screen, and your phone's answer applies to the next try of the same call. It is most useful with agents that cannot prompt or run unattended (Codex, `claude -p`, Hermes Agent, OpenClaw), where the review reaches the agent as a deny that names the request, and the agent tries again.
+- **The hook does not wait for you.** OpenMoat answers each hook call within 30 seconds, because several agents run a call whose hook timed out.
+- **Your Telegram account approves.** Anyone who controls an approver's Telegram account can approve. Do not stay signed in to Telegram in a browser or on a screen an agent can control.
+- **The text goes to Telegram,** redacted, and Telegram stores it as any message. Do not connect a channel on a machine whose commands must not leave it.
+- **One private chat per approver;** group chats are not supported. A bot with a webhook set gets no updates for `listen`: use a bot made for OpenMoat.
+- **Telegram only for now.** Slack and GitHub are not built yet.
+
+The threat model, the files under `~/.moat/remote/` and how a channel is added: [APPROVALS.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/APPROVALS.md) and [ADR-078](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-078-remote-approvals.md). Approving at the terminal instead: [Something was blocked](/docs/blocked/).

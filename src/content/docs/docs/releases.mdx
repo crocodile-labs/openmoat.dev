@@ -16,10 +16,11 @@ A new release is out and you want to know what changed, or whether you need to r
 
 Latest first. Each page starts with an **Upgrading** box (what to run after installing it), then the changes grouped as in the [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md): Security, Added, Changed, Fixed. Changes that need action or break something are marked **Breaking**. How to upgrade: [Upgrade](/docs/upgrade/).
 
-Latest: [0.19.0](/docs/releases/v0-19-0/) (2026-11-09). Releases before 0.14.0 call the `review` verdict `ask`; their pages keep the name they shipped with ([Upgrading from ask to review](/docs/upgrade/ask-to-review/)). Releases before 0.17.0 marked verdicts `✔`, `❓` and `⛔` in text output; their pages keep the marks they shipped with.
+Latest: [0.20.0](/docs/releases/v0-20-0/) (2026-11-12). Releases before 0.14.0 call the `review` verdict `ask`; their pages keep the name they shipped with ([Upgrading from ask to review](/docs/upgrade/ask-to-review/)). Releases before 0.17.0 marked verdicts `✔`, `❓` and `⛔` in text output; their pages keep the marks they shipped with.
 
 | Release | Date | Headline |
 |---|---|---|
+| [0.20.0](/docs/releases/v0-20-0/) | 2026-11-12 | Reviews approved from your phone over Telegram, workspace snapshots and `openmoat restore`, live audit delivery to a SIEM, short-lived brokered credentials (preview), the Isolated tier by default on Linux, `require.run: full-boundary`, a protection page per agent and OS, and Antigravity CLI checked on a real `agy`. Run `openmoat policy upgrade`. |
 | [0.19.0](/docs/releases/v0-19-0/) | 2026-11-09 | The guard takes its state directory from the hook command, Antigravity CLI support, the relay token kept from tool commands on seven agents, and the shared temp directories out of openmoat run. |
 | [0.18.0](/docs/releases/v0-18-0/) | 2026-11-09 | A required protection level, a per-layer proof report, openmoat serve, grants that end on their own, the MCP server surface pinned, the guard relay bound to its run, and hook-off project settings denied. |
 | [0.17.0](/docs/releases/v0-17-0/) | 2026-11-07 | Block messages that say what was stopped and why, `openmoat watch` and `openmoat why`, Claude Code in VS Code and JetBrains, Cursor's Tab checked, injected input for the Cline CLI and wrapped MCP servers and in other spellings, containers handed the host, the agents' system-wide settings, one set of verdict marks. Run `openmoat policy upgrade`, then `openmoat init`. |

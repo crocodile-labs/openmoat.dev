@@ -1,0 +1,72 @@
+---
+title: "Short-lived tokens from a program (preview)"
+description: "A brokered secret whose value comes from a program you chose, such as a CLI's token command: openmoat proxy uses it for at most its lifetime, renews it before it ends, and never sends a stale one."
+sidebar:
+  label: "Short-lived tokens (preview)"
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+A token kept in a file or variable lives for months, and you would rather the agent's requests used one that expires within minutes.
+
+</Aside>
+
+**New in 0.20.0, preview.** A brokered secret's `source` can be a `command`: a program that prints a short-lived token. `openmoat proxy` runs it, uses the value for at most `lifetime`, and runs it again before the value ends. The agent still holds only the placeholder `moat-secret:<id>:placeholder`, as for any [brokered secret](/docs/keep-tokens-safe/).
+
+## Example
+
+This uses HashiCorp Vault's CLI, one program file, to make a child token that lives 15 minutes. It is an example only: check your tool's own command and the header its API expects.
+
+```yaml
+secrets:
+  - id: vault
+    host: vault.example.com
+    header: X-Vault-Token
+    tls: terminate
+    source:
+      command:
+        run: ["/usr/local/bin/vault", "token", "create", "-address=https://vault.example.com",
+              "-ttl=15m", "-field=token"]
+        lifetime: 15m          # 1m to 12h: the longest one value is used
+        refresh_before: 3m     # optional; a fifth of lifetime when unset
+        home: user             # its own login is in ~/.vault-token
+```
+
+The agent sends `X-Vault-Token: moat-secret:vault:placeholder`; the proxy puts the token in place of the placeholder. Then:
+
+```bash
+openmoat edit                                  # add the secret
+openmoat run -- claude                         # the run's proxy runs the program
+openmoat sandbox show                          # lists the secret as handled by openmoat proxy
+```
+
+**The agent must not be able to change the program.** It runs as you, outside every sandbox. Installed by an administrator under `/usr/local/bin`, the program and every folder above it belong to root, so no rule is needed. Installed with Homebrew under `/opt/homebrew`, which is yours, it needs a deny rule for that whole folder:
+
+```yaml
+deny:
+  - id: credential-programs
+    fs.write: ["/opt/homebrew/**"]
+```
+
+`openmoat policy lint` warns when no rule covers the program, and `openmoat proxy` refuses to start and names the rule to add.
+
+## What the proxy checks
+
+- **Who can change it.** The path in `run`, the file it resolves to and every folder above it up to your home must each be covered by a deny `fs.write` rule of your own policy, or be changeable only by an administrator. A repository policy's rules never count, and a deny rule counts only outside the project and `openmoat run`'s write folders.
+- **What it is.** An absolute path or one under `~/`; never a bare name, `.` or `..`, or `/tmp`, `/var/tmp`, `/dev/shm`. A script's interpreter must pass the same check and is pinned too; `#!/usr/bin/env` is refused.
+- **Pinned.** At start the proxy hashes the program (SHA-256) and runs a private copy of those bytes, checked again before each run, never the file at the path. After you update the tool, restart `openmoat proxy` or `openmoat run`.
+- **How it runs.** In `/`, never in your project; no input, no terminal, a 30-second limit, at most 64 KiB of output, and a bare environment (`PATH` is the system folders only). `HOME` is an empty folder of its own unless you set `home: user`.
+- **What it prints.** The value alone on one line, or JSON with `value` and `expires_in` or `expires_at`. The value is used until the earlier of `lifetime` and that expiry.
+- **When it fails.** At start, the proxy does not start. Later, it says so (the secret's id and the reason, never the output) and tries again every 15 seconds. Past the old value's end, a request that needs it is refused before anything is sent, recorded as `proxy-secret-expired`. A stale value is never sent.
+
+## Limits
+
+- **Preview.** The format and the checks can still change.
+- **Only `openmoat proxy` runs it** (and the proxy of `openmoat run`). `openmoat guard`, audit delivery and Claude Code's broker never do, and a repository policy or a pack cannot add a secret.
+- **`openmoat guard`'s audit rows do not mask its values,** because OpenMoat writes no file of them for the guard to read: that would be a copy on disk of the tokens the source keeps short-lived. The proxy's own rows mask every value it gave (the last five).
+- **What the program loads is not pinned.** Libraries, modules and the configuration it reads (such as `~/.aws/config`) are not checked: keep them from the agent with deny `fs.write` rules, or choose a program that is one file. This is why the example is not `gcloud`, whose Python loads code from folders you can write.
+
+The full reference: [POLICY.md §2.2](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#22-short-lived-values-from-a-program-source-command-preview) and [ADR-087](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-087-short-lived-brokered-credentials.md).

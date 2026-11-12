@@ -29,7 +29,7 @@ Everything the default policy denies stays denied: secrets, unknown hosts, `curl
 
 ```bash
 openmoat run -- claude --dangerously-skip-permissions
-openmoat run --isolate -- codex          # Linux: the agent sees only the project, the read roots and temp
+openmoat run --isolate -- codex          # Linux: the Isolated tier, or refuse to start
 ```
 
 `openmoat run` starts the agent inside an OS sandbox generated from your policy (macOS 13 or later, Linux; not on Windows). It covers every process the agent starts, but is coarser per command than the hook. On macOS 12 and earlier it refuses to start and says so; the agent hooks still apply the policy there.
@@ -55,7 +55,7 @@ The standalone `openmoat proxy` serves agent sessions only too, from 0.12.0: Cla
 
 <Aside type="caution" title="Linux and project files">
 
-On Linux, plain `openmoat run` does not protect files inside the project (`.env`, `.git` hooks, `.moat`). Use `openmoat run --isolate` (bubblewrap) for that.
+On Linux, `openmoat run` starts the Isolated tier (bubblewrap) by default where bubblewrap works, which keeps the project's `.env`, `.git` hooks and `.moat` from the agent's commands. Where bubblewrap is missing or blocked it starts the Lightweight tier, which does not, and says so on every start. Use `openmoat run --isolate`, or `require.run: full-boundary`, to refuse instead ([Linux tiers and Landlock](/docs/sandboxes/linux-tiers/)).
 
 </Aside>
 

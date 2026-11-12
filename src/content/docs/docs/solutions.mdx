@@ -21,9 +21,9 @@ Find the situation closest to yours. Each page is short and in the same order: t
 
 <Aside type="note" title="Two facts that apply on several pages">
 
-`openmoat run` needs macOS 13 or later, or Linux. It refuses to start on macOS 12 and earlier and on Windows.
+`openmoat run` needs macOS 13 or later, or Linux. It refuses to start on macOS 12 and earlier and on Windows. On Linux it starts the Isolated tier by default where bubblewrap works.
 
-Antigravity CLI support is written from its documentation. It has not been checked against a running `agy`.
+Antigravity CLI's hook is run by a real `agy` on Linux and macOS each week; on Windows it is preview. What `agy` does when the hook times out is not documented, so OpenMoat assumes the call runs then ([Protection by agent and OS](/docs/agents/protection/)).
 
 </Aside>
 

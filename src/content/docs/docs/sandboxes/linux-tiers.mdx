@@ -1,0 +1,100 @@
+---
+title: "Linux: the Isolated tier by default, and the Landlock ABI ladder"
+description: "From 0.20.0 openmoat run on Linux starts the Isolated tier (bubblewrap) where it works, and uses what newer Landlock versions add beside its seccomp filter."
+sidebar:
+  label: "Linux tiers and Landlock"
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You run agents with `openmoat run` on Linux and want to know what the agent can see, why a run says it started the Lightweight tier, or what your kernel version adds.
+
+</Aside>
+
+## Which tier `openmoat run` starts
+
+From 0.20.0, `openmoat run` on Linux starts the **Isolated tier** (bubblewrap) by default where bubblewrap works, and the **Lightweight tier** (Landlock and seccomp) otherwise. macOS has the Lightweight tier only.
+
+| Linux, `openmoat run` … | bubblewrap works | bubblewrap missing or blocked |
+|---|---|---|
+| (no flag) | Isolated tier | Lightweight tier; says why on every start and records it in the audit log (`run-isolation-unavailable`) |
+| `--isolate` | Isolated tier | refused (exit 64) |
+| `--no-isolate` | Lightweight tier, recorded in the audit log (`run-no-isolate`) | the same |
+| any of these under `require.run: full-boundary` | Isolated tier; `--no-isolate` refused | refused (exit 64) |
+
+```bash
+openmoat doctor          # "openmoat run     starts the Isolated tier (bubblewrap works here)"
+openmoat run -- claude   # the Isolated tier here, or the Lightweight one with a warning
+openmoat run --no-isolate --write ~/.claude --write ~/.claude.json -- claude
+```
+
+The rows are in the audit log under the run's own session (`openmoat show`, host `moat-run`, tool `isolation`). On macOS `--no-isolate` changes nothing and writes nothing. To refuse rather than fall back, add [`require.run: full-boundary`](/docs/team-rules/required-protection/#require-openmoat-runs-full-boundary) to your policy.
+
+### What the agent sees in the Isolated tier
+
+- **Only** the project, `sandbox.read_roots`, the agent's executable, the `--write` paths and an empty temp directory, each at its usual path. The rest of the home directory (`~/.ssh`, `~/.aws`, other projects) does not exist in there.
+- **Denied paths inside them are hidden.** A denied read (the project's `.env` files) is covered by an empty placeholder no one may open; a denied write (`.git`, `.claude/settings.json`) is mounted read-only. `.env`, `.envrc` and `.moat` directly in the project are covered even when they are missing.
+- **Writes** go only to the project, the temp directory (in memory, gone when the session ends) and the `--write` paths.
+- **Network** goes only to OpenMoat's proxy, through a network namespace with nothing but loopback. There is no DNS.
+- The Lightweight tier's Landlock rules and seccomp filter apply inside too, so Linux 6.7 or later is needed.
+
+An MCP server started with `openmoat mcp proxy --sandbox` also runs in the Isolated tier on Linux from 0.20.0, so a path outside the project and the read roots is not there for it at all.
+
+### Setup
+
+It needs `bwrap` in `/usr/bin`, `/bin` or `/usr/local/bin` (never taken from `PATH`) and unprivileged user namespaces:
+
+```bash
+sudo apt install bubblewrap        # or: sudo dnf install bubblewrap
+openmoat doctor                    # says which tier openmoat run starts here
+```
+
+On Ubuntu 24.04, AppArmor restricts unprivileged user namespaces unless `kernel.apparmor_restrict_unprivileged_userns` is 0 or an AppArmor profile allows `bwrap`.
+
+**An agent that no longer starts.** An agent whose runtime lives elsewhere in your home (a Node or Python install under `~/.local` or a version manager's folder) can need that folder in `sandbox.read_roots`:
+
+```yaml
+sandbox:
+  read_roots: ["/usr", "~/.nvm"]
+```
+
+## The Landlock ABI ladder
+
+`openmoat run` needs Landlock ABI 4 (Linux 6.7). Where the kernel has more, it adds what a newer ABI brings beside the seccomp filter, never in its place, so an older kernel keeps exactly the protection it had (ADR-082):
+
+| Landlock ABI | First Linux | What `openmoat run` does with it |
+|---|---|---|
+| 4 | 6.7 | required: files and the proxy's TCP port |
+| 5 | 6.10 | not used (device `ioctl`): the terminal's own calls must work; seccomp refuses `TIOCSTI` and `TIOCLINUX` |
+| 6 | 6.12 | used: abstract Unix sockets and signals outside the sandbox refused |
+| 7 | 6.15 | not used (kernel audit logging): OpenMoat's audit log records its own decisions |
+| 8 | 7.0 | not used (one ruleset for all threads): OpenMoat's proxy thread must stay outside |
+| 9 | 7.1 | used: a pathname Unix socket made outside the sandbox cannot be connected or sent to |
+| 10 | 7.2 | not used yet (UDP): seccomp refuses UDP |
+| 11 | 7.3 | nothing to add (`no_new_privs` is set already) |
+| 12 | 7.4 | not used yet (capabilities, namespaces): seccomp refuses new namespaces |
+
+See what applies on your kernel:
+
+```bash
+openmoat doctor --verbose          # landlock  Landlock ABI 6 here: `openmoat run` applies ABI 4, 6; …
+openmoat sandbox show --format json | jq .lightweight.landlock.abi
+openmoat run --verbose -- claude   # prints the same before the agent starts
+```
+
+Every Linux run also writes it to the audit log (rule `run-landlock-abi`) before the agent starts.
+
+**Datagram socket pairs.** From 0.20.0 the seccomp filter allows `socketpair()` only for stream and sequenced-packet sockets (which Node, Python and Chromium use). A datagram pair fails with `EPERM`, because it could reach a pathname socket outside the sandbox such as `/dev/log`.
+
+## Limits
+
+- **A deny match created after the session starts is not hidden** (a `.env.local` a command writes, a `.env` in a new folder); the hook still decides the agent's own tool calls on it.
+- **The agent and its commands share one sandbox**, as in the Lightweight tier: whatever the agent needs, `npm test` gets too.
+- **A project with more than a million files and folders is refused** by the Isolated tier: each is looked at to find what to hide.
+- **Without bubblewrap**, the Lightweight tier does not protect the project's `.env`, `.git/hooks` and `.moat`, and restricts the network by port only.
+- **No Isolated tier on macOS yet**: `openmoat run --isolate` refuses there and names what is missing.
+
+The full reference: [SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md#which-tier-openmoat-run-starts), [ADR-080](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-080-isolate-default-and-latency.md) and [ADR-082](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-082-landlock-abi-ladder.md).

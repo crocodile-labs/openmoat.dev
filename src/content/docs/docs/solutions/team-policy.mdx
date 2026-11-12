@@ -71,7 +71,7 @@ Gemini CLI with `openmoat run`
 
 - **Repository rules apply in the hook.** The agents' own sandboxes and the standalone `openmoat proxy` are generated from each person's policy, so a repository deny is not enforced there. `openmoat run` adds the repository's deny rules to the hosts its proxy decides.
 - **A required level is checked where the hook runs.** A hook that does not run (turned off in the agent's settings, a plugin the agent did not load, an agent that runs a call when the hook fails) gets no call to deny. `openmoat status` and `openmoat doctor` show those agents as below the level, but an agent started on its own keeps running.
-- **Antigravity CLI** has no documented setting that blocks a call when its hook fails, so OpenMoat assumes the call runs there, and a required level cannot see that. Its support is written from its documentation and has not been checked against a running `agy`.
+- **Antigravity CLI** documents nothing for a hook that times out, so OpenMoat assumes the call runs then, and a required level cannot see that. A real `agy` blocks the call when the hook is missing or exits with an error (weekly run, Linux and macOS).
 - **`hook-and-os-sandbox` means OpenMoat's sandbox settings are in force, not that every call is confined.** Claude Code's file tools, `WebFetch` and MCP servers run outside its sandbox.
 - **A program that runs as you outside any sandbox** can change the policy and recompute the lock.
 - **Agent settings can turn hooks off.** `openmoat status` and `openmoat doctor` report the settings they can see.

@@ -30,7 +30,9 @@ OpenMoat checks {agentCount} agents: {agentList()}.
 
 For any agent, `openmoat run -- <agent>` starts the whole agent inside one sandbox made from your policy, with network only through OpenMoat's proxy (macOS 13 or later, Linux). It answers nothing command by command; that is the hook's job. See [Auto-approve and CI](/docs/auto-approve-and-ci/#run-a-whole-agent-in-a-sandbox).
 
-Each week CI installs every agent's latest release and sets it up with `openmoat init`; where the agent runs without an account, CI checks that the real agent loads OpenMoat's hook ([what is checked per agent](https://github.com/crocodile-labs/openmoat/blob/main/scripts/ci/latest-agents/README.md)).
+Each week CI installs every agent's latest release and sets it up with `openmoat init`; where the agent runs without an account, CI checks that the real agent loads OpenMoat's hook, and (from 0.20.0) makes the hook fail under it to check what the agent then does ([what is checked per agent](https://github.com/crocodile-labs/openmoat/blob/main/scripts/ci/latest-agents/README.md)). The **Hook run by the real agent** column says on which systems a real copy of the agent ran OpenMoat's hook and the decision held; everywhere else, Windows included, the hook is set up and its payloads are tested, but it is preview. Each agent on each OS, with the tests behind every claim: [Protection by agent and OS](/docs/agents/protection/).
+
+`openmoat doctor` names each agent that runs a call when OpenMoat's hook cannot start, crashes or times out ("fails open"), with the way out: start it with `openmoat run`, and add [`require.run: full-boundary`](/docs/team-rules/required-protection/#require-openmoat-runs-full-boundary) so `openmoat run` refuses to start without its whole boundary.
 
 ## What each agent's hook sees
 
@@ -67,7 +69,7 @@ Every hooked agent sends OpenMoat its shell commands, file reads and writes, and
 - **Checked:** every tool, through OpenMoat's plugin on OpenClaw's `before_tool_call` hook: `exec`, file tools, `apply_patch`, `web_fetch`, `web_search`, browser navigation and uploads, MCP tools, plugin changes, and cron jobs (which need review).
 - **The call that runs is the one checked.** The plugin decides at the highest priority and returns the parameters it checked at the lowest, so another plugin's rewrite of the call is undone ([OpenClaw runs the call OpenMoat checked](/docs/agents/openclaw/)). A plugin that changes the call and asks for approval in the same answer keeps its change once you approve it.
 - **Setup:** restart the Gateway after `openmoat init` (`openclaw gateway restart`). `openmoat init` refuses an `openclaw.json` that has comments, because writing it back would drop them: move them out first.
-- **If the hook fails:** a plugin that throws or takes over 60 seconds blocks the call. If the Gateway does not load the plugin at all, calls run unchecked; `openmoat status` says "plugin not loaded yet" until the plugin has reported loading ([Plugin loading](/docs/agents/plugin-loading/)).
+- **If the hook fails:** a plugin that throws, or an answer that takes over 45 seconds, blocks the call. If the Gateway does not load the plugin at all, calls run unchecked; `openmoat status` says "plugin not loaded yet" until the plugin has reported loading ([Plugin loading](/docs/agents/plugin-loading/)).
 - **Not checked:** OpenClaw's process input to a running `exec` session; `code_execution`, which runs at the model provider. Running a script the session wrote needs review.
 
 ### GitHub Copilot CLI
@@ -121,7 +123,7 @@ The Cline CLI (`cline`, npm `cline`). Setup, the tools it checks and the limits 
 
 - **Checked:** every tool, through OpenMoat's `PreToolUse` hook script in `~/.cline/hooks` (`$CLINE_DIR/hooks` when that is set), with a `PostToolUse` copy beside it (from 0.17.0) that reports what each call returned for [injected input](/docs/injected-input/): `run_commands`, `read_files`, `editor`, `apply_patch`, `search_codebase`, `fetch_web_content` and MCP tools; any other tool by the paths, URLs and commands its arguments name. The MCP servers in Cline's `cline_mcp_settings.json` are pinned.
 - **Reviews:** Cline's hooks cannot prompt, so a review is a deny, which ends Cline's run. Approve it with `openmoat allow --last` and continue the session.
-- **If the hook fails:** Cline itself runs a call whose hook fails, so OpenMoat's script blocks the call when `openmoat` is missing, crashes or gives no answer. A script that cannot start at all (no `sh`) or is killed after Cline's 120 seconds lets the call run.
+- **If the hook fails:** Cline itself runs a call whose hook fails, so OpenMoat's script blocks the call when `openmoat` is missing, crashes or gives no answer. A script that cannot start at all (no `sh`, as on native Windows) or is killed after Cline's 120 seconds lets the call run, so from 0.20.0 `openmoat doctor` names the Cline CLI as failing open.
 - **Not checked:** the Cline VS Code extension, `--yolo` runs (no hooks run at all) and native Windows. Another hook or plugin can change a call after OpenMoat checked it; `openmoat status` and `openmoat doctor` print these limits on a line of their own and name every other `PreToolUse` file and Cline plugin they find.
 - **Workspace hooks:** writes to `.clinerules/hooks/` and `.cline/hooks/`, which Cline runs on each tool call, need review (`runs-later`).
 
@@ -137,9 +139,11 @@ goose, the open-source agent from Block, CLI and desktop app. Setup, the tools i
 
 ### Antigravity CLI
 
-A `PreToolUse` command hook, under the name `openmoat` in `~/.gemini/config/hooks.json`. Protection is hook only. Every documented tool is mapped by what it does, and a tool not listed is treated as unknown. A review asks in Antigravity CLI's own prompt every time, and is a deny when its settings say `always-proceed`. An entry set to `"enabled": false` shows as not protected, and `openmoat init` turns it back on.
-
-This support is built from Antigravity CLI's documentation and has not been checked on a running `agy`. What it does when a hook crashes or times out is not documented, so a call may run then; `openmoat status` and `openmoat doctor` say so. For an OS sandbox use `openmoat run -- agy`.
+- **Checked:** every documented tool, through a `PreToolUse` command hook under the name `openmoat` in `~/.gemini/config/hooks.json` (shared with the Antigravity app and IDE). Each tool is mapped by what it does; a tool not listed is treated as unknown.
+- **Reviews:** Antigravity CLI's own prompt, every time (a saved "Always Allow" cannot answer it). With `toolPermission: always-proceed` in its settings, a review is a deny.
+- **Run on a real `agy`** (from 0.20.0): the weekly run of the agents' latest releases starts a real `agy` on Linux and macOS. In its run of 2026-11-12 ([43254846914](https://github.com/crocodile-labs/openmoat/actions/runs/43254846914)) `agy` ran OpenMoat's hook, which denied a read of a planted key, and blocked the call when the hook binary was missing and when it exited 1 without output. On Windows it is preview ([Protection by agent and OS](/docs/agents/protection/)).
+- **If the hook fails:** a hook that cannot start, crashes or exits non-zero blocks the call. What `agy` does when a hook times out (600 seconds) is not documented and not tried by the weekly run, so OpenMoat assumes the call runs; `openmoat doctor` names Antigravity CLI as failing open for that case only. For an OS sandbox as well, use `openmoat run -- agy`.
+- **Turned off by:** `"enabled": false` on OpenMoat's entry (a project's `.agents/hooks.json` included), or deleting it. `openmoat status` shows such an entry as not protected, and `openmoat init` turns it back on.
 
 ### Continue CLI
 
@@ -150,11 +154,11 @@ The Continue CLI (`cn`) is built to run Claude Code's hook, but the released `cn
 | | Hooks | Agents' own sandboxes | `openmoat run` | `openmoat proxy install` |
 |---|---|---|---|---|
 | macOS | yes | Claude Code, Codex, Cursor | macOS 13 or later | launchd user agent |
-| Linux | yes | Claude Code, Codex, Cursor | yes, plus `--isolate` | systemd user unit |
+| Linux | yes | Claude Code, Codex, Cursor | yes: the Isolated tier by default where bubblewrap works | systemd user unit |
 | Windows | yes (not the Cline CLI) | Codex only; use WSL2 for Claude Code | no; use WSL2 | not yet |
 
 - **macOS:** `openmoat run` uses Seatbelt and needs macOS 13 or later. On macOS 12 it refuses to start and says so; the hooks still apply the policy.
-- **Linux:** `openmoat run` uses Landlock and seccomp. Where bubblewrap can run, the agent also gets a network namespace of its own, so its traffic can only go through OpenMoat's proxy. Without it the network is limited by port only, and `openmoat run` says so on every start (`--netns=require` refuses to start instead). Plain `openmoat run` does not protect files inside the project (`.env`, `.git`, `.moat`); `openmoat run --isolate` does. Plain `openmoat run` says so on standard error when it starts (naming bubblewrap when it is missing), `openmoat doctor` warns about it, and `status`, `doctor` and `init` name `openmoat run --isolate` for an agent without a sandbox of its own.
+- **Linux:** from 0.20.0 `openmoat run` starts the Isolated tier (bubblewrap) by default where bubblewrap works: the agent sees only the project, the read roots, its executable, the `--write` paths and an empty temp directory, the project's `.env`, `.git/hooks` and `.moat` included, and its network goes only through OpenMoat's proxy. Where bubblewrap is missing or blocked, it starts the Lightweight tier (Landlock and seccomp), says why on every start and records it; there the project's files are not protected and the network is limited by port only. `openmoat doctor` says which tier applies ([Linux tiers and Landlock](/docs/sandboxes/linux-tiers/)).
 - **Windows:** the hooks apply the policy to every call, except for the Cline CLI, which is not covered on native Windows (its hook script needs `sh`). goose on Windows needs `sh` on the search path to run any hook; without it every call is blocked. PowerShell commands are not parsed, so OpenMoat never allows one: they go to your agent's prompt. Secrets kept in the system keychain cannot be brokered yet.
 
 ## Agent settings that switch the hook off

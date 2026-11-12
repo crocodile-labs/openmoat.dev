@@ -1,0 +1,67 @@
+---
+title: "Undo an agent's changes: snapshots and openmoat restore"
+description: "openmoat run takes a snapshot of the project's files before the agent starts and after it exits; openmoat restore puts them back after showing each change and asking."
+sidebar:
+  label: "Snapshots and restore"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+An agent session left the project's files broken, deleted or rewritten, and you want them back as they were before it started.
+
+</Aside>
+
+**New in 0.20.0.** `openmoat run` takes a snapshot of the project's files before the agent starts and another after it exits, into OpenMoat's own store (`~/.moat/snapshots/`), outside the project. The agent can neither read nor change the store, and your project's `.git` is not touched. `openmoat restore` puts the files back.
+
+## Put the files back
+
+Stop the agent, then in the project, in your own terminal:
+
+```bash
+openmoat snapshot --list          # this project's snapshots and what each left out
+openmoat restore                  # back to the newest one taken before an agent started
+openmoat restore 1a2b3c4d5e6f     # or a snapshot by its id
+openmoat restore --patch -- src   # only src/, and print each file's differences
+```
+
+```text
+snapshot 1a2b3c4d5e6f of 2026-11-10 09:12:04 (before the agent started), 214 files
+  changed back src/main.rs
+  added back   src/lib.rs
+  deleted      scratch.txt
+  not restored .env (a deny rule names it)
+Restore these 3 file(s)? [y/N] y
+restored from snapshot 1a2b3c4d5e6f: 2 written, 1 deleted
+undo with `openmoat restore 9f8e7d6c5b4a`, the snapshot of the files before this restore
+```
+
+- **A restore can be undone.** It first takes a snapshot of the files as they are, then shows each change and asks before it writes.
+- **A plain `openmoat restore` goes back to the start of the last run.** Every `openmoat run` records its own start snapshot, so it never undoes an earlier run's work as well.
+- **The bytes come back as they were.** Line-ending conversion and the other `.gitattributes` filters are off in OpenMoat's store, so a `.gitattributes` an agent plants cannot change what comes back.
+- **Nothing is written outside the project.** On macOS and Linux every write and delete is made relative to the folder the restore checked, held open, so an agent that swaps a folder for a link during the restore cannot redirect it; on Windows each folder is checked again right before each change.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `openmoat run … -- <agent>` | Takes a snapshot before the agent starts and after it exits |
+| `openmoat run --no-snapshot … -- <agent>` | Takes none; recorded in the audit log |
+| `openmoat snapshot` | Take a snapshot of the project's files by hand. **Terminal** |
+| `openmoat snapshot --list [--format json]` | This project's snapshots, with what each left out |
+| `openmoat snapshot --prune` | Remove those past the retention (50 per project, 14 days) |
+| `openmoat restore [<id>] [--patch] [-- <path>…]` | Put the files back as a snapshot holds them. **Terminal** |
+
+`openmoat snapshot` and `openmoat restore` are for a person: both refuse to run from an agent or without a terminal, and the default policy denies agents running them and reading or changing the store. Two runs in one project, or a run beside your own `openmoat snapshot` or `restore`, take turns on the store's lock.
+
+## What a snapshot leaves out
+
+- **Anything outside the project's files.** Network sends, `git push`, database writes, package registries, files outside the project and changes to your home directory are not undone.
+- **Files it skips:** what the project's `.gitignore` files and `.git/info/exclude` ignore (`node_modules/`, build output), every path a deny rule names (`.env`, keys, an agent's settings, `.moat`), anything inside `.git` (use git for branches, history and hooks), nested git repositories, files over 5 MiB, sockets and pipes, and names that are not UTF-8. Each snapshot names what it left out, and a restore leaves those paths as they are. An ignored file that was there when the snapshot was taken is left as it is too, even if the project no longer ignores it.
+- **Large projects.** Over 100 000 files or 1 GiB to keep, no snapshot is taken; the run says so and goes on. Ignore the generated folders.
+- **Metadata.** Only contents, symbolic links and the executable bit come back: not other permissions, owners, times, extended attributes or empty folders. Symbolic links are not restored on Windows.
+- **Runs without one.** A run with `--no-snapshot`, a run started from an agent, an agent started without `openmoat run`, and changes between the start and the end of one session (only those two are kept). A failed snapshot is said and recorded; the run goes on.
+- **A restore while the agent runs.** Stop the agent first: a file it writes during the restore can be overwritten or left half-restored.
+
+The full list: [LIMITS.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/LIMITS.md#snapshots-and-restore). The design: [ADR-085](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-085-workspace-snapshot-and-restore.md). Running an agent under `openmoat run`: [Run a whole agent](/docs/sandboxes/openmoat-run/).
