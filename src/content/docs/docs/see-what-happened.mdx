@@ -43,7 +43,7 @@ openmoat watch           # every agent's calls as they happen, one line each (Ct
 openmoat why --last      # the newest deny or review: the rule, where it is in your policy, how to change it
 ```
 
-Both are new in 0.17.0: [Watch and why](/docs/see-what-happened/watch-and-why/). Which files and lines of your commits an agent wrote: [Provenance](/docs/see-what-happened/provenance/).
+Both are new in 0.17.0: [Watch and why](/docs/see-what-happened/watch-and-why/). Which files and lines of your commits an agent wrote: [Provenance](/docs/see-what-happened/provenance/). Every decision sent to your SIEM as it happens (from 0.20.0): [Send to a SIEM](/docs/see-what-happened/siem-delivery/).
 
 ## The latest decisions
 
@@ -106,7 +106,7 @@ An anchor holds the newest event's id, its hash and the time. Nothing is pushed 
 
 <Aside type="tip" title="Private by design">
 
-The log is a SQLite file in `~/.moat`. Credentials are redacted before anything is stored, and nothing leaves your machine unless you export or anchor it somewhere that does. The agent's own reads and writes of the log file are denied (`kernel-self`).
+The log is a SQLite file in `~/.moat`. Credentials are redacted before anything is stored, and nothing leaves your machine unless you export or anchor it somewhere that does, or set up [audit delivery](/docs/see-what-happened/siem-delivery/). The agent's own reads and writes of the log file are denied (`kernel-self`).
 
 </Aside>
 

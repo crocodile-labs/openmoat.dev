@@ -16,8 +16,8 @@ The hook decides each call, but an allowed `npm test` can run any code. So OpenM
 | Tier | Set up by | What it confines | Platforms |
 |---|---|---|---|
 | The agent's own sandbox (Standard) | `openmoat init`, kept in step by `openmoat sandbox sync` | The commands the agent runs: Claude Code's `Bash`, `PowerShell` and `Monitor`; every Codex command; Cursor's terminal commands | Claude Code: macOS, Linux, WSL2. Codex: every OS. Cursor: macOS, Linux |
-| `openmoat run` (Lightweight) | `openmoat run -- <agent>` | The whole agent and everything it starts, in one sandbox, with network only through OpenMoat's proxy | Seatbelt on macOS 13 or later; Landlock and seccomp on Linux 6.7 or later |
-| `openmoat run --isolate` (Isolated) | `openmoat run --isolate -- <agent>` | As above; the agent sees only the project, the read roots, the `--write` paths and an empty temp directory | Linux, with bubblewrap |
+| `openmoat run` (Lightweight) | `openmoat run -- <agent>` on macOS; on Linux where bubblewrap cannot start, or with `--no-isolate` | The whole agent and everything it starts, in one sandbox, with network only through OpenMoat's proxy | Seatbelt on macOS 13 or later; Landlock and seccomp on Linux 6.7 or later |
+| `openmoat run` (Isolated) | `openmoat run -- <agent>` on Linux where bubblewrap works (the default from 0.20.0); `--isolate` refuses without it | As above; the agent sees only the project, the read roots, its executable, the `--write` paths and an empty temp directory | Linux, with bubblewrap |
 
 What `openmoat init` writes: the `sandbox` block and `permissions.blockReadsOutsideWorkingDirectories` in Claude Code's `settings.json`; a `[permissions.moat]` profile, `default_permissions = "moat"` and `features.network_proxy = true` in Codex's `config.toml`; `sandbox.json` next to Cursor's `hooks.json`. Each file is backed up to `<file>.moat-sandbox-backup` first, and `openmoat uninstall` takes the settings out again. From 0.16.0 every sandbox also denies the agents' login and key files to the commands an agent runs, so a test or package script cannot read a token; `openmoat run` keeps the login of the agent it starts readable ([Agent logins and keys](/docs/env-files/agent-credentials/)). OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, the Cline CLI and goose have no sandbox OpenMoat can configure: use `openmoat run` for them. Without it, running a script the session wrote needs review first ([Code the agent wrote](/docs/session-written-code/)).
 
@@ -40,10 +40,10 @@ ENOENT: the path does not exist inside the sandbox. contained: the write complet
 
 ```bash
 openmoat run --write ~/.claude --write ~/.claude.json -- claude
-openmoat run --isolate --write ~/.claude --write ~/.claude.json -- claude   # Linux
+openmoat run --isolate --write ~/.claude --write ~/.claude.json -- claude   # Linux: refuse without bubblewrap
 ```
 
-The two `--write` paths are Claude Code's own state, which it must write to run. Start `openmoat run` in a project, never in your home directory. Network then goes only through the run's proxy, and the agent's hooks still decide each call. Everything it does, and the Cursor CLI setup: [Run a whole agent with openmoat run](/docs/sandboxes/openmoat-run/).
+The two `--write` paths are Claude Code's own state, which it must write to run. Start `openmoat run` in a project, never in your home directory. Network then goes only through the run's proxy, and the agent's hooks still decide each call. On Linux it starts the Isolated tier where bubblewrap works ([Linux tiers and Landlock](/docs/sandboxes/linux-tiers/)). It also takes a snapshot of the project before and after, for `openmoat restore` ([Undo an agent's changes](/docs/snapshots/)). Everything it does, and the Cursor CLI setup: [Run a whole agent with openmoat run](/docs/sandboxes/openmoat-run/).
 
 ## Commands
 
@@ -55,7 +55,7 @@ The two `--write` paths are Claude Code's own state, which it must write to run.
 | `openmoat doctor --verbose` | Every place each agent's sandbox is stricter or wider than the policy | `openmoat doctor --verbose` |
 | `openmoat policy compile` | What the OS layers enforce for the policy, and what they cannot | `openmoat policy compile --format json` |
 | `openmoat run [--write <path>]… -- <agent>` | Run an agent in a sandbox made from the policy | `openmoat run -- claude --dangerously-skip-permissions` |
-| `openmoat run --isolate` | The Isolated tier (Linux, bubblewrap) | `openmoat run --isolate --write ~/.claude -- claude` |
+| `openmoat run --isolate` · `--no-isolate` | Linux: the Isolated tier or refuse; the Lightweight tier on purpose (recorded) | `openmoat run --isolate --write ~/.claude -- claude` |
 | `openmoat run --netns=require` | Refuse to start on Linux where the agent cannot get a network namespace, instead of restricting its network by port only | `openmoat run --netns=require -- claude` |
 
 `openmoat allow` and `openmoat secret add` update the agents' sandboxes for you. After `openmoat edit` or `openmoat policy upgrade`, run `openmoat sandbox sync`, then start a new agent session.
@@ -75,7 +75,7 @@ sandbox:
 
 - **Claude Code's sandbox covers `Bash`, `PowerShell` and `Monitor`.** File tools, `WebFetch` and MCP servers are checked by the hook only.
 - **Cursor runs some commands outside its sandbox**: when its Auto-review approves them, in Run Everything mode, and in the Cursor CLI without `--sandbox enabled`. Inside the workspace its sandbox cannot deny `.env` or `.git`.
-- **On Linux, plain `openmoat run` does not protect files inside the project** (`.env`, `.envrc`, `.git` hooks, `.moat`); `--isolate` does. Without bubblewrap, its network is restricted by port only and a `--write` path outside the project is refused.
+- **On Linux without bubblewrap, `openmoat run` does not protect files inside the project** (`.env`, `.envrc`, `.git` hooks, `.moat`); the Isolated tier, its default where bubblewrap works, does. Without bubblewrap, its network is restricted by port only and a `--write` path outside the project is refused.
 - **`openmoat run` refuses on macOS 12 and earlier and on Windows**, where Claude Code and Cursor get no sandbox from OpenMoat either. Use WSL2 on Windows.
 - **Under `openmoat run`, the agent and its commands share one sandbox**: whatever the agent needs, `npm test` gets too.
 

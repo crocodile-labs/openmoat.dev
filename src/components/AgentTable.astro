@@ -7,12 +7,12 @@ const { variant } = Astro.props;
 ---
 {variant === 'glance' ? (
   <table>
-    <thead><tr><th>Agent</th><th>Protection</th><th>Where you answer a review</th><th><code>openmoat init --hosts</code></th></tr></thead>
+    <thead><tr><th>Agent</th><th>Protection</th><th><a href="/docs/agents/protection/">Hook run by the real agent</a></th><th>Where you answer a review</th><th><code>openmoat init --hosts</code></th></tr></thead>
     <tbody>
       {agents.map((a) => (
-        <tr><td><a href={a.docs}>{a.name}</a></td><td set:html={a.protection} /><td set:html={a.answer} /><td><code>{a.host}</code></td></tr>
+        <tr><td><a href={a.docs}>{a.name}</a></td><td set:html={a.protection} /><td>{a.hookProven || 'preview on every OS'}</td><td set:html={a.answer} /><td><code>{a.host}</code></td></tr>
       ))}
-      <tr><td><a href="/docs/agents/#continue-cli">Continue CLI</a></td><td>not checked yet</td><td>none: use <code>openmoat run</code></td><td>none</td></tr>
+      <tr><td><a href="/docs/agents/#continue-cli">Continue CLI</a></td><td>not checked yet</td><td>none: it runs no hook</td><td>none: use <code>openmoat run</code></td><td>none</td></tr>
     </tbody>
   </table>
 ) : (

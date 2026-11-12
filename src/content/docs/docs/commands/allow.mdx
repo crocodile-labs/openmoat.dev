@@ -10,6 +10,8 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 
 | Command | What it does | Example |
 |---|---|---|
+| `openmoat approvals connect telegram` · `allow telegram:<id>` · `listen` | Approve calls held for review from your phone (from 0.20.0): connect a bot, name an approver, take answers while it runs. **Terminal** ([Approve from your phone](/docs/remote-approvals/)) | `openmoat approvals listen` |
+| `openmoat approvals status` · `test` · `remove <id>` · `disconnect` | The channel and approvers (never the credential) · a test message · take an approver back · remove the channel. All but `status`: **terminal** | `openmoat approvals status` |
 | `openmoat allow --last` | Allow the last review for the rest of that agent session (24 h; a command only in the project it was held in). Shows the call and asks `Approve it? [y/N]`. **Terminal** | `openmoat allow --last` |
 | `openmoat allow --last --always` | A permanent rule for exactly that command or those files, in `~/.moat/policy.d/approved.yaml`. **Terminal** | `openmoat allow --last --always` |
 | `openmoat allow "<command>" --always` | A permanent rule for a command you name. **Terminal** | `openmoat allow "make deploy-docs" --always` |

@@ -16,6 +16,10 @@ export type Agent = {
   answer: string; // where a person answers a review (docs)
   homeAnswer: string; // the same, shorter, for the home page
   note: string; // the home page's "good to know"
+  // Where a real copy of the agent ran OpenMoat's hook and the decision held (the
+  // "hook: protected" cells of the openmoat repo's docs/PROTECTION.md summary).
+  // Every other OS is preview.
+  hookProven: string;
 };
 
 export const agents: Agent[] = [
@@ -25,6 +29,7 @@ export const agents: Agent[] = [
     protectionShort: 'hook + OS sandbox', protectionSub: 'hook only on native Windows',
     answer: "Claude Code's own prompt", homeAnswer: "Claude Code's own prompt",
     note: 'its sandbox covers shell commands; file tools, web fetches and MCP are checked by the hook',
+    hookProven: 'Linux, macOS',
   },
   {
     name: 'Codex', inList: 'Codex', host: 'codex', docs: '/docs/agents/#codex', sandbox: true,
@@ -32,6 +37,7 @@ export const agents: Agent[] = [
     answer: 'the call is denied; run <code>openmoat allow --last</code>',
     homeAnswer: 'the call stops; run <code>openmoat allow --last</code>',
     note: "trust the hook once in Codex's <code>/hooks</code>; web search and hosted tools are not seen",
+    hookProven: 'Linux, macOS',
   },
   {
     name: 'Cursor', inList: 'Cursor', host: 'cursor', docs: '/docs/agents/#cursor', sandbox: true,
@@ -40,30 +46,35 @@ export const agents: Agent[] = [
     answer: "Cursor's prompt for shell and MCP calls; <code>openmoat allow --last</code> for file tools",
     homeAnswer: "Cursor's prompt for shell and MCP; <code>openmoat allow --last</code> for files",
     note: 'some commands run outside its sandbox (Run Everything, Auto-review); Tab is refused secret files',
+    hookProven: '',
   },
   {
     name: 'OpenClaw', inList: 'OpenClaw', host: 'openclaw', docs: '/docs/agents/#openclaw', sandbox: false,
     protection: 'hook only (a <code>before_tool_call</code> plugin)', protectionShort: 'hook only',
     answer: "OpenClaw's own approval request", homeAnswer: "OpenClaw's own approval request",
     note: "calls run unchecked if the Gateway does not load OpenMoat's plugin; <code>openmoat status</code> says when it has not reported loading",
+    hookProven: 'Linux, macOS',
   },
   {
     name: 'GitHub Copilot CLI', inList: 'GitHub Copilot CLI', host: 'copilot-cli', docs: '/docs/agents/#github-copilot-cli', sandbox: false,
     protection: 'hook only', protectionShort: 'hook only',
     answer: "Copilot's own prompt", homeAnswer: "Copilot's own prompt",
     note: 'a hook that times out lets the call run',
+    hookProven: 'Linux, macOS',
   },
   {
     name: 'pi', inList: 'pi', host: 'pi', docs: '/docs/agents/#pi', sandbox: false,
     protection: 'hook only (an extension)', protectionShort: 'hook only',
     answer: 'a pi dialog', homeAnswer: 'a pi dialog',
     note: 'pi has no prompt of its own, so calls with no rule run',
+    hookProven: 'Linux',
   },
   {
     name: 'Gemini CLI', inList: 'Gemini CLI', host: 'gemini-cli', docs: '/docs/agents/#gemini-cli', sandbox: false,
     protection: 'hook only', protectionShort: 'hook only',
     answer: "Gemini CLI's own confirmation", homeAnswer: "Gemini CLI's own confirmation",
     note: 'hooks run only in folders it trusts; a hook that times out lets the call run',
+    hookProven: 'Linux',
   },
   {
     name: 'OpenCode (1 and 2)', inList: 'OpenCode', host: 'opencode', docs: '/docs/agents/opencode/', sandbox: false,
@@ -71,12 +82,14 @@ export const agents: Agent[] = [
     answer: "OpenCode 2's own permission prompt; on OpenCode 1 the call is denied, run <code>openmoat allow --last</code>",
     homeAnswer: "OpenCode 2's own prompt; on OpenCode 1 the call stops, run <code>openmoat allow --last</code>",
     note: "other plugins share its process; OpenCode 2's --auto approves OpenMoat's reviews",
+    hookProven: '',
   },
   {
     name: 'Hermes Agent', inList: 'Hermes Agent', host: 'hermes', docs: '/docs/agents/#hermes-agent', sandbox: false,
     protection: 'hook only', protectionShort: 'hook only',
     answer: "Hermes's own approval prompt", homeAnswer: "Hermes's own approval prompt",
     note: 'its plugins and tool middleware can change a call after the check; the in-session /yolo approves reviews unseen',
+    hookProven: '',
   },
   {
     name: 'Cline CLI', inList: 'the Cline CLI', host: 'cline', docs: '/docs/agents/cline/', sandbox: false,
@@ -84,6 +97,7 @@ export const agents: Agent[] = [
     answer: "the call is denied, which ends Cline's run; run <code>openmoat allow --last</code>",
     homeAnswer: 'the call stops; run <code>openmoat allow --last</code>',
     note: 'the Cline VS Code extension, <code>--yolo</code> runs and native Windows are not covered',
+    hookProven: 'Linux, macOS',
   },
   {
     name: 'goose', inList: 'goose', host: 'goose', docs: '/docs/agents/goose/', sandbox: false,
@@ -91,12 +105,14 @@ export const agents: Agent[] = [
     answer: 'the call is blocked; run <code>openmoat allow --last</code>',
     homeAnswer: 'the call stops; run <code>openmoat allow --last</code>',
     note: "Code Mode's <code>execute_javascript</code> needs review, since the tool calls it makes skip the hook",
+    hookProven: 'Linux, macOS',
   },
   {
     name: 'Antigravity CLI', inList: 'the Antigravity CLI', host: 'antigravity-cli', docs: '/docs/agents/#antigravity-cli', sandbox: false,
     protection: 'hook only', protectionShort: 'hook only',
     answer: "Antigravity CLI's own prompt, asked every time", homeAnswer: "Antigravity CLI's own prompt",
-    note: 'built from its documentation and not yet checked on a running <code>agy</code>; what happens when a hook crashes is not documented',
+    note: 'a hook that times out is assumed to let the call run: <code>agy</code> does not document it',
+    hookProven: 'Linux, macOS',
   },
 ];
 

@@ -17,10 +17,12 @@ Put the whole agent and everything it starts in one sandbox, with network only t
 
 ```bash
 openmoat run --write ~/.claude --write ~/.claude.json -- claude
-openmoat run --isolate --write ~/.claude --write ~/.claude.json -- claude    # Linux, bubblewrap
+openmoat run --isolate --write ~/.claude --write ~/.claude.json -- claude    # Linux: refuse to start without bubblewrap
 ```
 
-The two `--write` paths are Claude Code's own state, which it must write to run. Whatever follows the agent's name goes to the agent, so an auto-approve flag goes there. With `--isolate` the agent sees only the project, the policy's read roots, its own executable, the `--write` paths and an empty temp directory.
+The two `--write` paths are Claude Code's own state, which it must write to run. Whatever follows the agent's name goes to the agent, so an auto-approve flag goes there. On Linux, where bubblewrap works, `openmoat run` starts the Isolated tier by default: the agent sees only the project, the policy's read roots, its own executable, the `--write` paths and an empty temp directory. `--isolate` refuses to start where that tier cannot ([Linux tiers and Landlock](/docs/sandboxes/linux-tiers/)); [`require.run: full-boundary`](/docs/team-rules/required-protection/#require-openmoat-runs-full-boundary) makes every `openmoat run` refuse.
+
+`openmoat run` also takes a snapshot of the project's files before the agent starts and after it exits, so `openmoat restore` can put them back after a bad session ([Undo an agent's changes](/docs/snapshots/)). A call held for review can be approved from your phone while you are away ([Approve reviews from your phone](/docs/remote-approvals/)).
 
 - `openmoat run` needs macOS 13 or later, or Linux. On macOS 12 and earlier it refuses to start and says so. On Windows it refuses too: for OS confinement, run the agent and `openmoat` inside WSL2.
 - Turn the agent's own sandbox off inside, because sandboxes do not nest. Credentials must not come from the keychain: use an API key or `apiKeyHelper`.
@@ -61,12 +63,12 @@ OpenMoat blocked: reading or changing your keys and credential files
 
 - **Deferred calls run.** `npm install left-pad` and `git push origin main` have no rule, so in auto-approve nothing asks.
 - **Some modes answer or skip the check.** OpenCode 2's `--auto` approves OpenMoat's reviews, and OpenMoat's plugin cannot tell. The Cline CLI's `--yolo` runs no hooks. Hermes Agent's in-session `/yolo` approves a review unseen.
-- **Antigravity CLI.** `--dangerously-skip-permissions` approves its requests unseen, which OpenMoat cannot see. OpenMoat assumes a call runs there when its hook fails. All of this comes from Antigravity's documentation and has not been checked against a running `agy`.
+- **Antigravity CLI.** `--dangerously-skip-permissions` approves its requests unseen, which OpenMoat cannot see. A real `agy` blocks the call when the hook is missing or exits with an error; what it does when the hook times out is not documented, so OpenMoat assumes the call runs then.
 - **Some agents run a call when the hook fails** or is not loaded. `openmoat status` reports what it can see.
 - **Without a sandbox, the hook decides alone.** On a hook-only agent an allowed call runs with your permissions.
 - **Under `openmoat run`, the agent's own login is readable** to the commands it runs. An API-key login can go through the broker instead; an OAuth login cannot.
 - **Under `openmoat run`, tool commands of some agents still receive the relay token.** Under Codex, Cursor, GitHub Copilot CLI, Gemini CLI, the Cline CLI and the Antigravity CLI, a script or a test runner can send the run calls the agent never made.
-- **On Linux, plain `openmoat run` does not protect files inside the project,** such as `.env`, `.git/hooks` and `.moat`. Use `--isolate`.
+- **On Linux without bubblewrap, `openmoat run` does not protect files inside the project,** such as `.env`, `.git/hooks` and `.moat`. Where bubblewrap works it starts the Isolated tier, which does, by default; `--isolate` refuses to start without it.
 - **An allowed host can receive data.** The proxy checks the host, not what is sent inside HTTPS.
 - **Sending what a session collected is recorded, not stopped.** It appears in the audit log and in `openmoat report`.
 

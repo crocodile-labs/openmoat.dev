@@ -1,0 +1,129 @@
+---
+title: "Send the audit log to a SIEM"
+description: "Live audit delivery: every OpenMoat decision sent to up to four sinks, OTLP/HTTP logs or an HTTPS webhook signed with HMAC-SHA-256, masked, without slowing the hook."
+sidebar:
+  label: "Send to a SIEM"
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You want every OpenMoat decision on a machine in your SIEM or log collector as it happens, not only when someone runs `openmoat audit export`.
+
+</Aside>
+
+**New in 0.20.0.** OpenMoat can send each decision to up to four places ("sinks"): an OpenTelemetry logs endpoint (OTLP/HTTP, JSON), or an HTTPS webhook whose bodies it signs. Delivery never slows or changes a decision, everything is masked before it leaves, and a sink that cannot keep up is told exactly what it missed.
+
+## How it works
+
+- **The audit log is the queue.** Each sink keeps its place in the log (`~/.moat/delivery/<sink>.json`); nothing is copied anywhere else on disk.
+- **The hook never waits for it.** After `openmoat guard` has answered the agent, it starts a delivery run in the background if none is going and a sink is due. That run sends the events after each sink's place, in batches.
+- **A sink that is down is tried again later**, waiting 5 seconds, doubling to 15 minutes. One that answers with an error retrying cannot fix (`401`, `404`, …) is paused until you run `openmoat audit deliver flush`.
+- **A sink more than `max_backlog` events behind skips the oldest.** The skip is recorded in the audit log (rule `audit-delivery-overflow`) and sent to the sink as a gap with its next request; the skipped events stay in the local log.
+
+## Set it up
+
+1. Put the key or token the sink needs in a file inside `~/.moat/delivery/`, readable by you only. The default policy keeps agents from reading or changing files there:
+
+   ```bash
+   mkdir -p ~/.moat/delivery
+   openssl rand -hex 32 > ~/.moat/delivery/webhook.key
+   chmod 600 ~/.moat/delivery/webhook.key
+   ```
+
+2. Write `~/.moat/delivery.yaml`:
+
+   ```yaml
+   version: 1
+   machine: alice-laptop      # host.name in OTLP, "machine" in webhook bodies
+   start: new                 # new (default): from when you accepted the file; all: the whole log
+   max_backlog: 100000        # how far a sink may fall behind
+   sinks:
+     - id: collector
+       otlp: https://otel.example.com:4318/v1/logs
+       headers:
+         - name: Authorization
+           prefix: "Bearer "
+           value: { file: ~/.moat/delivery/collector.token }
+     - id: siem
+       webhook: https://siem.example.com/openmoat
+       secret: { file: ~/.moat/delivery/webhook.key }   # required for a webhook
+   ```
+
+3. Accept it from your terminal. Until you do, every agent call is denied: the file decides where your audit log goes, so the policy lock pins it as it pins the policy.
+
+   ```bash
+   openmoat doctor --accept
+   ```
+
+4. Check it:
+
+   ```bash
+   openmoat audit deliver test
+   openmoat audit deliver status
+   ```
+
+   ```text
+   ✔ collector (otlp) → https://otel.example.com:4318/v1/logs
+      1204 delivered, 0 behind, 0 skipped (backlog full or too large)
+      last accepted 2026-11-10 14:02:11 UTC
+   ```
+
+Any later change to `delivery.yaml` stops every call again until you run `openmoat doctor --accept`. Run `openmoat policy upgrade` after upgrading to 0.20.0, so `kernel-self` denies agents reading `~/.moat/delivery/`.
+
+**The simplest start** is an OpenTelemetry Collector on the same machine: point a sink at `otlp: http://127.0.0.1:4318/v1/logs` and let the Collector export to your vendor, so OpenMoat needs no vendor key at all. For Splunk, Datadog or Elastic directly, put their documented OTLP/HTTP logs URL in `otlp:` and their header under `headers:`.
+
+## The rules for the file
+
+- `otlp:` takes `https://`, or `http://` to `localhost`, `127.0.0.1` or `[::1]` only. `webhook:` takes `https://` only.
+- A key or token (`secret:`, a header's `value:`) is `{ file: <path> }` inside `~/.moat/delivery/`, or `{ keychain: { service: …, account: … } }`. `{ env: … }` is refused: the background run starts from the agent's hook, in the agent's environment. `ca_file:` must be inside the state directory too.
+- Link-local, cloud metadata and non-unicast addresses are refused on every resolved address; private and loopback addresses are allowed. No redirect is followed and no `HTTPS_PROXY` is read.
+
+## What is sent
+
+Each event becomes one record: its id, time, agent, session, call id, working directory, tool, action, verdict, rules, reasons, decision time, and its chain hash and the previous one, so a SIEM row can be matched with `openmoat audit export`. Every text is masked again before sending: the audit log's patterns, the values of the policy's brokered secrets with a file source, and the sink's own key and header values in every form an event could hold them (with and without the `Bearer ` prefix, and for `Basic` the decoded `user:password` and the password alone). A record over the batch size or 256 KiB has its long texts cut, each ending with `…[openmoat trimmed N bytes]`.
+
+The records still say which commands ran, which files were read and which hosts were reached. Send them only where you would keep the audit log itself.
+
+**OTLP:** one `ExportLogsServiceRequest` per batch, `service.name: openmoat`; severity `INFO` (allow, defer), `INFO2` (review), `WARN` (deny); attributes such as `openmoat.verdict`, `openmoat.rules`, `openmoat.tool`, `session.id`.
+
+**Webhook:** a JSON body (`"format": "openmoat-delivery-v1"`) with these headers:
+
+| Header | Value |
+|---|---|
+| `X-OpenMoat-Timestamp` | when the request was made, ms since the epoch |
+| `X-OpenMoat-Signature` | `v1=` and the hex HMAC-SHA-256, under the key, of `<timestamp>.<body>` |
+| `X-OpenMoat-Delivery` | `<sink>-<first id>-<last id>`: drop a batch you already stored |
+
+Check a body as the receiver, for example in Python:
+
+```python
+import hmac, hashlib
+def valid(key: bytes, timestamp: str, body: bytes, signature: str) -> bool:
+    mac = hmac.new(key, timestamp.encode() + b"." + body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest("v1=" + mac, signature)
+```
+
+Refuse a timestamp far from your own clock to refuse a replayed body.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `openmoat audit deliver test` | Send one record marked `audit-delivery-test` to every sink; moves no sink's place |
+| `openmoat audit deliver status` | Each sink: delivered, behind, skipped, last accepted, last failure |
+| `openmoat audit deliver flush` | Deliver now, and resume a paused sink |
+
+All three take `--format json`. A failed test, a stopped flush and a configuration that is not honoured exit 64.
+
+## Limits
+
+- **What the tests run.** OpenMoat's tests run a local HTTP server as an OTLP endpoint and a local HTTPS server as a webhook, and check the body, the signature, a retry after `503`, a pause after `401` and the gap after a full backlog. No vendor's service and no OpenTelemetry Collector build is run by those tests: run `openmoat audit deliver test` against yours before you rely on it.
+- **Delivery runs when an agent's hook runs** or when you run `flush`. A machine where no agent runs sends nothing new.
+- **OTLP over protobuf or gRPC, HTTP proxies and more than four sinks are not supported.** An intake that accepts protobuf only refuses the JSON; OpenMoat pauses the sink and `status` shows the answer.
+- **Brokered secrets are masked by value only when their source is a file.** Delivery never runs a `command` source's program ([short-lived tokens](/docs/keep-tokens-safe/short-lived-tokens/)); the audit log's own patterns still apply to every text.
+- **Keychain values** are read by the background run too; on macOS the first read may ask, so run `openmoat audit deliver test` once from your terminal.
+
+Every field, the collector examples and the failure table: [DELIVERY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/DELIVERY.md) and [ADR-081](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-081-live-audit-delivery.md). Evidence for an auditor from the same log: [Compliance evidence](/docs/compliance-evidence/).

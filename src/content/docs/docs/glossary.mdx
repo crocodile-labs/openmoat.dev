@@ -50,7 +50,7 @@ A page or a message uses a word you have not met yet.
 | **hook** | The agent's own setting that runs `openmoat guard` before every tool call. [Supported agents](/docs/agents/) |
 | **OS sandbox** | The operating system's confinement of every process a command starts, written from the same policy. [OS sandboxes](/docs/sandboxes/) |
 | **hook + OS sandbox**, **hook only**, **not protected** | What `openmoat status` says per agent: both layers, the hook alone, or no working hook. [Supported agents](/docs/agents/) |
-| **Standard**, **Lightweight**, **Isolated** | The sandbox tiers: the agent's own sandbox, `openmoat run`, and `openmoat run --isolate` (Linux). [OS sandboxes](/docs/sandboxes/) |
+| **Standard**, **Lightweight**, **Isolated** | The sandbox tiers: the agent's own sandbox, `openmoat run` (Lightweight), and the Isolated tier, which `openmoat run` starts by default on Linux where bubblewrap works. [OS sandboxes](/docs/sandboxes/) |
 | **policy lock**, **pin** | `~/.moat/policy.lock`: the SHA-256 of the policy, the hook files and the agents' settings; each file in it is pinned. [Self-protection](/docs/self-protection/) |
 | **drift**, **re-pin**, **accept** | A pinned file that no longer matches the lock is drift, and every call is denied (`kernel-integrity`) until you accept it (`openmoat`, `openmoat doctor --accept`), which re-pins. [Self-protection](/docs/self-protection/) |
 | `kernel-self` | Denies the agent writing OpenMoat's files and settings, reading its state, and running the commands only a person may run. [Self-protection](/docs/self-protection/) |

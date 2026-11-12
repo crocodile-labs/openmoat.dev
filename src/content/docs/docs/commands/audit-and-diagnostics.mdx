@@ -23,6 +23,7 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 | `openmoat audit anchor --git <repo>` · `--file <path>` | Record the log's head outside it; nothing is sent anywhere. **Terminal** | `openmoat audit anchor --file ~/anchors.jsonl` |
 | `openmoat audit report <file>…` | One report over verified exports from several machines | `openmoat audit report alice.jsonl bob.jsonl` |
 | `openmoat audit evidence [--since <when>] [--until <when>] [--host <id>] [--samples N] [--format json]` | Evidence for a window per control of OWASP Top 10 for LLM Applications 2025, SOC 2 (CC6 to CC8) and ISO/IEC 27001:2022 Annex A: rules that fired, decisions by verdict, redacted samples, the chain head, and the policy, lock and protections now. Evidence, not a certification ([Compliance evidence](/docs/compliance-evidence/)) | `openmoat audit evidence --since 90d > evidence.md` |
+| `openmoat audit deliver test` · `status` · `flush` | Live delivery to a SIEM (from 0.20.0): send a test record to every sink · each sink's place, backlog and last failure · deliver now and resume a paused sink ([Send to a SIEM](/docs/see-what-happened/siem-delivery/)) | `openmoat audit deliver status` |
 
 `--since` takes `all`, `today`, `yesterday`, `12h`, `7d`, `2w` or a date (`2026-10-15`, UTC); `audit evidence` also takes `--until`, in the same forms, for the end of the window (not included). Most commands take `--format json`. See [Audit log](/docs/see-what-happened/).
 

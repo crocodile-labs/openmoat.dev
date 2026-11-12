@@ -16,7 +16,7 @@ Your agent has no OS sandbox from OpenMoat (OpenClaw, GitHub Copilot CLI, pi, Ge
 
 ```bash
 openmoat run --write ~/.claude --write ~/.claude.json -- claude
-openmoat run --isolate --write ~/.claude --write ~/.claude.json -- claude   # Linux
+openmoat run --isolate --write ~/.claude --write ~/.claude.json -- claude   # Linux: refuse without bubblewrap
 ```
 
 The two `--write` paths are Claude Code's own state, which it must write to run. Start `openmoat run` in a project, never in your home directory. Inside it:
@@ -31,11 +31,15 @@ The two `--write` paths are Claude Code's own state, which it must write to run.
 
 Before the agent starts, `openmoat run` prints how many places the sandbox is stricter or wider than the policy; `--verbose` lists each one. It needs macOS 13 or later, or Linux; it refuses on Windows.
 
-<Aside type="caution" title="Linux: plain openmoat run leaves project files open">
+<Aside type="caution" title="Linux: the Isolated tier is the default">
 
-Without `--isolate`, commands the agent starts can still read and write the project's `.env`, create `.envrc` and write `.moat` and `.git/hooks`. From 0.15.0 plain `openmoat run` says so on standard error when it starts, and that `openmoat run --isolate` closes this (naming bubblewrap when it is missing). `openmoat doctor` warns about the same, and `openmoat status`, `doctor` and `init` name `openmoat run --isolate` for an agent without a sandbox of its own.
+From 0.20.0 `openmoat run` on Linux starts the Isolated tier (bubblewrap) where bubblewrap works, so commands the agent starts can no longer read `.env` or write `.git/hooks` and `.moat` in the project. The agent sees only the project, the read roots, its executable, the `--write` paths and an empty temp directory: an agent whose runtime lives elsewhere in your home can need that folder in `sandbox.read_roots`. Where bubblewrap is missing or blocked, it says why on every start, records it, and starts the Lightweight tier, which leaves those project files open. `--no-isolate` starts the Lightweight tier on purpose. Details: [Linux tiers and Landlock](/docs/sandboxes/linux-tiers/).
 
 </Aside>
+
+**Snapshots.** Before the agent starts and after it exits, `openmoat run` takes a snapshot of the project's files into OpenMoat's own store; `openmoat restore` puts them back ([Undo an agent's changes](/docs/snapshots/)). `--no-snapshot` takes none, on record.
+
+**Environment.** Every inherited variable reaches the agent except brokered secrets; one line says how many look like credentials. Under [`require.run: full-boundary`](/docs/team-rules/required-protection/#require-openmoat-runs-full-boundary) only an allowlist does; add a name with `--env NAME` or `sandbox.env_allow`.
 
 More on auto-approve: [Auto-approve and CI](/docs/auto-approve-and-ci/#run-a-whole-agent-in-a-sandbox).
 
