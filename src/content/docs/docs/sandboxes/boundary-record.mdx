@@ -1,0 +1,66 @@
+---
+title: "What a run started with: the boundary record"
+description: "Every openmoat run records the sandbox it really started with, openmoat run --print-boundary shows it without starting the agent, and on Linux the run checks it right after the agent starts."
+sidebar:
+  label: "Boundary record"
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You want to know which sandbox an `openmoat run` actually started (not only which one it was asked for), or why a run stopped the agent right after starting it. New in 0.21.0.
+
+</Aside>
+
+**Protects against** a run that starts with less than you think: a tier that fell back, a network limited by port only, a Landlock or seccomp layer that did not take hold. The record says what was in force, and on Linux the run stops the agent when a part is missing.
+
+## What it does
+
+Every `openmoat run` that starts an agent writes one row to its audit session: tool `boundary`, rule `run-boundary`, with the whole record as JSON in its reason (ADR-089). The record names:
+
+- the tier asked for and the tier that started;
+- every downgrade (the tier, the network, and the project's top when [`sandbox.project_top: writable`](/docs/sandboxes/project-files/#opening-the-projects-top-sandboxproject_top) opened it), with why and whether you chose it;
+- how the network is held: `namespace`, `port_only`, or Seatbelt's `profile`;
+- the Landlock ABI, as Landlock's `restrict_self` reported it;
+- whether tool commands get the hook relay token;
+- for each restriction, whether the system has it (`available`), the run asks for it (`configured`), it is in force (`applied`), and a check after the agent started confirmed it (`tested`).
+
+This row replaces the `run-landlock-abi` row of 0.20.0.
+
+## Example
+
+```bash
+openmoat run --print-boundary -- claude                 # what a run here would start with
+openmoat run --print-boundary --format json -- claude | jq '.tier, .downgrades'
+openmoat show --format json | jq 'select(.tool == "boundary") | .reasons[0] | fromjson'
+```
+
+`--print-boundary` makes the same choices as a run (flags, policy, bubblewrap, kernel) and starts nothing. It refuses, with the run's words and exit 64, where a run would refuse before building its sandbox: no sandbox here, Landlock below ABI 4, a policy's `require.run: full-boundary` or `--netns=require` that cannot be met. A refusal that depends on the grants the run generates (a grant over OpenMoat's state directory, a `--write` path holding protected files without a namespace) only a real start finds.
+
+## The check after the start, on Linux
+
+The thread that starts the agent applies the Landlock rules and seccomp filters, keeps what `restrict_self` reports (the kernel's ABI and whether the ruleset is enforced), starts the agent and reads its `/proc/<pid>/status`. It looks for:
+
+- `NoNewPrivs: 1`;
+- `Seccomp: 2`, with `Seccomp_filters` grown by exactly this run's filters (a container's or service manager's own filter does not count);
+- the Landlock ruleset enforced.
+
+If anything is missing or unknown, the run stops the agent and every process it started at once, says why, exits 64, and the row is a `deny` naming what was missing. A row that cannot be written stops the run the same way.
+
+Under bubblewrap (the Isolated tier, and the Lightweight tier's network namespace) the check runs inside, in `openmoat isolated`, which reports it to the run over a private socket and waits for the run's go. No go, or no reply within a minute, and it stops the agent; a run that gets no report, or cannot record one, stops bubblewrap and every process below it.
+
+**On macOS** the row names the Seatbelt profile as configured. `sandbox-exec` reports nothing back and macOS has no `/proc`, so it is neither `applied` nor `tested`. The profile is the one `openmoat sandbox show` prints.
+
+## Settings
+
+None. Every run writes the record; `--print-boundary` and `--format json` only change what is printed.
+
+## Limits
+
+- **Landlock's rules cannot be read back from the kernel**, so Landlock's rows are `applied` from what `restrict_self` reported, never `tested`. What the rules stop is tested by OpenMoat's end-to-end suite ([EVIDENCE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/EVIDENCE.md)).
+- **macOS has no check after the start**: the record shows the profile that was handed to Seatbelt.
+- **`--print-boundary` cannot see every refusal.** One that depends on the generated grants appears only when the run starts.
+
+The full reference: [SANDBOX.md, "The run's boundary record"](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md#the-runs-boundary-record) and [ADR-089](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-089-run-boundary-record.md).

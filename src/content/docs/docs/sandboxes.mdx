@@ -25,16 +25,17 @@ What `openmoat init` writes: the `sandbox` block and `permissions.blockReadsOuts
 
 The project's test script, started as `npm test` (which the hook allows), in a throwaway home with fake secrets. Each cell is what the operating system did; CI asserts every cell on every pull request ([EVIDENCE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/EVIDENCE.md)):
 
-| Payload | `openmoat run`, macOS (Seatbelt) | `openmoat run`, Linux (Landlock + seccomp) | `openmoat run --isolate`, Linux (bubblewrap) | Claude Code sandbox, macOS | Claude Code sandbox, Linux | Codex `moat` profile, macOS | Codex `moat` profile, Linux |
-|---|---|---|---|---|---|---|---|
-| `cat "$HOME/.ssh/id_rsa"` | EPERM | EACCES | ENOENT | EPERM | ENOENT | EPERM | EACCES |
-| `cat .env` | EPERM | **gap**: ran (#174) | EACCES | EPERM | EACCES | EPERM | EACCES |
-| `echo x > "$HOME/outside.txt"` | EPERM | EACCES | EACCES | EPERM | contained | EPERM | contained |
-| `echo "# widened" >> "$HOME/.moat/policy.yaml"` | EPERM | EACCES | ENOENT | EPERM | ENOENT | EPERM | EACCES |
-| `ln -s "$HOME/.ssh" keys && cat keys/id_rsa` | EPERM | EACCES | ENOENT | EPERM | ENOENT | EPERM | EACCES |
-| `curl -fsS -o /dev/null -m 30 http://evil.example/` | proxy 403 | proxy 403 | proxy 403 | proxy 403 | proxy 403 | proxy 403 | proxy 403 |
+| Payload | `openmoat run`, macOS (Seatbelt) | `openmoat run --no-isolate`, Linux (Landlock + seccomp, network namespace) | `openmoat run --no-isolate`, Linux without bubblewrap | `openmoat run --isolate`, Linux (bubblewrap; the default where it works) | Claude Code sandbox, macOS | Claude Code sandbox, Linux | Codex `moat` profile, macOS | Codex `moat` profile, Linux |
+|---|---|---|---|---|---|---|---|---|
+| `cat "$HOME/.ssh/id_rsa"` | EPERM | EACCES | EACCES | ENOENT | EPERM | ENOENT | EPERM | EACCES |
+| `cat .env` | EPERM | EACCES | EACCES | EACCES | EPERM | EACCES | EPERM | EACCES |
+| `echo '# PLANTED' > .git/hooks/pre-commit` | EPERM | EROFS | EACCES | EROFS | EPERM | EROFS | EPERM | EROFS |
+| `echo x > "$HOME/outside.txt"` | EPERM | EACCES | EACCES | EACCES | EPERM | contained | EPERM | contained |
+| `echo "# widened" >> "$HOME/.moat/policy.yaml"` | EPERM | EACCES | EACCES | ENOENT | EPERM | ENOENT | EPERM | EACCES |
+| `ln -s "$HOME/.ssh" keys && cat keys/id_rsa` | EPERM | EACCES | EACCES | ENOENT | EPERM | ENOENT | EPERM | EACCES |
+| `curl -fsS -o /dev/null -m 30 http://evil.example/` | proxy 403 | proxy 403 | proxy 403 | proxy 403 | proxy 403 | proxy 403 | proxy 403 | proxy 403 |
 
-ENOENT: the path does not exist inside the sandbox. contained: the write completed in an in-memory directory and nothing reached the disk. proxy 403: the layer's proxy refused the request.
+ENOENT: the path does not exist inside the sandbox. contained: the write completed in an in-memory directory and nothing reached the disk. proxy 403: the layer's proxy refused the request. The one known gap (#174): on Linux without bubblewrap, a command cannot create a new file directly at the project's top, since the project is granted entry by entry there ([Project files on Linux](/docs/sandboxes/project-files/)).
 
 ## Run a whole agent
 
@@ -43,7 +44,7 @@ openmoat run --write ~/.claude --write ~/.claude.json -- claude
 openmoat run --isolate --write ~/.claude --write ~/.claude.json -- claude   # Linux: refuse without bubblewrap
 ```
 
-The two `--write` paths are Claude Code's own state, which it must write to run. Start `openmoat run` in a project, never in your home directory. Network then goes only through the run's proxy, and the agent's hooks still decide each call. On Linux it starts the Isolated tier where bubblewrap works ([Linux tiers and Landlock](/docs/sandboxes/linux-tiers/)). It also takes a snapshot of the project before and after, for `openmoat restore` ([Undo an agent's changes](/docs/snapshots/)). Everything it does, and the Cursor CLI setup: [Run a whole agent with openmoat run](/docs/sandboxes/openmoat-run/).
+The two `--write` paths are Claude Code's own state, which it must write to run. Start `openmoat run` in a project, never in your home directory. Network then goes only through the run's proxy, and the agent's hooks still decide each call. On Linux it starts the Isolated tier where bubblewrap works ([Linux tiers and Landlock](/docs/sandboxes/linux-tiers/)). It also takes a snapshot of the project before and after, for `openmoat restore` ([Undo an agent's changes](/docs/snapshots/)), and records the sandbox it really started with ([The boundary record](/docs/sandboxes/boundary-record/)). Everything it does, and the Cursor CLI setup: [Run a whole agent with openmoat run](/docs/sandboxes/openmoat-run/).
 
 ## Commands
 
@@ -56,6 +57,7 @@ The two `--write` paths are Claude Code's own state, which it must write to run.
 | `openmoat policy compile` | What the OS layers enforce for the policy, and what they cannot | `openmoat policy compile --format json` |
 | `openmoat run [--write <path>]… -- <agent>` | Run an agent in a sandbox made from the policy | `openmoat run -- claude --dangerously-skip-permissions` |
 | `openmoat run --isolate` · `--no-isolate` | Linux: the Isolated tier or refuse; the Lightweight tier on purpose (recorded) | `openmoat run --isolate --write ~/.claude -- claude` |
+| `openmoat run --print-boundary [--format json]` | Print the boundary a run would start with and start nothing (from 0.21.0) | `openmoat run --print-boundary -- claude` |
 | `openmoat run --netns=require` | Refuse to start on Linux where the agent cannot get a network namespace, instead of restricting its network by port only | `openmoat run --netns=require -- claude` |
 
 `openmoat allow` and `openmoat secret add` update the agents' sandboxes for you. After `openmoat edit` or `openmoat policy upgrade`, run `openmoat sandbox sync`, then start a new agent session.
@@ -67,15 +69,17 @@ sandbox:
   read_roots: ["/usr", "~/.cargo"]   # what sandboxed commands may read beyond the rules
   proxy_port: 18080                  # optional: send sandboxed traffic through openmoat proxy
   package_min_release_age_days: 7    # openmoat run: npm and uv skip newer versions; 0 is off
+  project_top: protected             # Linux without bubblewrap: `writable` opens the project's top, on record
 ```
 
-`read_roots` lists directories or files, never globs; deny rules still win inside them (`~/.cargo/credentials.toml` stays denied). A policy without a `sandbox:` section gets the default list (system directories, temp directories and toolchain homes). `proxy_port`: see [Egress proxy](/docs/egress-proxy/).
+`read_roots` lists directories or files, never globs; deny rules still win inside them (`~/.cargo/credentials.toml` stays denied). A policy without a `sandbox:` section gets the default list (system directories, temp directories and toolchain homes). `proxy_port`: see [Egress proxy](/docs/egress-proxy/). `project_top` (from 0.21.0, your own policy only): see [Project files on Linux](/docs/sandboxes/project-files/#opening-the-projects-top-sandboxproject_top).
 
 ## Limits
 
 - **Claude Code's sandbox covers `Bash`, `PowerShell` and `Monitor`.** File tools, `WebFetch` and MCP servers are checked by the hook only.
 - **Cursor runs some commands outside its sandbox**: when its Auto-review approves them, in Run Everything mode, and in the Cursor CLI without `--sandbox enabled`. Inside the workspace its sandbox cannot deny `.env` or `.git`.
-- **On Linux without bubblewrap, `openmoat run` does not protect files inside the project** (`.env`, `.envrc`, `.git` hooks, `.moat`); the Isolated tier, its default where bubblewrap works, does. Without bubblewrap, its network is restricted by port only and a `--write` path outside the project is refused.
+- **On Linux without bubblewrap, `openmoat run` cannot create anything directly at the project's top.** From 0.21.0 it grants the project entry by entry there, so `.env`, `.git` and `.moat` at the top stay covered; a `.env` in a subfolder or a nested `.git` stays open, and `sandbox.project_top: writable` opens the top again, on record ([Project files on Linux](/docs/sandboxes/project-files/)). Without bubblewrap, its network is restricted by port only and a `--write` path outside the project is refused.
+- **Under `openmoat run`, the project's `.git` is read-only** (macOS, and every Linux tier from 0.21.0), and agent configuration folders in the project cannot be written: commit, pull and install outside the run.
 - **`openmoat run` refuses on macOS 12 and earlier and on Windows**, where Claude Code and Cursor get no sandbox from OpenMoat either. Use WSL2 on Windows.
 - **Under `openmoat run`, the agent and its commands share one sandbox**: whatever the agent needs, `npm test` gets too.
 

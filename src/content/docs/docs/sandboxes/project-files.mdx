@@ -1,0 +1,88 @@
+---
+title: "Project files in every Linux tier, and sandbox.project_top"
+description: "From 0.21.0 what the policy denies inside the project (.env, .git, .moat, git hooks, agent configuration) holds in every openmoat run tier on Linux. Without bubblewrap nothing can be created at the project's top, unless sandbox.project_top: writable opens it, on record."
+sidebar:
+  label: "Project files on Linux"
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You run `openmoat run` on Linux, and a command could not create a file at the project's top, `git commit` failed inside the run, or a `git pull` failed on an agent's configuration folder. New in 0.21.0.
+
+</Aside>
+
+**Protects against** a command inside `openmoat run` (a test script, an install step) reading the project's `.env`, planting a git hook or an `.envrc`, changing `.moat`, or adding an agent command or hook that runs in the next session.
+
+## What it does
+
+Landlock grants access to whole directory trees, so a deny rule inside the project needs something besides Landlock. From 0.21.0 every Linux tier covers it (ADR-090):
+
+| Linux, `openmoat run` … | The project's `.env` | `.git`, `.moat` | New entries at the project's top |
+|---|---|---|---|
+| Isolated tier (bubblewrap; the default where it works) | hidden (`EACCES`) | read-only (`EROFS`) | allowed |
+| `--no-isolate` with bubblewrap (a network namespace) | hidden, as under `--isolate` | read-only, as under `--isolate` | allowed |
+| Without bubblewrap (entry by entry) | unreadable (`EACCES`) | read-only | **refused**: nothing can be created, renamed or removed directly at the top |
+| Without bubblewrap, `sandbox.project_top: writable` | readable and writable | `.git/hooks` and `.moat` writable | allowed; every run recorded |
+
+**With a network namespace** (bubblewrap installed and allowed), every `.env` file in the project is hidden, `.git`, `.moat` and the agents' configuration are bound read-only, and a missing `.env`, `.envrc` or `.moat` directly in the project gets an empty placeholder for the session. So `git commit` inside the run fails, as under `--isolate` and on macOS: **commit outside the run.** CI files and commit-hook managers' files stay writable, as on macOS.
+
+**Without one**, the project is granted entry by entry: the project folder only for listing, each entry at its top on its own, none for an entry whose reading the policy denies (`.env`), read-only for one whose writing it denies (`.git`, `.moat`), and the folders that hold an agent's settings (`.claude`, `.github`, `.moat`) the same way one level down. Commands cannot read `.env` there, write `.git` or `.moat`, or create `.envrc`, `.moat` or a hook. The cost: they cannot create, rename or remove anything directly at the project's top either (a new file, a `target/` that does not exist yet, an editor's save through a new file and a rename). Everything inside an existing folder works as before. Create what is needed before the run, or install bubblewrap.
+
+Before the agent starts, `openmoat run` says which of these applies and names each path the policy denies in the project that stays open, up to eight and a count; `openmoat doctor` on Linux without a namespace names the same for the current directory.
+
+## Agent configuration folders
+
+From 0.21.0, commands under `openmoat run` cannot write the configuration agents load from the project: Cline's workspace hooks (`.cline/hooks/`, `.clinerules/hooks/`), Gemini CLI's project policy files, custom commands and subagents (`.gemini/policies/`, `.gemini/commands/`, `.gemini/agents/`), Claude Code's subagents, skills and slash commands, GitHub Copilot CLI's custom agents (`.github/agents/`), and OpenCode's commands, agents (`.opencode/agents/`, `.opencode/agent/`) and skills (`.opencode/skills/`).
+
+- **macOS:** Seatbelt denies them wherever they are.
+- **Linux:** within the limits of each tier above, existing ones are read-only, and a missing folder of them is made read-only for the session where the folder holding it exists directly in the project. In both bubblewrap tiers a missing `.claude/hooks/`, `.github/hooks/` or other agent configuration folder whose holder exists (or is made for hook settings, as `.claude` and `.github` are) is a read-only folder for the session, so a hook written there after the start is refused; below a missing `.pi` or `.opencode` one can still be created.
+
+Repositories often commit some of these folders. Under `openmoat run`, a `git pull`, `git checkout` or package install that changes them fails partway, and so does the agent's own tool when the agent runs inside `openmoat run`. **Do those outside `openmoat run`.**
+
+The agent's own writes of these files are decided by its hook as before ([Code that runs later](/docs/runs-later/)); writing OpenCode's project agents and skills now needs review there too.
+
+## Example
+
+Without bubblewrap, in a project with a `.env` and a `src/` folder:
+
+```bash
+openmoat run -- sh -c 'cat .env'                          # EACCES
+openmoat run -- sh -c 'echo x > .git/hooks/pre-commit'    # EACCES
+openmoat run -- sh -c 'echo x > src/new.rs'               # works: inside an existing folder
+openmoat run -- sh -c 'echo x > notes.txt'                # EACCES: a new entry at the top
+```
+
+What `openmoat run` prints before the agent starts in that case:
+
+```text
+moat run: without bubblewrap the project is granted entry by entry: commands cannot create, rename or remove entries directly in it (create what they need before the run), `.env` files there stay unreadable and `.git` and `.moat` read-only. These paths the policy denies lie in a folder granted whole and stay open to commands: /home/me/proj/sub/.env. …
+```
+
+## Opening the project's top (`sandbox.project_top`)
+
+Where you need new entries at the top and cannot install bubblewrap, your own policy can give the old grant back:
+
+```yaml
+sandbox:
+  project_top: writable   # default: protected
+```
+
+With `writable`, Linux without a network namespace grants the project whole again: new files at the top and saves through a new file and a rename work, and commands the agent starts can read and write `.env`, write `.git/hooks` and `.moat`, and create `.envrc` there.
+
+- `openmoat run` says so before the agent starts, writes `run-project-top-open` to the audit log on every such run, and lists it as a downgrade you chose in the run's [boundary record](/docs/sandboxes/boundary-record/).
+- `openmoat doctor` and `openmoat policy check` warn.
+- The hook still decides the agent's own tool calls.
+- It changes nothing in the Isolated tier, in the Lightweight tier with a network namespace, or on macOS, and `require.run: full-boundary` still refuses to start without the namespace.
+- Only your own policy can set it: a repository policy or a pack has no `sandbox:` section.
+
+## Limits
+
+- **Without bubblewrap, a `.env` in a subfolder or a nested `.git` stays open**: it lies in a folder granted whole. `openmoat run` names each such path on start.
+- **A deny match created after the start where nothing stood** (`.env.local`, a `.env` in a new folder) stays open in the bubblewrap tiers.
+- **Below a missing `.pi` or `.opencode`**, a configuration folder can still be created on Linux.
+- **Commits, pulls and installs that touch these paths fail inside the run**: run them outside it.
+
+The full reference: [SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md#openmoat-run-lightweight-tier), [POLICY.md §9.4](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#94-the-projects-top-without-bubblewrap-sandboxproject_top), [ADR-090](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-090-project-paths-in-every-tier.md) and [ADR-091](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-091-agent-configuration-from-host-specs.md).

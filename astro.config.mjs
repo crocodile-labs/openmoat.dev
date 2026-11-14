@@ -51,7 +51,7 @@ export default defineConfig({
           sub('Code the agent wrote', 'session-written-code', ['opaque-code']), 'runs-later',
           sub('Token broker', 'keep-tokens-safe', ['token-egress', 'another-service', 'where-it-works', 'https-injection', 'short-lived-tokens']),
           sub('MCP pinning, gateway and browsers', 'mcp-servers', ['tool-pinning', 'gateway', 'cross-server', 'browser-pages']),
-          sub('OS sandboxes and run', 'sandboxes', ['openmoat-run', 'linux-tiers']), 'snapshots',
+          sub('OS sandboxes and run', 'sandboxes', ['openmoat-run', 'linux-tiers', 'boundary-record', 'project-files']), 'snapshots',
           sub('Egress proxy', 'egress-proxy', ['sessions']), 'self-protection', 'session-taint', 'injected-input',
           sub('Audit log, watch and why', 'see-what-happened', ['watch-and-why', 'provenance', 'siem-delivery']), 'remote-approvals',
           'openmoat-bar']),
@@ -70,7 +70,7 @@ export default defineConfig({
         {
           label: 'Releases',
           collapsed: true,
-          items: ['docs/releases', ...['v0-20-0', 'v0-19-0', 'v0-18-0', 'v0-17-0', 'v0-16-0', 'v0-15-0', 'v0-14-0', 'v0-13-0', 'v0-12-1', 'v0-12-0', 'v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
+          items: ['docs/releases', ...['v0-21-0', 'v0-20-0', 'v0-19-0', 'v0-18-0', 'v0-17-0', 'v0-16-0', 'v0-15-0', 'v0-14-0', 'v0-13-0', 'v0-12-1', 'v0-12-0', 'v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
             .map((v) => `docs/releases/${v}`)],
         },
       ],
