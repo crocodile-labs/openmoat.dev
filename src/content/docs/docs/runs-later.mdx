@@ -27,6 +27,8 @@ A write was held with `runs-later`, `persistence` or `container-host`, or denied
 
 Reading these files stays allowed. `runs-later` and `persistence` hold the agent's own writes; an editor (`vim`, `nano`, `code`) on one of these files counts as a write too.
 
+From 0.21.0 the agent lines of `runs-later` come from each agent's own spec in OpenMoat, so every agent's files that run later are covered the same way, and writing OpenCode's project agents (`.opencode/agents/`, `.opencode/agent/`) and skills (`.opencode/skills/`) needs review. Under `openmoat run`, commands cannot write any agent's configuration in the project either (`.claude/commands`, `.gemini/commands/`, `.github/agents/`, `.cline/hooks/`, …): [Project files on Linux](/docs/sandboxes/project-files/#agent-configuration-folders).
+
 ## Example
 
 ```bash
@@ -54,7 +56,7 @@ These are rule groups of your policy: narrow one with `openmoat edit`, or allow 
 
 ## Limits
 
-- **Only the agent's own writes.** A script the agent runs in its sandbox may still write these files, and a test runner or build tool running files the session wrote is not held.
+- **Only the agent's own writes.** A script the agent runs in its sandbox may still write these files, and a test runner or build tool running files the session wrote is not held. Under `openmoat run`, commands cannot write the agents' configuration in the project.
 - **`container-host` reads the flags as written.** Another spelling, or the same options in a compose file or a script, is not caught by it.
 - **Build files are ordinary edits.** `package.json` scripts and a `Makefile` run when you next build, without a question; the [pull request check](/docs/check-a-pull-request/) reports them.
 

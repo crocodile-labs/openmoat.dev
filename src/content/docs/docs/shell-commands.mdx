@@ -168,5 +168,6 @@ The syntax in full: [Policy file](/docs/policy-file/).
 - **An allowed command runs what its scripts contain.** `npm test` is allowed; OpenMoat does not read the script. The [OS sandbox](/docs/sandboxes/) bounds what it can reach.
 - **Outside an OS sandbox, a mistake in how OpenMoat reads a command is a way past it**, since an allowed command runs with your permissions.
 - **PowerShell commands are not parsed** on native Windows, so OpenMoat never allows one.
+- **Handing work to WSL is denied on Windows** (`wsl-crossing`, from 0.21.0), since no Windows path rule reaches inside it; a `cmd` or PowerShell line beyond simple commands, or one naming `wsl` or `bash` anywhere, needs review ([Windows](/docs/agents/#macos-linux-and-windows)).
 
 More in [Limits](/docs/limits/).

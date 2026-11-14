@@ -11,6 +11,7 @@ executables:                      # programs pinned to their paths
   git: ["/usr/bin/git", "/opt/homebrew/bin/git"]
 sandbox:                          # what the OS sandboxes may read beyond the rules
   read_roots: ["/usr", "~/.cargo"]
+  project_top: protected          # since 0.21.0: `writable` opens the project's top on Linux without bubblewrap
 secrets: []                       # brokered secrets: openmoat secret add
 taint:
   protected_writes: ["**/deploy/**"]

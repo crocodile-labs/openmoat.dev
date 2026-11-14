@@ -1,6 +1,6 @@
 ---
 title: "Instructions planted in what the agent reads"
-description: "injected-input: a command or write that uses a host, path or command a fetched page, an issue or a tool result named needs review, with the source named. Claude Code, the Cline CLI and wrapped MCP servers."
+description: "injected-input: a command or write that uses a host, path or command a fetched page, an issue or a tool result named needs review, with the source named. Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, the Cline CLI, wrapped MCP servers, and PowerShell commands."
 sidebar:
   label: "Injected input"
 ---
@@ -9,7 +9,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Read this when">
 
-A call was held with `injected-input`, or you want to know what OpenMoat does when a page, an issue or a tool result tells the agent what to do. New in 0.16.0 for Claude Code; since 0.17.0 also the Cline CLI and wrapped MCP servers, and other spellings of the same request.
+A call was held with `injected-input`, or you want to know what OpenMoat does when a page, an issue or a tool result tells the agent what to do. New in 0.16.0 for Claude Code; since 0.17.0 also the Cline CLI and wrapped MCP servers, and other spellings of the same request; since 0.21.0 also Codex, Gemini CLI, GitHub Copilot CLI and PowerShell commands.
 
 </Aside>
 
@@ -36,8 +36,20 @@ A later shell command, write or patch of the same session that uses one of them 
 | Claude Code (its `PostToolUse` hook), and the Continue CLI, which runs Claude Code's hooks | 0.16.0 |
 | The Cline CLI (OpenMoat's `PostToolUse` script beside `PreToolUse`) | 0.17.0 |
 | Any agent's wrapped MCP servers: `openmoat mcp proxy` keeps what a wrapped server's tool returned, under the session of the hook's decision for that call | 0.17.0 |
+| Codex (its `PostToolUse` hook) | 0.21.0 |
+| Gemini CLI (its `AfterTool` hook) | 0.21.0 |
+| GitHub Copilot CLI (its `postToolUse` hook; every tool's output is read). Its payloads name no event, so each of OpenMoat's entries names its own (`openmoat guard --event`), and a payload counts as a report of what a call returned only when the `postToolUse` entry sent it | 0.21.0 |
 
-After upgrading, run `openmoat init` once to add the `PostToolUse` entry or file. `openmoat doctor` and `openmoat status` report the hook as needing it until then. Other agents keep [session taint](/docs/session-taint/) alone for calls that are not wrapped MCP tools.
+The payloads follow what the weekly run of the agents' latest releases recorded from each real agent. After upgrading, run `openmoat init` once to add the after-call entry or file; in Codex, then trust OpenMoat's new hook in `/hooks`. `openmoat doctor` and `openmoat status` report the hook as needing it until then. Other agents keep [session taint](/docs/session-taint/) alone for calls that are not wrapped MCP tools.
+
+## PowerShell commands
+
+From 0.21.0 injected input also covers PowerShell commands: Gemini CLI's shell on Windows, and the PowerShell tools of Claude Code and the Cline CLI. OpenMoat does not parse them, so it reads their text for the hosts and paths they name:
+
+- a host, or a path outside the project, that untrusted output named makes the command need review (`injected-input`);
+- a PowerShell command that reads from a host the policy does not allow (a URL, a web client's target, `-Uri`, `-ComputerName`, …), or runs `gh`, `glab` or `tea` anywhere in its line, has its output kept like a `curl` of it.
+
+Windows paths are read in untrusted output and in PowerShell alike: `C:\…`, `~\…`, `$env:USERPROFILE\…`, `%USERPROFILE%\…`. A UNC path, another variable, or a host or path built at run time is not seen.
 
 ## Other spellings of the same request
 
@@ -79,9 +91,10 @@ None of its own. It is part of session taint; `openmoat edit` changes the rules 
 
 ## Limits
 
-- **Only Claude Code, the Cline CLI and wrapped MCP servers report output.** Other agents report none yet; their wrapped MCP servers' results are read by the gateway.
+- **Only Claude Code, the Continue CLI, Codex, Gemini CLI, GitHub Copilot CLI, the Cline CLI and wrapped MCP servers report output.** Other agents report none yet; their wrapped MCP servers' results are read by the gateway.
+- **PowerShell commands are linked by the hosts and paths their text names, not by their commands**, since OpenMoat does not parse them.
 - **Beyond the spellings above, matches are exact.** A host under another name, a subdomain of a word host, a reworded command or a relative path is not linked.
 - **Bounded.** Each output is read up to 1 MiB and reduced to at most 256 tokens, and a session keeps at most 4096, so a page full of decoys can push a planted host out.
-- **Fetches, searches and MCP calls themselves are not checked against it**, and an install without the `PostToolUse` entry links nothing.
+- **Fetches, searches and MCP calls themselves are not checked against it**, and an install without the after-call entry (or, in Codex, with it not trusted in `/hooks`) links nothing.
 
 More in [Limits](/docs/limits/). The rules in full: [POLICY.md §4.1.2](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#412-injected-input), [ADR-057](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-057-injected-input-and-instruction-files.md) and [ADR-063](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-063-injected-input-for-more-agents.md).

@@ -22,7 +22,7 @@ From 0.20.0, `openmoat run` on Linux starts the **Isolated tier** (bubblewrap) b
 |---|---|---|
 | (no flag) | Isolated tier | Lightweight tier; says why on every start and records it in the audit log (`run-isolation-unavailable`) |
 | `--isolate` | Isolated tier | refused (exit 64) |
-| `--no-isolate` | Lightweight tier, recorded in the audit log (`run-no-isolate`) | the same |
+| `--no-isolate` | Lightweight tier, recorded in the audit log (`run-no-isolate`); from 0.21.0 the network namespace covers the project as `--isolate` does | the same, with the project granted entry by entry ([Project files on Linux](/docs/sandboxes/project-files/)) |
 | any of these under `require.run: full-boundary` | Isolated tier; `--no-isolate` refused | refused (exit 64) |
 
 ```bash
@@ -85,7 +85,7 @@ openmoat sandbox show --format json | jq .lightweight.landlock.abi
 openmoat run --verbose -- claude   # prints the same before the agent starts
 ```
 
-Every Linux run also writes it to the audit log (rule `run-landlock-abi`) before the agent starts.
+Every run also writes it to the audit log, as Landlock's `restrict_self` reported it, in the run's boundary record (rule `run-boundary`, which from 0.21.0 replaces the `run-landlock-abi` row), and checks after the agent starts that the ruleset and the seccomp filters are in force ([The boundary record](/docs/sandboxes/boundary-record/)).
 
 **Datagram socket pairs.** From 0.20.0 the seccomp filter allows `socketpair()` only for stream and sequenced-packet sockets (which Node, Python and Chromium use). A datagram pair fails with `EPERM`, because it could reach a pathname socket outside the sandbox such as `/dev/log`.
 
@@ -94,7 +94,7 @@ Every Linux run also writes it to the audit log (rule `run-landlock-abi`) before
 - **A deny match created after the session starts is not hidden** (a `.env.local` a command writes, a `.env` in a new folder); the hook still decides the agent's own tool calls on it.
 - **The agent and its commands share one sandbox**, as in the Lightweight tier: whatever the agent needs, `npm test` gets too.
 - **A project with more than a million files and folders is refused** by the Isolated tier: each is looked at to find what to hide.
-- **Without bubblewrap**, the Lightweight tier does not protect the project's `.env`, `.git/hooks` and `.moat`, and restricts the network by port only.
+- **Without bubblewrap**, the Lightweight tier restricts the network by port only. From 0.21.0 it grants the project entry by entry, so the project's `.env`, `.git` and `.moat` at its top stay covered, but nothing can be created directly at the top ([Project files on Linux](/docs/sandboxes/project-files/)).
 - **No Isolated tier on macOS yet**: `openmoat run --isolate` refuses there and names what is missing.
 
 The full reference: [SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md#which-tier-openmoat-run-starts), [ADR-080](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-080-isolate-default-and-latency.md) and [ADR-082](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-082-landlock-abi-ladder.md).
