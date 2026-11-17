@@ -19,6 +19,8 @@ export const agents: Logo[] = [
   { name: "Cline CLI", path: null, glyph: null },
   { name: "goose", path: null, glyph: null },
   { name: "Antigravity CLI", path: null, glyph: null },
+  { name: "Qwen Code", path: null, glyph: null },
+  { name: "Crush", path: null, glyph: null },
 ];
 
 export const platforms: Logo[] = [

@@ -144,6 +144,25 @@ goose, the open-source agent from Block, CLI and desktop app. Setup, the tools i
 - **Run on a real `agy`** (from 0.20.0): the weekly run of the agents' latest releases starts a real `agy` on Linux and macOS. In its run of 2026-11-12 ([43254846914](https://github.com/crocodile-labs/openmoat/actions/runs/43254846914)) `agy` ran OpenMoat's hook, which denied a read of a planted key, and blocked the call when the hook binary was missing and when it exited 1 without output. On Windows it is preview ([Protection by agent and OS](/docs/agents/protection/)).
 - **If the hook fails:** a hook that cannot start, crashes or exits non-zero blocks the call. What `agy` does when a hook times out (600 seconds) is not documented and not tried by the weekly run, so OpenMoat assumes the call runs; `openmoat doctor` names Antigravity CLI as failing open for that case only. For an OS sandbox as well, use `openmoat run -- agy`.
 - **Turned off by:** `"enabled": false` on OpenMoat's entry (a project's `.agents/hooks.json` included), or deleting it. `openmoat status` shows such an entry as not protected, and `openmoat init` turns it back on.
+- **Blocks with:** exit 0 and the deny on stdout (from 0.22.0), the way `agy`'s plugin guide says a hook blocks; a non-zero exit is ignored there.
+
+### Qwen Code
+
+Preview from 0.22.0: what its docs and source say is supported, not yet run on a real Qwen Code.
+
+- **Checked:** every tool, through a `PreToolUse` command hook named `openmoat` in `~/.qwen/settings.json` (`QWEN_HOME` names the folder). MCP tools are `mcp__<server>__<tool>`.
+- **Reviews:** Qwen Code's own prompt, even in YOLO mode; without a screen a review is a deny.
+- **If the hook fails:** a hook that times out, cannot start or gives an answer Qwen Code cannot read lets the call run. For an OS sandbox as well, use `openmoat run -- qwen`.
+- **Turned off by:** `disableAllHooks` in a settings file, `--safe-mode` or `--bare`. `openmoat run` refuses a project whose settings turn the hook off.
+
+### Crush
+
+Preview from 0.22.0: what its source says is supported, not yet run on a real Crush.
+
+- **Checked:** every tool, through a `PreToolUse` hook named `openmoat` in Crush's global `crush.json` (`CRUSH_GLOBAL_CONFIG`, else `~/.config/crush`). A project's `crush.json`, `.crush.json`, `.crush/crush.json` and `crushrc` scripts need review before a session changes them.
+- **Reviews:** Crush has no "ask", so a review is a deny; run `openmoat allow --last`.
+- **Not seen:** the calls of its subagents (`agent`, `agentic_fetch`), so starting one needs review. An MCP tool is named `mcp_<server>_<tool>`, which cannot be split back into its server, so per-server MCP rules do not apply: each MCP call is checked by what its arguments name.
+- **If the hook fails:** the call runs. For an OS sandbox as well, use `openmoat run -- crush`.
 
 ### Continue CLI
 
