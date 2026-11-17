@@ -1,0 +1,34 @@
+---
+title: "OpenMoat 0.22.0"
+description: "A keyed audit log; an unattended profile; unknown packages run through npx, uvx or pipx need review; a project cannot turn OpenMoat's hook off under openmoat run, and openmoat init --managed writes it where an administrator's hooks live; openmoat audit stats; plugin packages for each agent's own channel; SDK framework adapters; Qwen Code and Crush in preview."
+sidebar:
+  label: "0.22.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-15. [GitHub release v0.22.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.22.0).
+
+<Aside type="caution" title="Upgrading">
+
+- **Run `openmoat policy upgrade`** in your own terminal for the new and changed default rules: `package-run-unknown`, `unattended`, the audit key and the new agents' paths.
+- **Then run `openmoat init` once.** It sets Claude Code's `CLAUDE_CODE_DISABLE_FILE_MENTIONS`, makes the audit key, and sets up Qwen Code and Crush where they are installed.
+- **Restart a running `openmoat proxy`, `openmoat approvals listen` or `openmoat mcp proxy`.** One from the older build refuses to record until it is restarted.
+- **A policy with `unattended:` is refused by an older binary.** Upgrade every machine that reads the policy before you set it.
+- **Running a package with `npx`, `uvx` or `pipx run`** that the project neither installs nor declares now needs review once.
+
+Every step after an upgrade: [Upgrade](/docs/upgrade/).
+
+</Aside>
+
+New in this release, with setup and limits:
+
+- [Packages](/docs/packages/): a package that `npx`, `bunx`, `uvx`, `pipx run` and the like would fetch, which the project neither installs nor declares and which is not a popular tool, waits for review. A program in the project's `node_modules/.bin` and a package its `package.json`, `pyproject.toml` or `uv.lock` declares run as before.
+- [Auto-approve and CI](/docs/auto-approve-and-ci/): with `unattended: review` in your own policy, a call the agent's own prompt would decide waits for review when the agent runs with no one to ask (Claude Code's `bypassPermissions` or `auto`, pi without a screen, an approvals-off mode), and is denied with how to approve where the agent cannot ask.
+- [See what happened](/docs/see-what-happened/): each audit event carries a MAC made with a key kept beside the log, so a rewrite by someone who cannot read the key is caught; `openmoat audit stats` shows decision times and how often calls were held or denied, per agent.
+- [Self-protection](/docs/self-protection/): `openmoat run` refuses to start an agent whose project files would turn its hook off (Claude Code starts with its hooks kept on), and `openmoat init --managed` writes OpenMoat's hook where Claude Code, Cursor and GitHub Copilot CLI read an administrator's hooks.
+- [Agents](/docs/agents/): Qwen Code and Crush, in preview; Antigravity CLI's hook blocks the way agy documents; another agent's call through Claude Code's hook (Grok Build, Devin CLI) is checked.
+- [SDK](/docs/sdk/): one-line wraps for the Claude Agent SDK, OpenAI Agents, the AI SDK, Mastra and LangChain.js.
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0220---2026-11-15).

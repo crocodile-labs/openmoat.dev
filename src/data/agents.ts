@@ -114,6 +114,21 @@ export const agents: Agent[] = [
     note: 'a hook that times out is assumed to let the call run: <code>agy</code> does not document it',
     hookProven: 'Linux, macOS',
   },
+  {
+    name: 'Qwen Code', inList: 'Qwen Code', host: 'qwen-code', docs: '/docs/agents/#qwen-code', sandbox: false,
+    protection: 'hook only (preview)', protectionShort: 'hook only', protectionSub: 'preview',
+    answer: "Qwen Code's own prompt, even in YOLO mode", homeAnswer: "Qwen Code's own prompt",
+    note: 'its hook lets a call run if it fails or times out',
+    hookProven: '',
+  },
+  {
+    name: 'Crush', inList: 'Crush', host: 'crush', docs: '/docs/agents/#crush', sandbox: false,
+    protection: 'hook only (preview)', protectionShort: 'hook only', protectionSub: 'preview',
+    answer: 'the call is denied; run <code>openmoat allow --last</code>',
+    homeAnswer: 'the call stops; run <code>openmoat allow --last</code>',
+    note: "its subagents' calls fire no hook; an MCP call is checked by its arguments only",
+    hookProven: '',
+  },
 ];
 
 // "A, B and C", with each agent's sentence form.
