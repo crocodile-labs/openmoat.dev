@@ -113,6 +113,29 @@ session.record(engine, d.action, facts);
 const saved = session.save();        // opaque text; new Session(saved) continues it
 ```
 
+## Agent frameworks
+
+`@openmoat/sdk` has one-line wraps for the frameworks people build agents with. Each runs
+OpenMoat's decision before the tool runs.
+
+| Framework | Import | One line |
+|---|---|---|
+| Claude Agent SDK | `@openmoat/sdk/claude-agent-sdk` | `hooks: openmoatHooks()` |
+| OpenAI Agents | `@openmoat/sdk/openai-agents` | `withOpenMoat(tools)` or `inputGuardrails: [openmoatGuardrail()]` |
+| AI SDK | `@openmoat/sdk/ai-sdk` | `tools: withOpenMoat(tools)` |
+| Mastra | `@openmoat/sdk/mastra` | `hooks: openmoatHooks()` |
+| LangChain.js | `@openmoat/sdk/langchain` | `createMiddleware(openmoatMiddleware())`, last in the list |
+
+- **Deny:** the tool does not run, and the model gets the reason and the rules.
+- **Review:** it does not run unless your `review` callback returns `true`.
+- **Defer:** it goes to the framework's own approval flow.
+- **Any error** blocks the call.
+- **A Claude Agent SDK app** that leaves `settingSources` unset already loads the settings
+  files, so it runs the hook `openmoat init` writes with no code change; `settingSources: []`
+  turns that off.
+
+A Python package is designed, not built yet.
+
 ## What stays with the CLI
 
 The SDK is the decision only. The policy lock and drift checks, approvals (`openmoat allow`), the audit log, MCP server pins, host hooks, the OS sandboxes and the egress proxy stay with `openmoat`. A product that needs them runs `openmoat`.

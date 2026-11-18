@@ -60,6 +60,29 @@ On Linux, `openmoat run` starts the Isolated tier (bubblewrap) by default where 
 
 </Aside>
 
+## When no one is asked: `unattended: review`
+
+A `defer` leaves a call to the agent's own prompt. In an auto-approve or headless mode that
+prompt asks no one, so the call runs. With this in your own policy, OpenMoat holds such a call
+for review instead (a repository policy cannot set it):
+
+```yaml
+unattended: review    # default defer
+```
+
+- **Which modes count:** what the agent's hook can see. That is Claude Code's
+  `bypassPermissions` and `auto` (and `acceptEdits` for file writes and `mkdir`, `touch`, `rm`,
+  `rmdir`, `mv`, `cp`, `sed`), pi without a screen, Hermes Agent in YOLO mode or with approvals
+  off, and Antigravity CLI with `toolPermission: always-proceed`.
+- **What you see:** where the agent can still ask (Claude Code's `auto` mode shows hook
+  prompts), the review is asked. Where it cannot, the call is denied with how to approve it:
+  `openmoat allow --last`, or your [phone](/docs/remote-approvals/).
+- **Not detected:** `cline --auto-approve`, OpenCode 2's `--auto`, Codex's approval policy
+  `never`, Gemini CLI's `--yolo` and GitHub Copilot CLI's `--allow-all-tools` are flags the hook
+  is not shown. For those, run the agent with [`openmoat run`](/docs/sandboxes/openmoat-run/).
+- An OpenMoat older than 0.22.0 refuses a policy with `unattended:`, so upgrade every machine
+  that reads it first.
+
 ## Per agent
 
 - **Codex** cannot show an OpenMoat prompt: a review becomes a deny you approve with `openmoat allow --last`. A deferred call follows Codex's own approval policy.

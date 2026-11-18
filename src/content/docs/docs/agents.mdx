@@ -1,6 +1,6 @@
 ---
 title: "Supported agents"
-description: "The twelve agents OpenMoat checks (and the Continue CLI, not yet), how well each one is protected, where you answer a review, and what each one does not cover."
+description: "The fourteen agents OpenMoat checks (and the Continue CLI, which runs no hooks and is no longer maintained upstream), how well each one is protected, where you answer a review, and what each one does not cover."
 sidebar:
   label: "Supported agents"
   order: 2
@@ -16,7 +16,7 @@ You want to know how much OpenMoat can do for the agent you use, or `openmoat st
 
 </Aside>
 
-Each agent calls `openmoat guard` from its own **hook** before every tool call. `openmoat init` finds the agents installed on your machine and asks before setting up each one.
+Each agent calls `openmoat guard` from its own **hook** before each tool call it reports. `openmoat init` finds the agents installed on your machine and asks before setting up each one.
 
 For an agent with an **OS sandbox**, `openmoat init` also writes the sandbox settings from the same policy, so a script inside an allowed `npm test` cannot read your keys either. For the others, the hook is the only check; there, running a script the same session wrote needs review first ([Code the agent wrote](/docs/session-written-code/)).
 
@@ -166,7 +166,7 @@ Preview from 0.22.0: what its source says is supported, not yet run on a real Cr
 
 ### Continue CLI
 
-The Continue CLI (`cn`) is built to run Claude Code's hook, but the released `cn` runs no hooks yet, so OpenMoat cannot check its calls. Start it with `openmoat run -- cn` to keep it in a sandbox; `openmoat doctor` warns about this.
+The Continue CLI (`cn`) is built to run Claude Code's hook, but the released `cn` runs no hooks, so OpenMoat cannot check its calls, and its repository (github.com/continuedev/continue) says it is no longer actively maintained and is read-only. Start it with `openmoat run -- cn` to keep it in a sandbox; `openmoat doctor` warns about this.
 
 ## macOS, Linux and Windows
 

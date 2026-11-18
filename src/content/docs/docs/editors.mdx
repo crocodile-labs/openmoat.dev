@@ -18,7 +18,7 @@ You use Claude Code from the VS Code extension or the JetBrains plugin, or Curso
 
 | Editor | What protects it |
 |---|---|
-| VS Code, JetBrains | Claude Code's extension and plugin use the same `claude-code` hook as the CLI: every tool call goes through OpenMoat, and a hook that fails to start, crashes or times out blocks the call. There is no separate host to set up. |
+| VS Code, JetBrains | Claude Code's extension and plugin use the same `claude-code` hook as the CLI: every tool call the hook reports goes through OpenMoat, and a hook that fails to start, crashes or times out blocks the call. There is no separate host to set up. |
 | Cursor | Cursor's own hooks for the agent ([Supported agents](/docs/agents/#cursor)), and Tab, Cursor's inline completion, is refused secret files. |
 
 ## Set it up

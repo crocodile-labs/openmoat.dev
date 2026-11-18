@@ -106,7 +106,7 @@ An anchor holds the newest event's id, its hash and the time. Nothing is pushed 
 
 <Aside type="tip" title="Private by design">
 
-The log is a SQLite file in `~/.moat`. Credentials are redacted before anything is stored, and nothing leaves your machine unless you export or anchor it somewhere that does, or set up [audit delivery](/docs/see-what-happened/siem-delivery/). The agent's own reads and writes of the log file are denied (`kernel-self`).
+The log is a SQLite file in `~/.moat`. Each event carries a MAC made with a key kept beside the log (`~/.moat/audit.key`, which the agent's calls cannot read), so a rewrite by someone who cannot read the key is caught: `openmoat audit verify` and `openmoat doctor` say where. Credentials are redacted before anything is stored, and nothing leaves your machine unless you export or anchor it somewhere that does, or set up [audit delivery](/docs/see-what-happened/siem-delivery/). The agent's own reads and writes of the log file are denied (`kernel-self`).
 
 </Aside>
 
@@ -134,6 +134,21 @@ openmoat audit evidence --since 30d > evidence.md
 ```
 
 What the report holds, the map and its limits: [Compliance evidence](/docs/compliance-evidence/).
+
+## What OpenMoat costs your work
+
+`openmoat audit stats` reads your audit log and shows, per agent and for all agents, over a
+window (the last 7 days unless you give `--since`/`--until`):
+
+- calls checked, and decision time at p50, p95 and p99;
+- allow, defer, review and deny counts, and reviews per 100 calls;
+- the calls you approved, and denies and reviews the same session later allowed;
+- guard timeouts, and what the agent does when its hook fails.
+
+It only reads the local log and sends nothing. `--format json` gives the same numbers for a
+script. `openmoat bench` reports the same figures for its everyday scenarios, and CI fails if
+any of them is denied. Approvals given at the agent's own prompt are not in the log, so they
+are not counted.
 
 ## Commands
 

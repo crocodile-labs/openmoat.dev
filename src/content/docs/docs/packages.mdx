@@ -61,6 +61,24 @@ An install runs code from the package (`postinstall`, `build.rs`, `setup.py`). W
 
 `~/.npmrc`, `~/.pypirc` and `~/.cargo/credentials` are secrets, so a publish started by the agent has no registry token. Publish from your own terminal: a release is a step you want to take yourself.
 
+## A package run that downloads it
+
+`npx`, `bunx`, `pnpx`, `npm exec`, `pnpm dlx`, `yarn dlx`, `bun x`, `uvx`, `uv tool run` and
+`pipx run` fetch a package and run it in one step. From 0.22.0 OpenMoat reads the package such
+a command names (`package-run-unknown`, review):
+
+- **Runs as before:** a popular tool (the same lists the near-miss check uses, with common
+  command-line tools and scaffolders added), a program in the project's `node_modules/.bin`
+  (looked up from the working folder up to the project root), and a package the nearest
+  `package.json`, `pyproject.toml` or `uv.lock` declares.
+- **Waits for review:** any other package, pinned to a version or not, and a package named with
+  `-p` / `--package`. `npx --no-install tsc` names nothing to fetch.
+- **Still a near miss:** a name one typo away from a popular one keeps its `package-near-miss`
+  review, even when the project declares it.
+
+The hook cannot tell a local program from a download by the command alone, so where the
+project has neither the program nor the declaration, `npx tsc` asks once.
+
 ## Fewer prompts
 
 To let the agent install without asking, allow the exact command (`openmoat allow "npm install" --always`) or use your agent's own "always allow". Keep in mind that an install runs package code.
