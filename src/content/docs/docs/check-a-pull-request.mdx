@@ -147,9 +147,9 @@ They never change the exit code or fail the check. `--provenance info` shows the
            with:
              fetch-depth: 0             # the base and head commits and what they share
              persist-credentials: false
-         - uses: crocodile-labs/openmoat@<full commit SHA of the release tag> # v0.17.0
+         - uses: crocodile-labs/openmoat@1dd88d81246a60ffa318f619375628128d5b7ece # v0.23.0
            with:
-             version: 0.17.0            # the same release, without the leading v
+             version: 0.23.0            # the same release, without the leading v
              fail-on: review            # review (default), deny or never
              # policy: ci/openmoat.yaml # read as the pull request's base has it
    ```
@@ -164,7 +164,7 @@ They never change the exit code or fail the check. `--provenance info` shows the
 
 4. **Hold merges on it, if you want**
 
-   A finding is a report, not a block on merging. Make the job a required status check to hold merges until it passes, and merge past it when a person meant the change.
+   A finding is a report, not a block on merging. Make the job a required status check to hold merges until it passes, and merge past it when a person meant the change. A repository whose pull requests often change CI, hooks or policy can block on `deny` alone (`fail-on: deny`) and leave reviews as warnings: OpenMoat's own repository does ([its workflow](https://github.com/crocodile-labs/openmoat/blob/main/.github/workflows/openmoat.yml)). `fail-on: deny` and `never` work from 0.23.0; before it, any finding failed the step.
 
 </Steps>
 

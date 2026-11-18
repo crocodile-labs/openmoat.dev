@@ -1,0 +1,27 @@
+---
+title: "OpenMoat 0.23.0"
+description: "Request rules for allowed hosts: uploads to an allowed host's public endpoints, such as a new GitHub gist, are denied in the commands the hook reads, and with a proxy CA inside HTTPS too; the GitHub Action's fail-on deny and never work; fewer reviews for loops that trim known values."
+sidebar:
+  label: "0.23.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-18. [GitHub release v0.23.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.23.0).
+
+<Aside type="caution" title="Upgrading">
+
+- **Using the GitHub Action with `fail-on: deny` or `fail-on: never`?** Move its pin to this release (`crocodile-labs/openmoat@1dd88d81246a60ffa318f619375628128d5b7ece # v0.23.0`, `version: 0.23.0`). Before it, any finding failed the step whatever `fail-on` said.
+- The new request rules for GitHub's gist endpoints are on by default in the hook and need nothing to run. Rules the proxy holds inside HTTPS need `openmoat proxy ca init`.
+
+Every step after an upgrade: [Upgrade](/docs/upgrade/).
+
+</Aside>
+
+- **Uploads to an allowed host's public endpoints are denied.** `api.github.com` is allowed so that `gh` and the API work, but its gist endpoints publish whatever they are sent. The default policy's new request rules deny `curl -X POST https://api.github.com/gists -d @notes.txt` in every spelling of the method and path, along with `wget --post-file`, HTTPie, `xh`, `gh api gists -f …` and `gh gist create`, with rule `request-rule`. A request whose address or method is built at run time (`curl -d @f "$URL"`) waits for review. Reads, `gh pr create`, `gh issue list` and `git push` are unchanged. [Use GitHub from the agent](/docs/github/).
+- **Your own request rules.** A `requests:` entry in the policy lists `METHOD /path` allow and deny rules for one allowed host. The hook applies them to the commands it reads; with a proxy CA (`openmoat proxy ca init`) the proxy applies them inside HTTPS too, and after a secret read lets a session only read from those hosts. A repository policy or a pack may only add deny rules. [Egress proxy](/docs/egress-proxy/#request-rules-inside-https).
+- **The GitHub Action's `fail-on` works.** `fail-on: deny` now fails only on a deny finding and `never` fails on nothing, as documented. OpenMoat's own repository runs the check on every pull request with `fail-on: deny`, as a required check. [Check a pull request](/docs/check-a-pull-request/#on-github).
+- **Fewer reviews in everyday loops.** A loop that trims known values into a `sed` or `awk` script (`n=${x#*:}; sed -n ${n}p ${x%%:*}`) is now decided instead of held. The same work closed a gap: a variable copied inside a loop now holds every value the loop gives it, so `for x in ~/.ssh/id_rsa README; do y=$x; cat $y; done` is denied.
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0230---2026-11-18).
