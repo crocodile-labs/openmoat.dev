@@ -1,0 +1,23 @@
+---
+title: "OpenMoat 0.22.1"
+description: "Codex starts on Linux again with OpenMoat's sandbox profile."
+sidebar:
+  label: "0.22.1"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-17. [GitHub release v0.22.1](https://github.com/crocodile-labs/openmoat/releases/tag/v0.22.1).
+
+<Aside type="caution" title="Upgrading">
+
+- **On Linux with Codex, run `openmoat init` once** after upgrading (or `openmoat sandbox sync`): it rewrites Codex's sandbox profile. Nothing else to run.
+
+Every step after an upgrade: [Upgrade](/docs/upgrade/).
+
+</Aside>
+
+- **Codex starts on Linux again.** 0.22.0 wrote the deny for OpenMoat's service files under `/run/user` into Codex's sandbox profile as a glob. Codex on Linux lists every folder below a deny glob before each command, stopped at the root-only `/run/user/<uid>/systemd/inaccessible`, and started no session. A glob under `/run` is now left out of Codex's profile; OpenMoat's hook still denies the agent's own calls on those files.
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0221---2026-11-17).
