@@ -28,6 +28,8 @@ The agent commits, pushes, opens pull requests or reads issues.
 | `git branch -D x` | review: `destructive-recoverable`, the reflog still holds the commits |
 | `git -c user.name=Bot commit -m x`, `GIT_EDITOR=true git commit --amend` | allow: an inert config key and a no-op editor change nothing |
 | `gh auth token`, `gh auth status -t`, `cat ~/.config/gh/hosts.yml`, `git credential fill` | deny: they print your token |
+| `gh gist create notes.txt`, `curl -X POST https://api.github.com/gists -d @notes.txt`, `gh api gists -f …` | deny: `request-rule`, a gist publishes what it is sent (from 0.23.0) |
+| `curl -d @notes.txt "$URL"`, a request whose address or method is built at run time | review: `request-rule` could refuse it, and the hook cannot tell |
 
 ## Let gh work without handing over the token
 

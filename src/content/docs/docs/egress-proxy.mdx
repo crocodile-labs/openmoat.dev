@@ -59,6 +59,27 @@ Every refusal is a row in the audit log: `openmoat show --since today`.
 
 The agent cannot stop the service: `systemctl --user stop moat-proxy`, `launchctl bootout …/dev.openmoat.proxy` and the like are denied (`kernel-self`), and `pkill` or `killall` naming `moat` needs review (`stops-openmoat`).
 
+## Request rules inside HTTPS
+
+A `requests:` entry lists `METHOD /path` rules for one allowed host (from 0.23.0). The hook applies them to the commands it reads; the proxy applies them inside HTTPS when the entry is not `hook_only` and a proxy CA covers the host:
+
+```yaml
+requests:
+  - id: exfil-gists
+    host: api.github.com
+    deny: ["POST /gists", "PATCH /gists/**", "POST /gists/*/comments"]
+```
+
+```bash
+openmoat proxy ca init     # a CA that covers every host a requests: entry names
+```
+
+The default policy ships this entry with `hook_only: true`, so it applies in the hook only; the copy above, in your own policy, has the proxy hold it too.
+
+- **Which sessions are read.** `openmoat run`'s sessions, and the standalone proxy's Claude Code sessions whose `SessionStart` hook gave their commands the CA. Another session's connection to such a host is refused (`requests_untrusted: refuse`, the default) or relayed unread (`relay`).
+- **After a secret read** a session may only read from those hosts: `GET`, `HEAD` and `OPTIONS` without a body, with a target of at most 2048 bytes (`session-taint`).
+- **Teams.** A repository policy or a pack may only add deny rules, and they stay in the hook unless your own policy has the proxy hold the host. On macOS, Go programs such as `gh` ignore `SSL_CERT_FILE` and do not trust the proxy CA, so the default keeps GitHub's rules in the hook.
+
 ## Settings
 
 Send the agents' sandboxed commands through the proxy, and open one port of one host:
@@ -76,8 +97,8 @@ Keep the bare host in the rule: the hook decides by host alone, and a `host:port
 
 ## Limits
 
-- **It checks the host, not what is sent inside HTTPS.** An allowed host can receive whatever a command sends it, and the proxy does not see the HTTP `Host` header inside the tunnel.
-- **HTTPS is decrypted only inside `openmoat run`, and only to the host of a `tls: terminate` secret.** Elsewhere a brokered secret goes into plain-HTTP requests only, and an HTTPS request keeps the placeholder ([Where it works today](/docs/keep-tokens-safe/where-it-works/)).
+- **It checks the host, not what is sent inside HTTPS**, except for a `requests:` host it terminates, where it checks the method and path but never the body. Any other allowed host can receive whatever a command sends it.
+- **HTTPS is decrypted only for the host of a `tls: terminate` secret inside `openmoat run`, and for a `requests:` host a proxy CA covers, for the sessions above.** Elsewhere a brokered secret goes into plain-HTTP requests only, and an HTTPS request keeps the placeholder ([Where it works today](/docs/keep-tokens-safe/where-it-works/)).
 - **Only Claude Code's sessions get a credential for the standalone proxy.** Codex's proxy sends none, so its traffic is refused unless `sandbox.proxy_serve_without_credential: true` serves it, with no session and no taint; Cursor's sandboxed commands never reach `openmoat proxy`.
 - **No user service on Windows yet:** `openmoat proxy install` and `status` refuse; run `openmoat proxy` in a terminal.
 
