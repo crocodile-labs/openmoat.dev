@@ -1,6 +1,6 @@
 ---
 title: "OpenMoat documentation"
-description: "OpenMoat is the security layer between your AI coding agents and your machine: it checks every tool call before it runs, keeps your secrets and network out of reach, confines the code that does run, and records every decision."
+description: "OpenMoat is the security layer between your AI coding agents and your machine: it checks each tool call an agent's hook reports before it runs, denies reads of your secrets and sends to hosts your policy does not list, confines the code an allowed call runs where an OS sandbox applies, and records every decision."
 sidebar:
   label: "Introduction"
   order: 0
@@ -10,25 +10,25 @@ import { Aside, CardGrid, LinkCard, Steps, TabItem, Tabs } from '@astrojs/starli
 import AgentTable from '../../../components/AgentTable.astro';
 import { agentListOr } from '../../../data/agents';
 
-OpenMoat is the security layer between your AI coding agents and your machine. It checks every tool call an agent makes before it runs, keeps your secrets and network out of reach, confines the code that does run, and records every decision, for {agentListOr()}, with one policy that stays on your machine. Normal work goes on as before; what the policy has no rule for goes to your agent's own prompt; effects that outlive the session wait for you; reading your keys, sending them out, destructive commands and switching OpenMoat off never run.
+OpenMoat is the security layer between your AI coding agents and your machine. It checks each tool call an agent's hook reports before it runs: it denies reads of your secrets and sends to hosts your policy does not list, and holds what outlives the session for your review. Where an OS sandbox applies (the agent's own, or `openmoat run`), it also confines the code an allowed call runs. Every decision is recorded, for {agentListOr()}, with one policy that stays on your machine. Normal work goes on as before; what the policy has no rule for goes to your agent's own prompt; effects that outlive the session wait for you; reading your keys, sending them out, destructive commands and switching OpenMoat off never run.
 
 ## What OpenMoat is
 
-<img class="om-diagram light" src="/assets/overview-light.svg" alt="OpenMoat sits between your AI coding agents and your machine. Twelve agents send every tool call through OpenMoat. Its parts: a policy engine, OS sandboxes, an egress proxy, a secret broker, an MCP gateway, an audit trail, a merge check and a policy lock. It guards your files and secrets, shell and programs, network, MCP servers, and git, CI and editors." />
+<img class="om-diagram light" src="/assets/overview-light.svg" alt="OpenMoat sits between your AI coding agents and your machine. Fourteen agents send the tool calls their hooks report through OpenMoat. Its parts: a policy engine, OS sandboxes, an egress proxy, a secret broker, an MCP gateway, an audit trail, a merge check and a policy lock. It guards your files and secrets, shell and programs, network, MCP servers, and git, CI and editors." />
 <img class="om-diagram dark" src="/assets/overview-dark.svg" alt="" aria-hidden="true" />
 
 | Part | What it does | Start with |
 |---|---|---|
-| [Policy engine](/docs/how-it-decides/) | Decides every tool call before it runs, from what the call really does: it reads the shell the way a shell does and checks the files, hosts and programs a call touches. | `openmoat init` |
+| [Policy engine](/docs/how-it-decides/) | Decides each tool call the hook reports before it runs, from what the call really does: it reads the shell the way a shell does and checks the files, hosts and programs a call touches. | `openmoat init` |
 | [OS sandboxes](/docs/sandboxes/) | Confine the code an allowed call runs: the agents' own sandboxes written from the same policy, or `openmoat run` for any agent. | `openmoat run` |
 | [Egress proxy](/docs/egress-proxy/) | Lets network from the sandbox reach only the hosts the policy lists. | `openmoat proxy` |
 | [Secret broker](/docs/keep-tokens-safe/) | Gives the agent a placeholder; the proxy adds your real token for one host only. | `openmoat secret add` |
 | [MCP gateway](/docs/mcp-servers/gateway/) | Starts only the MCP servers you accepted, pins each tool's description, and holds data from one server sent into another's writing tool. | `openmoat mcp wrap` |
 | [Audit trail](/docs/see-what-happened/) | Records every decision in a local, hash-chained log; explains any block, follows calls live, and shows which lines of a commit an agent wrote. | `openmoat watch`, `why`, `provenance` |
 | [Merge check](/docs/check-a-pull-request/) | Checks a pull request for what its changes do: CI and hook edits, agent settings, look-alike packages, new hosts. Runs in CI and as a GitHub Action. | `openmoat policy check-diff` |
-| [Policy lock](/docs/self-protection/) | Pins the policy and hook files: the agent cannot change the rules, approve its own blocked call or switch OpenMoat off. | `openmoat doctor` |
+| [Policy lock](/docs/self-protection/) | Pins the policy and hook files: an agent's call that changes the rules, approves its own blocked call or switches OpenMoat off is denied, and a changed file blocks every call until you review it. Outside an OS sandbox, a program running as you can still rewrite both. | `openmoat doctor` |
 
-It is one Rust binary for macOS, Linux and Windows. No AI model decides, and OpenMoat sends nothing off your machine.
+It is one Rust binary for macOS, Linux and Windows. No AI model decides. OpenMoat sends nothing off your machine unless you set that up: [phone approvals](/docs/remote-approvals/) send each call held for review, redacted, to your phone, and [audit delivery](/docs/see-what-happened/siem-delivery/) sends each decision, masked, to the log collectors you name. What it does not stop: [Limits](/docs/limits/).
 
 ## How a call is decided
 
@@ -112,7 +112,7 @@ Already have projects? Every project you open with a protected agent is covered 
 <CardGrid>
   <LinkCard title="Shell command checks" href="/docs/shell-commands/" description="Parses variables, globs, base64 and nested commands; stops curl | sh, git push --force and rm -rf ~." />
   <LinkCard title="Secrets and .env files" href="/docs/env-files/" description="Denies reading ~/.ssh, cloud credentials, .env files and secret variables such as $GITHUB_TOKEN." />
-  <LinkCard title="Card numbers sent out" href="/docs/env-files/card-numbers/" description="Denies a payment card number sent to any host off the machine, allowed hosts included; repository, job and order ids pass." />
+  <LinkCard title="Card numbers sent out" href="/docs/env-files/card-numbers/" description="Denies a payment card number sent to any host off the machine, allowed hosts included; only numbers the call's own text shows; repository, job and order ids pass." />
   <LinkCard title="Network allowlist" href="/docs/allow-a-site/" description="Stops a command sending data to a host the policy does not list; openmoat allow --site adds one." />
   <LinkCard title="Token broker" href="/docs/keep-tokens-safe/" description="The agent holds a placeholder; the token goes to one host only, and never to another." />
   <LinkCard title="Secrets over HTTPS, for some requests only" href="/docs/keep-tokens-safe/https-injection/" description="Inside openmoat run the token goes into HTTPS, and only into the requests you name: GET /repos/**, nothing else." />

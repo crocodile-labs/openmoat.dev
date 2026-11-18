@@ -47,7 +47,7 @@ A page or a message uses a word you have not met yet.
 | Term | Means |
 |---|---|
 | **agent**, **host**, **host id** | The coding agent OpenMoat protects (Claude Code, Codex, …); `--hosts` takes its id (`claude-code`, `codex`, …). [Supported agents](/docs/agents/) |
-| **hook** | The agent's own setting that runs `openmoat guard` before every tool call. [Supported agents](/docs/agents/) |
+| **hook** | The agent's own setting that runs `openmoat guard` before each tool call it reports. [Supported agents](/docs/agents/) |
 | **OS sandbox** | The operating system's confinement of every process a command starts, written from the same policy. [OS sandboxes](/docs/sandboxes/) |
 | **hook + OS sandbox**, **hook only**, **not protected** | What `openmoat status` says per agent: both layers, the hook alone, or no working hook. [Supported agents](/docs/agents/) |
 | **Standard**, **Lightweight**, **Isolated** | The sandbox tiers: the agent's own sandbox, `openmoat run` (Lightweight), and the Isolated tier, which `openmoat run` starts by default on Linux where bubblewrap works. [OS sandboxes](/docs/sandboxes/) |
@@ -65,7 +65,7 @@ A page or a message uses a word you have not met yet.
 |---|---|
 | **brokered secret**, **placeholder** | A token kept by OpenMoat: programs the agent runs hold a placeholder, and the value is put into requests to one host only. [Token broker](/docs/keep-tokens-safe/) |
 | `token-egress` | Denies a well-known token sent to a host that is not its service's. [Tokens to the wrong host](/docs/keep-tokens-safe/token-egress/) |
-| `card-egress` | Denies a payment card number sent to a host off this machine, allowed hosts included; processors' test numbers are left out. [Card numbers sent out](/docs/env-files/card-numbers/) |
+| `card-egress` | Denies a payment card number sent to a host off this machine, allowed hosts included, when the call's own text shows the number; processors' test numbers are left out. [Card numbers sent out](/docs/env-files/card-numbers/) |
 | `@pii-egress` | The atom personal data on its way out becomes: `@pii-egress card <host>` (which `card-egress` denies) or `@pii-egress emails <host>` (ten or more mail addresses in one send, which no default rule names). [Card numbers sent out](/docs/env-files/card-numbers/#settings) |
 | **egress proxy** | `openmoat proxy`: lets sandboxed commands reach only allowed hosts, and refuses metadata and private addresses. [Egress proxy](/docs/egress-proxy/) |
 | **session taint**, **untrusted content** | After a session read a secret, or a web page or MCP result (untrusted content), some of its later calls need review. [Session taint](/docs/session-taint/) |

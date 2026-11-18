@@ -52,6 +52,30 @@ A person-only command started by an agent refuses before it does anything:
 moat: `openmoat allow` must be run by a person, not by an agent: it was started from `<agent>`. Run it in a terminal of your own
 ```
 
+## A project that would turn the hook off
+
+Some agents load project settings at start that can turn every hook off, OpenMoat's included
+(Claude Code's `disableAllHooks`, and similar settings in GitHub Copilot CLI, Gemini CLI,
+OpenCode, goose, pi, Codex and Antigravity CLI).
+
+- **`openmoat run` refuses** to start an agent whose project files, from the working folder up
+  to the project root, would turn its hook off. It names the file and the fix, and writes an
+  audit row. A file it cannot read counts as turning the hook off.
+- **Claude Code** is started with `--settings '{"disableAllHooks":false}'` whenever OpenMoat's
+  hook is installed, so its hooks stay on for the whole session, through reloads and `/cd`.
+  When your own user settings turn hooks off, the run says so and leaves them off.
+- **Your own policy can choose** `sandbox.project_hook_off: start` to start anyway; that needs an
+  intact policy lock, writes an audit row, and a repository policy cannot set it.
+
+### Hooks a project cannot turn off: `openmoat init --managed`
+
+`openmoat init --managed` writes OpenMoat's hook where an agent reads an administrator's hooks:
+Claude Code's managed settings, Cursor's enterprise `hooks.json` and GitHub Copilot CLI's
+`policy.d`. There a project cannot turn it off. It needs a person at a terminal and never
+edits an administrator's own file. Where root is needed, it keeps the file in `~/.moat/managed/`
+and prints a command that checks the file's SHA-256 before installing it. `openmoat doctor`
+reports it, and `openmoat uninstall` removes it.
+
 ## Commands
 
 | Command | What it does | Example |

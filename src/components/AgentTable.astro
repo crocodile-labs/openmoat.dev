@@ -12,7 +12,7 @@ const { variant } = Astro.props;
       {agents.map((a) => (
         <tr><td><a href={a.docs}>{a.name}</a></td><td set:html={a.protection} /><td>{a.hookProven || 'preview on every OS'}</td><td set:html={a.answer} /><td><code>{a.host}</code></td></tr>
       ))}
-      <tr><td><a href="/docs/agents/#continue-cli">Continue CLI</a></td><td>not checked yet</td><td>none: it runs no hook</td><td>none: use <code>openmoat run</code></td><td>none</td></tr>
+      <tr><td><a href="/docs/agents/#continue-cli">Continue CLI</a></td><td>not checked: it runs no hooks and is no longer maintained upstream</td><td>none: it runs no hook</td><td>none: use <code>openmoat run</code></td><td>none</td></tr>
     </tbody>
   </table>
 ) : (
