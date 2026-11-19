@@ -1,0 +1,25 @@
+---
+title: "OpenMoat 0.23.1"
+description: "A fix for upgrades from before 0.22.0, where a long session could end up with every call denied because the audit key was never made; escaped dollars in awk programs are no longer held; clearer anchor checks."
+sidebar:
+  label: "0.23.1"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-19. [GitHub release v0.23.1](https://github.com/crocodile-labs/openmoat/releases/tag/v0.23.1).
+
+<Aside type="caution" title="Upgrading">
+
+- **Every call denied with `kernel-error` and "the audit key … is missing"?** Run `openmoat init` in your terminal. It makes the key and keeps your audit log. This happened after an upgrade from a release before 0.22.0, and this release stops it happening.
+
+Every step after an upgrade: [Upgrade](/docs/upgrade/).
+
+</Aside>
+
+- **Upgrades from before 0.22.0 no longer lock you out.** 0.22.0 added a key that signs each audit event. The first call after an upgrade makes it, but in a long session another part of the hook could upgrade the log first without making the key, and from then on every call was denied. Every part that writes the log now goes through the one place that makes the key. Where the key is still missing over a log with no signed events yet, the message says to run `openmoat init`. [See what happened](/docs/see-what-happened/).
+- **`awk "{print \$2}"` is decided like `awk '{print $2}'`.** A `\$` that the shell passes as a plain `$` no longer counts as a variable the shell expands, so these commands are no longer held for review. A `$`, `$(…)` or backticks the shell still expands keep the program held, and `bash -c "cat \$HOME/.ssh/id_rsa"` is still denied.
+- **Anchor checks read clearly.** Event ids print in hexadecimal, as `openmoat show` and `openmoat why` take them. `openmoat audit verify --against` now puts the log's newest event id beside the newest anchored one, instead of the decimal event count, which made an up-to-date anchor look far behind.
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0231---2026-11-19).
