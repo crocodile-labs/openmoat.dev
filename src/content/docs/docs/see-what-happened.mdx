@@ -100,7 +100,7 @@ openmoat audit anchor --file ~/anchors.jsonl   # or one line appended to a file 
 openmoat audit verify --against ~/notes        # later: check today's log against every anchor
 ```
 
-An anchor holds the newest event's id, its hash and the time. Nothing is pushed or sent anywhere: an anchor is only as safe as where you keep it, so push the ref (`git -C ~/notes push origin refs/moat/anchors`) or copy the file to another machine.
+An anchor holds the newest event's id, its hash and the time. Event ids are hexadecimal, the form `openmoat show` and `openmoat why` take: event `10442` is the log's 66626th. Nothing is pushed or sent anywhere: an anchor is only as safe as where you keep it, so push the ref (`git -C ~/notes push origin refs/moat/anchors`) or copy the file to another machine.
 
 `openmoat audit verify --against` fails when an anchored event was deleted or rewritten, and names the first such anchor. Events after the newest anchor are not covered. `openmoat doctor` shows when you last anchored. The agent cannot run `openmoat audit anchor` (`kernel-self`).
 
