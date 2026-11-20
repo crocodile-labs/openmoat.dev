@@ -1,0 +1,45 @@
+---
+// Agent tiles: each agent's mark (src/data/logos.ts) and name, then its facts as labelled
+// lines. Used where a page builds an agent list from data (Supported agents, Supported
+// features); markdown tables with one agent per row get the same look from
+// src/plugins/om-tables.mjs. A fact value is a small HTML string (text and <code>).
+import { agents as logos } from '../data/logos';
+interface Row { name: string; href?: string; facts: [string, string | null | undefined][] }
+interface Props { rows: Row[]; label?: string }
+const { rows, label } = Astro.props;
+const logo = (name: string) => logos.find((l) => name.replace(' (1 and 2)', '') === l.name);
+---
+<ul class="tiles not-content" aria-label={label}>
+  {rows.map((r) => {
+    const l = logo(r.name);
+    return (
+      <li class="tile">
+        <p class="name">
+          <span class="mark" aria-hidden="true">
+            {l?.path ? <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d={l.path} /></svg> : <span>{l?.glyph ?? r.name.charAt(0)}</span>}
+          </span>
+          {r.href ? <a href={r.href}>{r.name}</a> : <span>{r.name}</span>}
+        </p>
+        <dl>
+          {r.facts.filter(([, v]) => v).map(([k, v]) => (
+            <div><dt>{k}</dt><dd set:html={v} /></div>
+          ))}
+        </dl>
+      </li>
+    );
+  })}
+</ul>
+
+<style>
+  .tiles { list-style: none; margin: 1.2rem 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 0.75rem; }
+  .tile { padding: 0.95rem 1.05rem; border: 1px solid var(--om-line); border-radius: 18px; background: var(--om-card); box-shadow: 0 8px 22px rgba(60, 45, 20, 0.06); }
+  .tile:hover { border-color: var(--sl-color-accent); }
+  .name { margin: 0 0 0.5rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--om-line); display: flex; align-items: center; gap: 0.6rem; font-weight: 800; font-size: 1rem; }
+  .name a { color: var(--sl-color-white); text-decoration: none; }
+  .name a:hover { text-decoration: underline; }
+  .mark { flex: none; width: 32px; height: 32px; border-radius: 10px; display: inline-grid; place-items: center; background: var(--sl-color-accent-low); color: var(--sl-color-accent-high); }
+  dl { margin: 0; display: flex; flex-direction: column; gap: 0.45rem; font-size: var(--sl-text-sm); }
+  dt { font-family: var(--sl-font-mono); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sl-color-gray-3); }
+  dd { margin: 0; color: var(--sl-color-gray-1); line-height: 1.5; }
+  dd :global(code) { background: var(--sl-color-bg-inline-code); border: 1px solid var(--om-line); border-radius: 7px; padding: 0.05em 0.35em; font-size: 0.85em; overflow-wrap: anywhere; }
+</style>

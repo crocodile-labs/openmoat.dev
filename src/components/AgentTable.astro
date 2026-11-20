@@ -1,27 +1,31 @@
 ---
-// The supported-agents table for the docs, from the one list in data/agents.ts.
-// variant "glance": Supported agents' at-a-glance table; "intro": the docs introduction's.
+// The supported agents at a glance, as agent tiles, from the one list in data/agents.ts.
+// variant "glance": Supported agents' overview; "intro": protection and a link only.
+import AgentFacts from './AgentFacts.astro';
 import { agents } from '../data/agents';
 interface Props { variant: 'glance' | 'intro' }
 const { variant } = Astro.props;
+const rows = agents.map((a) => ({
+  name: a.name, href: a.docs,
+  facts: (variant === 'glance'
+    ? [
+        ['Protection', a.protection],
+        ['Hook run by the real agent', a.hookProven || 'preview on every OS'],
+        ['Where you answer a review', a.answer],
+        ['openmoat init --hosts', `<code>${a.host}</code>`],
+      ]
+    : [['Protection', a.protection]]) as [string, string][],
+}));
+if (variant === 'glance') {
+  rows.push({
+    name: 'Continue CLI', href: '/docs/agents/#continue-cli',
+    facts: [
+      ['Protection', 'not checked: it runs no hooks and is no longer maintained upstream'],
+      ['Hook run by the real agent', 'none: it runs no hook'],
+      ['Where you answer a review', 'none: use <code>openmoat run</code>'],
+      ['openmoat init --hosts', 'none'],
+    ],
+  });
+}
 ---
-{variant === 'glance' ? (
-  <table>
-    <thead><tr><th>Agent</th><th>Protection</th><th><a href="/docs/agents/protection/">Hook run by the real agent</a></th><th>Where you answer a review</th><th><code>openmoat init --hosts</code></th></tr></thead>
-    <tbody>
-      {agents.map((a) => (
-        <tr><td><a href={a.docs}>{a.name}</a></td><td set:html={a.protection} /><td>{a.hookProven || 'preview on every OS'}</td><td set:html={a.answer} /><td><code>{a.host}</code></td></tr>
-      ))}
-      <tr><td><a href="/docs/agents/#continue-cli">Continue CLI</a></td><td>not checked: it runs no hooks and is no longer maintained upstream</td><td>none: it runs no hook</td><td>none: use <code>openmoat run</code></td><td>none</td></tr>
-    </tbody>
-  </table>
-) : (
-  <table>
-    <thead><tr><th>Agent</th><th>Protection</th><th>Details</th></tr></thead>
-    <tbody>
-      {agents.map((a) => (
-        <tr><td>{a.name}</td><td set:html={a.protection} /><td><a href={a.docs}>{a.name}</a></td></tr>
-      ))}
-    </tbody>
-  </table>
-)}
+<AgentFacts rows={rows} label="Supported agents" />

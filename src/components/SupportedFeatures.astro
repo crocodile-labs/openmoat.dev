@@ -1,29 +1,24 @@
 ---
 // The Supported features tables, from src/data/features.ts (which names each source).
+import AgentFacts from './AgentFacts.astro';
 import { rows, byFeature } from '../data/features';
 interface Props { table: 'agents' | 'features' }
 const { table } = Astro.props;
-const cell = (v: string | null) => v ?? '—';
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const tiles = rows.map((r) => ({
+  name: r.name, href: r.docs,
+  facts: [
+    ['Protection', r.protection],
+    ['Hook entries openmoat init writes', `<code>${esc(r.hooks)}</code>`],
+    ['A review becomes', r.answer],
+    ['Injected input', r.injected ?? '—'],
+    ['Review of code it wrote', r.written ?? '—'],
+    ['Hook run by the real agent', r.hookProven || 'preview on every OS'],
+  ] as [string, string][],
+}));
 ---
 {table === 'agents' ? (
-  <table>
-    <thead>
-      <tr><th scope="col">Agent</th><th scope="col">Protection</th><th scope="col">Hook entries <code>openmoat init</code> writes</th><th scope="col">A <code>review</code> becomes</th><th scope="col"><a href="/docs/injected-input/">Injected input</a></th><th scope="col"><a href="/docs/session-written-code/">Review of code it wrote</a></th><th scope="col"><a href="/docs/agents/protection/">Hook run by the real agent</a></th></tr>
-    </thead>
-    <tbody>
-      {rows.map((r) => (
-        <tr>
-          <th scope="row"><a href={r.docs}>{r.name}</a></th>
-          <td set:html={r.protection} />
-          <td><code>{r.hooks}</code></td>
-          <td set:html={r.answer} />
-          <td class={r.injected?.startsWith('yes') ? 'om-yes' : 'om-no'}>{cell(r.injected)}</td>
-          <td>{cell(r.written)}</td>
-          <td>{r.hookProven || 'preview on every OS'}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
+  <AgentFacts rows={tiles} label="What each agent gets" />
 ) : (
   <ul class="feat not-content">
     {byFeature.map((f) => (
