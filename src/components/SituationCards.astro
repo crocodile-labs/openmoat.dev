@@ -1,0 +1,34 @@
+---
+// The situation pages as cards: the risk in a sentence, the first command, the parts it
+// uses. The same data as Where to use it (src/data/situations.ts).
+import { situations, parts } from '../data/situations';
+const name = (id: string) => parts.find((p) => p.id === id)?.name ?? id;
+---
+<ul class="sits not-content">
+  {situations.map((s) => (
+    <li class="sit">
+      <h3><a href={s.href}>{s.title}</a></h3>
+      <p>{s.risk}</p>
+      <code><span aria-hidden="true">$ </span>{s.cmd}</code>
+      <ul class="uses" aria-label="Parts it uses">
+        {s.core.map((id) => <li class="core">{name(id)}</li>)}
+        {s.helps.map((id) => <li>{name(id)}</li>)}
+      </ul>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .sits { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.8rem; }
+  .sit { position: relative; display: flex; flex-direction: column; gap: 0.55rem; padding: 1.1rem; border: 1px solid var(--om-line); border-radius: 20px; background: var(--om-card); }
+  .sit:hover, .sit:focus-within { border-color: var(--sl-color-accent); }
+  h3 { margin: 0; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
+  h3 a { color: var(--sl-color-white); text-decoration: none; }
+  h3 a::after { content: ''; position: absolute; inset: 0; border-radius: 20px; }
+  p { margin: 0; font-size: var(--sl-text-sm); color: var(--sl-color-gray-2); }
+  code { background: var(--om-term); color: var(--om-term-fg); border-radius: 10px; padding: 0.5rem 0.65rem; font-size: 0.75rem; overflow-wrap: anywhere; border: 0; }
+  code span { color: var(--om-term-dim); }
+  .uses { list-style: none; margin: auto 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .uses li { font-size: 0.72rem; border: 1px solid var(--om-line); border-radius: 999px; padding: 0.1rem 0.55rem; color: var(--sl-color-gray-3); }
+  .uses li.core { border-color: transparent; background: var(--sl-color-accent-low); color: var(--sl-color-accent-high); font-weight: 600; }
+</style>
