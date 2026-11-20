@@ -25,6 +25,11 @@ const sub = (label, overview, parts) => ({
 export default defineConfig({
   site: 'https://openmoat.dev',
   trailingSlash: 'ignore',
+  // Pages that were removed: old links land on the docs instead of a 404.
+  redirects: {
+    '/openmoat-bar': '/docs/',
+    '/docs/openmoat-bar': '/docs/',
+  },
   integrations: [
     starlight({
       title: 'OpenMoat',
@@ -70,7 +75,7 @@ export default defineConfig({
           sub('Audit log, watch and why', 'see-what-happened', ['watch-and-why', 'provenance', 'siem-delivery']),
           ['Merge check', 'check-a-pull-request'],
           sub('Team rules and packs', 'team-rules', ['repository-policy', 'policy-packs', 'required-protection']),
-          'compliance-evidence', 'auto-approve-and-ci', 'remote-approvals', 'sdk', 'openmoat-bar']),
+          'compliance-evidence', 'auto-approve-and-ci', 'remote-approvals', 'sdk']),
         group('Something blocked?', [['Why it was blocked', 'blocked'], 'check-a-command', ['Allow it: every allow and its impact', 'allow-reference'],
           'work-across-repos', 'the-project', 'github', 'local-services', 'cloud-clis', 'packages',
           sub('Troubleshooting', 'troubleshooting', ['agent-messages', 'openmoat-messages', 'hooks-and-lock', 'policies-and-network']),

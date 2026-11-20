@@ -1,4 +1,4 @@
-/* The home page, Get started, Where to use it, OpenMoat Bar and the blog: one warm light
+/* The home page, Get started, Where to use it, the rule pages and the blog: one warm light
    look (the approved "Home v3" design). Colours are checked for 4.5:1 text contrast. */
 :root {
   color-scheme: light;
@@ -48,7 +48,7 @@ code, kbd, pre { font-family: var(--mono); }
 .shell { background: var(--term); color: var(--t-fg); border-radius: 16px; padding: 18px 22px; font-family: var(--mono); font-size: 14px; line-height: 1.8; overflow-x: auto; }
 .shell .p { color: #8fa69a; user-select: none; }
 .tab-btn { font-family: var(--font); cursor: pointer; }
-/* the blog and OpenMoat Bar pages still use these */
+/* tabs and diagrams other pages share */
 .tab { font-family: var(--mono); font-size: 13px; padding: 8px 14px; border-radius: 8px; border: 0; cursor: pointer; min-height: 36px; background: transparent; color: var(--muted-2); }
 .tab[aria-selected='true'] { background: var(--panel-2); color: var(--fg); }
 .agent-row code { font-family: var(--mono); color: var(--fg-2); }
