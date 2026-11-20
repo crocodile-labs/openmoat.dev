@@ -2,6 +2,48 @@
 // Static output for GitHub Pages; no analytics, no external fonts or scripts.
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import { satteri } from '@astrojs/markdown-satteri';
+import omTables from './src/plugins/om-tables.mjs';
+import { agents as logos } from './src/data/logos.ts';
+
+// Code blocks: the home page's dark terminal windows, in the light and the dark theme.
+const term = { bg: '#13201a', bar: '#0b130f', line: '#22332a', fg: '#dfe9e3', dim: '#8fa69a' };
+const expressiveCode = {
+  themes: ['github-dark-default'],
+  useStarlightUiThemeColors: false,
+  defaultProps: {
+    frame: 'terminal',
+    // files keep an editor frame; command lines and output get the terminal's dots
+    overridesByLang: { 'yaml,yml,json,jsonc,toml,js,ts,rust,markdown,md,diff,html,css': { frame: 'code' } },
+  },
+  styleOverrides: {
+    borderRadius: '16px',
+    borderColor: term.line,
+    codeBackground: term.bg,
+    codeFontFamily: "'Geist Mono', ui-monospace, monospace",
+    codeFontSize: '0.84rem',
+    codeLineHeight: '1.65',
+    uiFontFamily: "'Geist Sans', system-ui, sans-serif",
+    frames: {
+      shadowColor: 'rgba(19, 32, 26, 0.18)',
+      terminalBackground: term.bg,
+      terminalTitlebarBackground: term.bar,
+      terminalTitlebarBorderBottomColor: term.line,
+      terminalTitlebarForeground: term.dim,
+      terminalTitlebarDotsForeground: '#5f7a6c',
+      terminalTitlebarDotsOpacity: '1',
+      editorBackground: term.bg,
+      editorTabBarBackground: term.bar,
+      editorTabBarBorderBottomColor: term.line,
+      editorActiveTabBackground: term.bg,
+      editorActiveTabForeground: term.fg,
+      editorActiveTabIndicatorTopColor: '#3fb177',
+      editorActiveTabBorderColor: term.line,
+      inlineButtonForeground: term.fg,
+      inlineButtonBorder: term.dim,
+    },
+  },
+};
 
 // An entry is a slug, or a sub-group made with sub(): its overview page first, then its parts.
 // A [label, slug] pair gives the entry a menu label of its own; a slug that starts with /
@@ -25,6 +67,7 @@ const sub = (label, overview, parts) => ({
 export default defineConfig({
   site: 'https://openmoat.dev',
   trailingSlash: 'ignore',
+  markdown: { processor: satteri({ hastPlugins: [omTables({ logos })] }) },
   // Pages that were removed: old links land on the docs instead of a 404.
   redirects: {
     '/openmoat-bar': '/docs/',
@@ -35,6 +78,7 @@ export default defineConfig({
       title: 'OpenMoat',
       // the site's own 404 page (src/pages/404.astro) serves every missing page
       disable404Route: true,
+      expressiveCode,
       description: 'The security layer between your AI coding agents and your machine: checks every tool call before it runs, keeps secrets and network out of reach, confines the code that does run, and records every decision.',
       logo: { src: './public/assets/logo.svg', alt: 'OpenMoat' },
       favicon: '/assets/logo.svg',
