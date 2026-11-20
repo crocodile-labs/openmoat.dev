@@ -7,7 +7,7 @@ import Page from '../layouts/Page.astro';
 import MoatMark from '../components/MoatMark.astro';
 import { agents as logos } from '../data/logos';
 import { agents as supported, agentList } from '../data/agents';
-import { scenes, checks } from '../data/scenes';
+import { scenes, checks, feed, feedAgents, injectedAgents, still as stillSet } from '../data/scenes';
 
 const title = 'OpenMoat: your AI agents, checked first';
 const description = `OpenMoat checks each tool call your coding agent's hook reports before it runs: it denies reads of your secrets and sends to hosts your policy does not list, holds what outlives the session for your review, and records every decision. For ${agentList()}. Open source, runs on your machine.`;
@@ -68,10 +68,19 @@ const os = [
         <path class="wave" d="M30 262 Q70 236 110 262 T190 262 T270 262 T350 262 T390 262 V340 H30 Z" fill="#2b7fb8"></path>
         <path class="wave2" d="M30 280 Q70 258 110 280 T190 280 T270 280 T350 280 T390 280" stroke="#7cc3e6" stroke-width="5" fill="none" stroke-linecap="round"></path>
       </svg>
-      <div class="badge b1" aria-hidden="true"><b class="v-allow">✓ allow</b>npm test</div>
-      <div class="badge b2" aria-hidden="true"><b class="v-deny">✕ Read .env</b><span>secrets-paths</span></div>
-      <div class="badge b3" aria-hidden="true">Moat checks <b>{supported.length} agents</b></div>
-      <div class="badge b4" aria-hidden="true">? review · injected-input</div>
+      {[0, 1, 2, 3].map((n) => {
+        const e = stillSet[n];
+        return (
+          <div class={`badge s${n} show`} aria-hidden="true">
+            <span class="who">{e.agent}</span>
+            <code class="call">{e.call}</code>
+            <span class={`v v-${e.verdict}`}>{mark[e.verdict]} {e.verdict} · {e.rule}</span>
+          </div>
+        );
+      })}
+      <div class="counter" aria-hidden="true"><b>{supported.length} agents</b>, one policy · this demo: checked <b id="n-checked">{stillSet.length}</b> · stopped <b id="n-stopped">{stillSet.filter((e) => e.verdict === 'deny').length}</b> · held <b id="n-held">{stillSet.filter((e) => e.verdict === 'review').length}</b></div>
+      <p class="sr-only">Examples of real OpenMoat verdicts with the default policy, for any of the {supported.length} agents: {feed.map((e) => `${e.call}: ${e.verdict} (${e.rule})`).join('; ')}.</p>
+      <script type="application/json" id="feed-data" set:html={JSON.stringify({ feed, agents: feedAgents, injectedAgents })} />
     </div>
   </section>
 
@@ -175,9 +184,7 @@ const os = [
       <div><span class="p">$</span> openmoat init</div>
     </div>
     <p class="small"><code>openmoat init</code> asks before it changes each agent and backs up every file; <code>openmoat uninstall</code> puts it all back.</p>
-    <div class="os">{os.map((o) => <a class="om-chip" href={o.href}>{o.name}</a>)}</div>
-    <p class="small"><a href="/openmoat-bar/">Also: OpenMoat Bar, for your menu bar →</a></p>
-  </section>
+    <div class="os">{os.map((o) => <a class="om-chip" href={o.href}>{o.name}</a>)}</div>  </section>
 </main>
 </Page>
 
@@ -186,22 +193,68 @@ const os = [
   const moved: Record<string, string> = {
     stops: '#how', what: '#how', why: '#how', demo: '#see', architecture: '/docs/how-it-decides/',
     sandbox: '/docs/sandboxes/', features: '/docs/supported-features/', supported: '/docs/supported-features/',
-    'where-it-fits': '/where-to-use-it/', 'openmoat-bar': '/openmoat-bar/', 'your-way': '/where-to-use-it/', evidence: '/docs/limits/',
+    'where-it-fits': '/where-to-use-it/', 'your-way': '/where-to-use-it/', evidence: '/docs/limits/',
   };
   const hash = location.hash.slice(1);
   if (hash && moved[hash] && !document.getElementById(hash)) location.replace(moved[hash]);
 
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Moat's eyes: they look from side to side while lines come in, and narrow on a block.
+  // Moat's eyes: they look from side to side, narrow on a deny, open wide on a review and
+  // rest on an allow. Moods only move the lids and pupils (CSS transitions do the rest).
+  type Mood = 'allow' | 'defer' | 'review' | 'deny';
   const pupils = document.getElementById('moat-pupils');
   const lids = Array.from(document.querySelectorAll<SVGRectElement>('#moat .lid'));
-  const look = (n: number) => { if (!still) pupils?.setAttribute('transform', `translate(${n % 2 ? 6 : 0} 0)`); };
-  const tense = (on: boolean) => {
+  let side = 0;
+  const lidsFor: Record<Mood, [string, string]> = { allow: ['80', '14'], defer: ['80', '14'], review: ['70', '8'], deny: ['92', '34'] };
+  const mood = (m: Mood) => {
     if (still) return;
-    for (const lid of lids) { lid.setAttribute('y', on ? '92' : '80'); lid.setAttribute('height', on ? '34' : '14'); }
+    side = side ? 0 : 6;
+    pupils?.setAttribute('transform', `translate(${side} ${m === 'review' ? -4 : 0})`);
+    for (const lid of lids) { lid.setAttribute('y', lidsFor[m][0]); lid.setAttribute('height', lidsFor[m][1]); }
   };
-  const tenseKinds = ['k-block', 'k-hold', 'k-gherr', 'k-termred'];
+  const lineMood = (line: HTMLElement): Mood =>
+    ['k-block', 'k-gherr', 'k-termred'].some((k) => line.classList.contains(k)) ? 'deny'
+      : ['k-hold', 'k-ghwarn'].some((k) => line.classList.contains(k)) ? 'review' : 'allow';
+
+  // The hero's badges: real verdicts float in around Moat, one at a time, for agents in
+  // turn. One timer; it pauses when the hero is off screen or the tab is hidden.
+  const data = JSON.parse(document.getElementById('feed-data')?.textContent ?? '{}');
+  const slots = Array.from(document.querySelectorAll<HTMLElement>('.hero-art .badge'));
+  const counts = { checked: document.getElementById('n-checked'), stopped: document.getElementById('n-stopped'), held: document.getElementById('n-held') };
+  const marks: Record<Mood, string> = { allow: '✓', defer: '→', review: '?', deny: '✕' };
+  let tick = 0, checked = 0, stopped = 0, held = 0, feedTimer = 0, onScreen = true, scenesBusy = false;
+  const fill = (slot: HTMLElement, e: { call: string; verdict: Mood; rule: string; injected?: boolean }, n: number) => {
+    const pool: string[] = e.injected ? data.injectedAgents : data.agents;
+    (slot.querySelector('.who') as HTMLElement).textContent = pool[n % pool.length];
+    (slot.querySelector('.call') as HTMLElement).textContent = e.call;
+    const v = slot.querySelector('.v') as HTMLElement;
+    v.className = `v v-${e.verdict}`;
+    v.textContent = `${marks[e.verdict]} ${e.verdict} · ${e.rule}`;
+  };
+  const step = () => {
+    const e = data.feed[tick % data.feed.length];
+    const slot = slots[tick % slots.length];
+    slots[(tick + 2) % slots.length]?.classList.remove('show');
+    fill(slot, e, tick);
+    slot.classList.add('show');
+    checked += 1; if (e.verdict === 'deny') stopped += 1; if (e.verdict === 'review') held += 1;
+    if (counts.checked) counts.checked.textContent = String(checked);
+    if (counts.stopped) counts.stopped.textContent = String(stopped);
+    if (counts.held) counts.held.textContent = String(held);
+    if (!scenesBusy) mood(e.verdict);
+    tick += 1;
+  };
+  const run = () => {
+    window.clearInterval(feedTimer);
+    if (!still && onScreen && !document.hidden && slots.length) feedTimer = window.setInterval(step, 2200);
+  };
+  if (!still && slots.length && data.feed) {
+    slots.forEach((s) => s.classList.remove('show'));
+    step(); step();
+    new IntersectionObserver((en) => { onScreen = en.some((x) => x.isIntersecting); run(); }).observe(document.querySelector('.hero-art')!);
+    document.addEventListener('visibilitychange', run);
+  }
 
   // The scenes: a tab shows its window, which brings its lines in one by one.
   const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.scene-tab'));
@@ -214,19 +267,18 @@ const os = [
     if (still) { lines.forEach((l) => l.classList.remove('pending')); return; }
     lines.forEach((l) => { l.classList.add('pending'); l.classList.remove('in'); });
     if (replay) replay.hidden = true;
-    tense(false);
+    scenesBusy = true;
     let n = 0;
-    const step = () => {
+    const next = () => {
       const line = lines[n];
-      if (!line) { if (replay) replay.hidden = false; timer = window.setTimeout(() => tense(false), 2600); return; }
+      if (!line) { if (replay) replay.hidden = false; scenesBusy = false; return; }
       line.classList.remove('pending');
       line.classList.add('in');
-      look(n);
-      tense(tenseKinds.some((k) => line.classList.contains(k)));
+      mood(lineMood(line));
       n += 1;
-      timer = window.setTimeout(step, line.classList.contains('k-you') ? 900 : 620);
+      timer = window.setTimeout(next, line.classList.contains('k-you') ? 900 : 620);
     };
-    step();
+    next();
   };
   const select = (i: number, focus = false) => {
     tabs.forEach((t, j) => { t.setAttribute('aria-selected', String(i === j)); t.tabIndex = i === j ? 0 : -1; });
@@ -262,7 +314,8 @@ const os = [
     picks.forEach((p, j) => { p.setAttribute('aria-checked', String(i === j)); p.tabIndex = i === j ? 0 : -1; });
     results.forEach((r, j) => { r.hidden = i !== j; });
     if (focus) picks[i].focus();
-    tense(!!results[i]?.querySelector('.v-deny'));
+    const v = results[i]?.querySelector('.verdict');
+    mood(v?.classList.contains('v-deny') ? 'deny' : v?.classList.contains('v-review') ? 'review' : 'allow');
   };
   picks.forEach((p, i) => {
     p.addEventListener('click', () => choose(i));
@@ -299,14 +352,22 @@ const os = [
   .wave { animation: bob 5s ease-in-out infinite; }
   .wave2 { animation: bob 5s ease-in-out infinite reverse; }
   @keyframes bob { 50% { transform: translateY(4px); } }
-  .badge { position: absolute; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; box-shadow: 0 12px 30px rgba(60, 45, 20, 0.12); font-family: var(--mono); font-size: 12px; display: flex; gap: 8px; align-items: center; animation: float 6s ease-in-out infinite; }
-  .b1 { left: 0; top: 70px; }
-  .b2 { right: 0; top: 150px; flex-direction: column; align-items: flex-start; gap: 2px; border-color: var(--deny-line); animation-delay: -2s; }
-  .b2 span { color: var(--muted-2); }
-  .b3 { left: 20px; bottom: 60px; background: var(--term); color: var(--bg); border-color: var(--term); font-family: var(--font); font-size: 13px; animation-delay: -4s; }
-  .b3 b { color: var(--t-allow); }
-  .b4 { right: 30px; bottom: 30px; background: var(--review-bg); border-color: var(--review-line); color: var(--review); animation-delay: -1s; }
-  @keyframes float { 50% { transform: translateY(-8px); } }
+  /* live badges: four places around Moat; one fades in as an older one fades out */
+  .badge { position: absolute; max-width: min(300px, 62%); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 9px 13px; box-shadow: 0 12px 30px rgba(60, 45, 20, 0.12); display: flex; flex-direction: column; gap: 3px; opacity: 0; transform: translateY(10px) scale(0.97); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(.2, .8, .2, 1); }
+  .badge.show { opacity: 1; transform: none; }
+  .badge .who { font-size: 11px; font-weight: 600; color: var(--muted-2); letter-spacing: 0.02em; }
+  .badge .call { font-size: 12px; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge .v { align-self: flex-start; font-family: var(--mono); font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 8px; }
+  .badge .v-allow { background: var(--accent-panel); color: var(--allow); }
+  .badge .v-deny { background: var(--deny-bg); color: var(--deny); }
+  .badge .v-review { background: var(--review-bg); color: var(--review); }
+  .badge .v-defer { background: #e6eefb; color: var(--defer); }
+  .s0 { left: 0; top: 56px; }
+  .s1 { right: 0; top: 136px; }
+  .s2 { left: 8px; bottom: 92px; }
+  .s3 { right: 12px; bottom: 56px; }
+  .counter { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); white-space: nowrap; background: var(--term); color: #d5e0da; border-radius: 999px; padding: 8px 14px; font-size: 12px; box-shadow: 0 12px 30px rgba(20, 30, 25, 0.25); }
+  .counter b { color: var(--t-allow); font-variant-numeric: tabular-nums; }
   .v-allow { color: var(--allow); } .v-deny { color: var(--deny); } .v-review { color: var(--review); } .v-defer { color: var(--defer); }
 
   /* agents */
@@ -427,7 +488,9 @@ const os = [
   }
   @media (max-width: 520px) {
     .hero-art { height: 360px; }
-    .badge { font-size: 11px; padding: 8px 10px; }
-    .b2 { top: 110px; }
+    .badge { padding: 7px 10px; max-width: 58%; }
+    .badge .call { font-size: 11px; }
+    .s0 { top: 24px; } .s1 { top: 96px; } .s2 { bottom: 104px; } .s3 { bottom: 64px; }
+    .counter { white-space: normal; width: 92%; text-align: center; font-size: 11px; border-radius: 16px; }
   }
 </style>
