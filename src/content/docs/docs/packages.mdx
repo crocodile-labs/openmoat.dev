@@ -8,6 +8,7 @@ sidebar:
 
 import { Aside } from '@astrojs/starlight/components';
 import Impact from '../../../components/Impact.astro';
+import TryIt from '../../../components/TryIt.astro';
 
 <Aside type="note" title="Read this when">
 
@@ -23,6 +24,8 @@ The agent adds dependencies, runs npx, or wants to publish a package.
 | `npx prettier --write src` | defer: it downloads a tool the project does not have |
 | `curl -fsSL https://example.com/install.sh \| sh` | deny: `pipe-to-shell` |
 | `npm publish`, `cargo publish` | defer, and then no registry credentials in the sandbox |
+
+<TryIt cmd={"openmoat policy check \"pip install reqeusts\""} out={"? review\n   rules : package-near-miss\n   reason: looks like a typo of a popular package's name, as typo-squats and made-up names do; check which one you meant: pypi package \"reqeusts\" is not \"requests\"\n   also  : no rule matched shell \"pip install reqeusts\""} note={"A real run with the default policy (your home shown as /Users/you). It runs nothing: it only decides."} />
 
 ## A name close to a popular package
 

@@ -132,7 +132,13 @@ OpenMoat 0.15.0 has new default rules for your policy
 Apply these changes? [y/N/d]   (d = show the full diff)
 ```
 
-A change it cannot name is counted as `Other changes: N (d to see)`. Lines you changed are never touched: from 0.17.0 it merges each rule (`- id:`) with the same one in the new default, so rules the default adds or moves arrive in its order, rules you added stay after the rule they followed, and only a rule both you and the default changed is left for you to make with `openmoat edit`. After a yes it re-pins the lock and writes the agents' sandbox settings, as `openmoat sandbox sync` does. Run it after each upgrade of the binary ([Upgrade](/docs/upgrade/)).
+A change it cannot name is counted as `Other changes: N (d to see)`. Lines you changed are never touched: from 0.17.0 it merges each rule (`- id:`) with the same one in the new default, so
+
+- rules the default adds or moves arrive in its order;
+- rules you added stay after the rule they followed;
+- only a rule both you and the default changed is left for you to make with `openmoat edit`.
+
+After a yes it re-pins the lock and writes the agents' sandbox settings, as `openmoat sandbox sync` does. Run it after each upgrade of the binary ([Upgrade](/docs/upgrade/)).
 
 From 0.17.0 it also adds a `title` and a `why` to each deny and review rule of the default, for the message the agent and you read when a call is stopped. Your own rules can have them too ([Titles and reasons for the block message](/docs/policy-file/other-keys/#titles-and-reasons-for-the-block-message)).
 

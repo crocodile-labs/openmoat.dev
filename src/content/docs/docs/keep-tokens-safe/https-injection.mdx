@@ -24,7 +24,11 @@ Most APIs are HTTPS, which `openmoat proxy` does not read: the token broker put 
 - `allow: [GET /repos/**, POST /repos/*/*/issues]` lists the only requests that may receive the value: the method in capitals, compared exactly, and the path in segments where `*` is exactly one segment and `**` any number. **Every other request to the host is refused with `403`** before anything is sent (`proxy-secret-route`), plain HTTP included; so are `..` in any spelling, encoded slashes, `;`, double encoding and a method-override header.
 - The answer is stopped before any brokered value in it, so what the agent reads back never holds the token.
 
-The CA is made once by `openmoat proxy ca init` (person-only, asks first). X.509 name constraints limit it to the terminated hosts, its key stays in `~/.moat/proxy-ca/`, which `kernel-self` denies to agents and no sandbox lets them read, and both files are pinned in the policy lock. **Only the commands `openmoat run` starts trust it**: the run writes the certificate and a bundle with the system's roots to a private directory and names them in the run's environment (`SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `PIP_CERT`, `CURL_CA_BUNDLE`, `GIT_SSL_CAINFO`, `CARGO_HTTP_CAINFO`; `NODE_EXTRA_CA_CERTS` gets the certificate alone). Nothing is added to the system's or your trust store.
+The CA is made once by `openmoat proxy ca init` (person-only, asks first).
+
+- X.509 name constraints limit it to the terminated hosts, its key stays in `~/.moat/proxy-ca/`, which `kernel-self` denies to agents and no sandbox lets them read, and both files are pinned in the policy lock.
+- **Only the commands `openmoat run` starts trust it**: the run writes the certificate and a bundle with the system's roots to a private directory and names them in the run's environment (`SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `PIP_CERT`, `CURL_CA_BUNDLE`, `GIT_SSL_CAINFO`, `CARGO_HTTP_CAINFO`; `NODE_EXTRA_CA_CERTS` gets the certificate alone).
+- Nothing is added to the system's or your trust store.
 
 ## Example
 

@@ -106,7 +106,10 @@ allow:
     net: ["example.com", "example.com:8443"]
 ```
 
-Keep the bare host in the rule: the hook decides by host alone, and a `host:port` pattern matches nothing there. With `proxy_port` set, keep the proxy running (`openmoat proxy install`): while it is stopped, Claude Code's sandboxed commands have no network, and `openmoat doctor` and `openmoat status` warn. Codex passes its traffic on to the proxy only when started with `HTTP_PROXY` and `HTTPS_PROXY` set to `http://127.0.0.1:18080`, and its API hosts then need an allow rule; it sends no session credential, so that traffic needs `sandbox.proxy_serve_without_credential: true`, or run `openmoat run -- codex` instead ([Agent sessions only](/docs/egress-proxy/sessions/#codex)). `sandbox.proxy_allow_ech: true` lets encrypted server names through; `openmoat policy lint` warns about both settings.
+- **Keep the bare host in the rule:** the hook decides by host alone, and a `host:port` pattern matches nothing there.
+- **With `proxy_port` set, keep the proxy running** (`openmoat proxy install`): while it is stopped, Claude Code's sandboxed commands have no network, and `openmoat doctor` and `openmoat status` warn.
+- **Codex** passes its traffic on to the proxy only when started with `HTTP_PROXY` and `HTTPS_PROXY` set to `http://127.0.0.1:18080`, and its API hosts then need an allow rule; it sends no session credential, so that traffic needs `sandbox.proxy_serve_without_credential: true`, or run `openmoat run -- codex` instead ([Agent sessions only](/docs/egress-proxy/sessions/#codex)).
+- `sandbox.proxy_allow_ech: true` lets encrypted server names through; `openmoat policy lint` warns about both settings.
 
 ## Limits
 

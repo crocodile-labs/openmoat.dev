@@ -36,7 +36,9 @@ Taint knows that untrusted content came in; [injected input](/docs/injected-inpu
 
 Taint follows files too. When a tainted session writes a file, the audit log records it; a later session that reads or runs that file (`cat`, `source run.sh`, `./run.sh`, `python x.py`) is tainted as well.
 
-A push from a tainted session that changes a file `runs-later` names needs review (`push-runs-later`). After a secret read, a URL a fetch, network or MCP tool opens that carries 80 or more characters of base64 or hex is denied (`encoded-egress`, new in 0.12.0): a person reviewing the call can judge a short URL, not a few hundred characters of encoded text. Under `openmoat run`, the run's proxy cannot prompt, so after a secret read it refuses requests to every other host, registries included; a new run starts clean. The standalone `openmoat proxy` does the same for Claude Code's sessions from 0.12.0, since each sends its own credential ([Agent sessions only](/docs/egress-proxy/sessions/)).
+- **Pushes:** a push from a tainted session that changes a file `runs-later` names needs review (`push-runs-later`).
+- **Encoded URLs:** after a secret read, a URL a fetch, network or MCP tool opens that carries 80 or more characters of base64 or hex is denied (`encoded-egress`, new in 0.12.0): a person reviewing the call can judge a short URL, not a few hundred characters of encoded text.
+- **The proxy:** under `openmoat run`, the run's proxy cannot prompt, so after a secret read it refuses requests to every other host, registries included; a new run starts clean. The standalone `openmoat proxy` does the same for Claude Code's sessions from 0.12.0, since each sends its own credential ([Agent sessions only](/docs/egress-proxy/sessions/)).
 
 ## Your answer covers the file
 

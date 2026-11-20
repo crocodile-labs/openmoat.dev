@@ -6,7 +6,11 @@ sidebar:
   order: 1
 ---
 
-A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`. From 0.17.0 that line sits inside a short message headed `OpenMoat blocked: <the rule's title>` (or `OpenMoat is holding this for you: …` for a review), with why the rule exists and one next step ([What the message says](/docs/blocked/#what-the-message-says)); `openmoat why --last` explains it in full. The reason is the rule's own, from the default policy. Run the fix in your own terminal; agents are denied every one of these commands.
+A blocked call reads `moat: <verdict> [<rule>] — <reason>: <what it did>`.
+
+From 0.17.0 that line sits inside a short message headed `OpenMoat blocked: <the rule's title>` (or `OpenMoat is holding this for you: …` for a review), with why the rule exists and one next step ([What the message says](/docs/blocked/#what-the-message-says)); `openmoat why --last` explains it in full.
+
+The reason is the rule's own, from the default policy. Run the fix in your own terminal; agents are denied every one of these commands.
 
 | Message starts with | Means | Run |
 |---|---|---|

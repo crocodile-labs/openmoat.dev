@@ -35,7 +35,11 @@ Before the agent starts, `openmoat run` prints how many places the sandbox is st
 
 <Aside type="caution" title="Linux: the Isolated tier is the default">
 
-From 0.20.0 `openmoat run` on Linux starts the Isolated tier (bubblewrap) where bubblewrap works, so commands the agent starts can no longer read `.env` or write `.git/hooks` and `.moat` in the project. The agent sees only the project, the read roots, its executable, the `--write` paths and an empty temp directory: an agent whose runtime lives elsewhere in your home can need that folder in `sandbox.read_roots`. Where bubblewrap is missing or blocked, it says why on every start, records it, and starts the Lightweight tier. From 0.21.0 that tier keeps those project files covered too, by granting the project entry by entry, so nothing can be created directly at the project's top there ([Project files on Linux](/docs/sandboxes/project-files/)). `--no-isolate` starts the Lightweight tier on purpose. Details: [Linux tiers and Landlock](/docs/sandboxes/linux-tiers/).
+From 0.20.0 `openmoat run` on Linux starts the Isolated tier (bubblewrap) where bubblewrap works, so commands the agent starts can no longer read `.env` or write `.git/hooks` and `.moat` in the project.
+
+- The agent sees only the project, the read roots, its executable, the `--write` paths and an empty temp directory: an agent whose runtime lives elsewhere in your home can need that folder in `sandbox.read_roots`.
+- Where bubblewrap is missing or blocked, it says why on every start, records it, and starts the Lightweight tier. From 0.21.0 that tier keeps those project files covered too, by granting the project entry by entry, so nothing can be created directly at the project's top there ([Project files on Linux](/docs/sandboxes/project-files/)).
+- `--no-isolate` starts the Lightweight tier on purpose. Details: [Linux tiers and Landlock](/docs/sandboxes/linux-tiers/).
 
 </Aside>
 

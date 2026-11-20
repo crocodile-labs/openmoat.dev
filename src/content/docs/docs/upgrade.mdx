@@ -89,7 +89,12 @@ A new OpenMoat release is out, or `openmoat` says "policy update available". Com
 
 ## Keep one OpenMoat installed
 
-An older binary left elsewhere (a Homebrew install beside a `cargo install`) can still be the one a hook runs, and an older binary denies every call over a lock a newer release wrote. `openmoat doctor` names it: `hook runs …, which does not exist`, `hook runs …, a different OpenMoat binary than this one`, or `lock expects …, running …`. Remove one install, run `openmoat init` with the one you keep (by its full path, if needed), run `openmoat proxy install` again if the proxy runs as a service, and restart the agents.
+An older binary left elsewhere (a Homebrew install beside a `cargo install`) can still be the one a hook runs, and an older binary denies every call over a lock a newer release wrote. `openmoat doctor` names it: `hook runs …, which does not exist`, `hook runs …, a different OpenMoat binary than this one`, or `lock expects …, running …`. Then:
+
+1. Remove one install.
+2. Run `openmoat init` with the one you keep (by its full path, if needed).
+3. Run `openmoat proxy install` again if the proxy runs as a service.
+4. Restart the agents.
 
 On macOS 12 and earlier, Homebrew may stop and ask for a newer Xcode: upgrade with the installer or `cargo install` instead, then `brew uninstall openmoat` and run `openmoat init` once.
 

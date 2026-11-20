@@ -32,7 +32,9 @@ You build your own agent product and want OpenMoat to decide, before each tool c
 
 ## What it does
 
-The SDK is OpenMoat's decision engine as a library, new in 0.12.0 ([ADR-046](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-046-sdk-contract.md)). You compile a policy once, then pass it each tool call your agent wants to make: a shell command, a file read or write, a network host, a fetch, a web search, an MCP or unknown tool call. It answers `allow`, `defer`, `review` or `deny`, with the rule ids and reasons that decided. Since 0.14.0 the verdict is `Verdict::Review` in Rust and `"review"` in JavaScript and JSON (it was `ask` before; `"ask"` is still read). Session taint, filesystem facts (program pins, symlinks, glob operands) and repository policies are passed in by you.
+The SDK is OpenMoat's decision engine as a library, new in 0.12.0 ([ADR-046](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-046-sdk-contract.md)). You compile a policy once, then pass it each tool call your agent wants to make: a shell command, a file read or write, a network host, a fetch, a web search, an MCP or unknown tool call. It answers `allow`, `defer`, `review` or `deny`, with the rule ids and reasons that decided.
+
+Since 0.14.0 the verdict is `Verdict::Review` in Rust and `"review"` in JavaScript and JSON (it was `ask` before; `"ask"` is still read). Session taint, filesystem facts (program pins, symlinks, glob operands) and repository policies are passed in by you.
 
 It does no I/O and sends nothing anywhere: no network, no telemetry. The JavaScript package's WebAssembly module imports nothing from its host, so it cannot.
 
