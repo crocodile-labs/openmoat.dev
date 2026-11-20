@@ -33,6 +33,8 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'OpenMoat',
+      // the site's own 404 page (src/pages/404.astro) serves every missing page
+      disable404Route: true,
       description: 'The security layer between your AI coding agents and your machine: checks every tool call before it runs, keeps secrets and network out of reach, confines the code that does run, and records every decision.',
       logo: { src: './public/assets/logo.svg', alt: 'OpenMoat' },
       favicon: '/assets/logo.svg',
