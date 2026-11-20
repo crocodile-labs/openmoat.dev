@@ -1,34 +1,115 @@
-/* Starlight theme for the OpenMoat docs: the home page's look (near black, Geist,
-   crocodile green), with a light theme for those who choose it. */
+/* Starlight theme for the OpenMoat docs: the site's warm light look (Moat's green, the
+   water's blue, amber, rounded cards, Geist), light by default; a warm dark theme for
+   those who choose it. Text colours are checked for 4.5:1 contrast on their background. */
 :root {
   --sl-font: 'Geist Sans', system-ui, sans-serif;
   --sl-font-mono: 'Geist Mono', ui-monospace, monospace;
+  --om-term: #13201a;
+  --om-term-fg: #dfe9e3;
+  --om-term-dim: #8fa69a;
+}
+:root[data-theme='light'], [data-theme='light'] ::backdrop {
+  --sl-color-white: #13201a;
+  --sl-color-gray-1: #1f2d26;
+  --sl-color-gray-2: #34433b;
+  --sl-color-gray-3: #4a5a52;
+  --sl-color-gray-4: #6b7a72;
+  --sl-color-gray-5: #d9d1bf;
+  --sl-color-gray-6: #ebe4d6;
+  --sl-color-gray-7: #f3eee3;
+  --sl-color-black: #f5f1e8;
+  --sl-color-accent-low: #d9efe1;
+  --sl-color-accent: #1d6b45;
+  --sl-color-accent-high: #0f4a2e;
+  --sl-color-text: #24332b;
+  --sl-color-bg-nav: rgba(255, 253, 248, 0.92);
+  --sl-color-bg-sidebar: #f5f1e8;
+  --sl-color-bg-inline-code: #ece5d6;
+  --sl-color-hairline-light: #e6dfd0;
+  --sl-color-hairline: #e6dfd0;
+  --sl-color-hairline-shade: #d9d1bf;
+  --sl-color-orange-high: #7a4f00;
+  --sl-color-orange-low: #fff1d6;
+  --sl-color-orange: #f0a93b;
+  --sl-color-blue-high: #1f5f8f;
+  --sl-color-blue-low: #dcecf7;
+  --sl-color-blue: #2b7fb8;
+  --sl-color-green-high: #1d6b45;
+  --sl-color-green-low: #dcf1e4;
+  --sl-color-green: #2f9a62;
+  --sl-color-red-high: #a1261a;
+  --sl-color-red-low: #fbe4e0;
+  --om-card: #fffdf8;
+  --om-line: #e6dfd0;
 }
 :root[data-theme='dark'] {
-  --sl-color-accent-low: #12301b;
-  --sl-color-accent: #4caf68;
-  --sl-color-accent-high: #a7ebb3;
-  --sl-color-white: #ededed;
-  --sl-color-gray-1: #e0e0e0;
-  --sl-color-gray-2: #bdbdbd;
-  --sl-color-gray-3: #8a8a8a;
-  --sl-color-gray-4: #555555;
-  --sl-color-gray-5: #262626;
-  --sl-color-gray-6: #141414;
-  --sl-color-black: #0a0a0a;
+  --sl-color-white: #f3efe6;
+  --sl-color-gray-1: #e2ddd2;
+  --sl-color-gray-2: #c8d6ce;
+  --sl-color-gray-3: #9fb5aa;
+  --sl-color-gray-4: #5f7268;
+  --sl-color-gray-5: #2a3b32;
+  --sl-color-gray-6: #172620;
+  --sl-color-black: #0f1915;
+  --sl-color-accent-low: #163626;
+  --sl-color-accent: #3fb177;
+  --sl-color-accent-high: #a6ebc6;
+  --om-card: #15231c;
+  --om-line: #24372d;
 }
-:root[data-theme='light'] {
-  --sl-color-accent-low: #dcf2e1;
-  --sl-color-accent: #1f7a3c;
-  --sl-color-accent-high: #0f3d1e;
+
+/* the page: dotted warm paper, a floating header */
+:root[data-theme='light'] body {
+  background-image: radial-gradient(#e3dccd 1px, transparent 1px);
+  background-size: 22px 22px;
 }
+.page > header.header {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.site-title { font-weight: 800; letter-spacing: -0.03em; font-size: 1.3rem; }
+
+/* headings: heavy and tight, like the home page */
+.sl-markdown-content :is(h1, h2, h3) , h1#_top {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+h1#_top { font-size: clamp(2.1rem, 4vw, 2.9rem); line-height: 1.05; }
+
 /* the sidebar's group labels read like the home page's section labels */
 .sidebar-content .group-label .large {
   font-family: var(--sl-font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: var(--sl-color-blue-high);
 }
+:root[data-theme='dark'] .sidebar-content .group-label .large { color: #8cc7ec; }
+.sidebar-content a[aria-current='page'] {
+  border-radius: 10px;
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-accent-high);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--sl-color-accent);
+}
+.sidebar-content a { border-radius: 10px; }
+
+/* rounded cards: tables, code, asides, link cards */
+.sl-markdown-content table {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--om-line);
+  background: var(--om-card);
+}
+.sl-markdown-content :is(th, td) { border-color: var(--om-line); }
+.sl-markdown-content th { background: var(--sl-color-gray-7, var(--sl-color-gray-6)); }
+.expressive-code .frame, .expressive-code figure { border-radius: 14px !important; }
+.starlight-aside { border-radius: 14px; }
+.sl-link-card, .card { border-radius: 18px !important; background: var(--om-card); }
+.sl-link-card:hover { border-color: var(--sl-color-accent) !important; }
+.pagination-links a { border-radius: 16px; background: var(--om-card); }
+:focus-visible { outline: 3px solid var(--sl-color-blue); outline-offset: 2px; }
+
 /* the how-it-works diagram: one image per theme */
 .om-diagram {
   display: block;
@@ -42,3 +123,7 @@
 :root[data-theme='light'] .om-diagram.dark {
   display: none;
 }
+
+/* the supported-features table: marks keep their meaning in colour and in text */
+.om-yes { color: var(--sl-color-green-high); font-weight: 600; }
+.om-no { color: var(--sl-color-gray-3); }
