@@ -1,0 +1,173 @@
+---
+// Get started: install, protect your agents, see it work (the approved Setup design).
+// Install lines: the openmoat repo's docs/INSTALL.md ("Install"). The init output is a
+// real `openmoat init` run (0.24.0). The policy check output is a real run with the
+// default policy; the doctor line is its last line when nothing needs you
+// (crates/openmoat-cli/src/commands/doctor/human.rs).
+import Page from '../layouts/Page.astro';
+import MoatMark from '../components/MoatMark.astro';
+
+const ways = [
+  { id: 'macos', label: 'macOS', cmd: 'brew install crocodile-labs/tap/openmoat', note: 'Homebrew. To upgrade later: brew update && brew upgrade openmoat. On macOS 12 and earlier, where Homebrew may stop, use the Linux and macOS installer instead.' },
+  { id: 'linux', label: 'Linux', cmd: "curl --proto '=https' --tlsv1.2 -LsSf https://github.com/crocodile-labs/openmoat/releases/latest/download/openmoat-installer.sh | sh", note: 'Installs openmoat into ~/.cargo/bin; the same installer works on macOS. Homebrew works on Linux too: brew install crocodile-labs/tap/openmoat.' },
+  { id: 'windows', label: 'Windows', cmd: 'powershell -ExecutionPolicy Bypass -c "irm https://github.com/crocodile-labs/openmoat/releases/latest/download/openmoat-installer.ps1 | iex"', note: 'On native Windows the hooks apply the policy, and Codex’s own sandbox is set up as on other systems. For the OS sandbox with the other agents and openmoat run, use WSL2.' },
+  { id: 'cargo', label: 'Rust', cmd: 'cargo install openmoat --locked', note: 'From crates.io, built from source (Rust 1.99).' },
+];
+---
+<Page title="Get started with OpenMoat" description="Install OpenMoat, protect the coding agents on your machine with openmoat init, and see it decide. Nothing changes until you say yes, and openmoat uninstall puts it all back.">
+<main class="gs wrap">
+  <div class="head">
+    <p class="kicker">Get started</p>
+    <h1 class="display">Protected in three steps</h1>
+    <p class="lead">Nothing changes until you say yes. Every file OpenMoat touches is backed up, and <code>openmoat uninstall</code> puts it back.</p>
+  </div>
+
+  <ol class="steps">
+    <li class="step card">
+      <div class="step-head"><span class="num" aria-hidden="true">1</span><h2>Install</h2><span class="aside" id="os-note">pick your system</span></div>
+      <div role="tablist" aria-label="Operating system" class="os-tabs">
+        {ways.map((w, i) => (
+          <button type="button" role="tab" id={w.id} aria-controls={`way-${w.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} class="os-tab tab-btn">{w.label}</button>
+        ))}
+      </div>
+      {ways.map((w, i) => (
+        <div role="tabpanel" id={`way-${w.id}`} aria-labelledby={w.id} class="way" hidden={i !== 0}>
+          <div class="cmd"><code><span class="p">$ </span><span class="text">{w.cmd}</span></code><button type="button" class="copy" aria-label={`Copy the ${w.label} install command`}>Copy</button></div>
+          <p class="note">{w.note}</p>
+        </div>
+      ))}
+      <p class="note more">Checksums and build attestations for every release file: <a href="https://github.com/crocodile-labs/openmoat/blob/main/docs/INSTALL.md#install">INSTALL.md</a>. Upgrading from 0.7 or earlier, when the command was <code>moat</code>? <a href="/docs/upgrade/#upgrading-from-07-or-earlier">Read this first</a>.</p>
+    </li>
+
+    <li class="step card">
+      <div class="step-head"><span class="num" aria-hidden="true">2</span><h2>Protect your agents</h2></div>
+      <div class="cmd"><code><span class="p">$ </span><span class="text">openmoat init</span></code><button type="button" class="copy" aria-label="Copy openmoat init">Copy</button></div>
+      <div class="shell out" aria-label="openmoat init output, from a real run">
+        <div class="hi">OpenMoat 0.24.0 · protecting the agents on this machine</div>
+        <div class="dim pre">  Each file is backed up first · d shows the full diff · openmoat uninstall undoes it</div>
+        <div class="pre">  Claude Code  ~/.claude    adds hook + sandbox settings  Protect? [Y/n/d] <span class="ok">y</span></div>
+        <div class="pre">  Codex        ~/.codex     adds hook + sandbox settings  Protect? [Y/n/d] <span class="ok">y</span></div>
+        <div class="ok">✔ 2 agents protected</div>
+        <div class="pre">  Agent               Protection</div>
+        <div class="pre">  Claude Code         <span class="ok">✔</span> hook + OS sandbox</div>
+        <div class="pre">  Codex               <span class="ok">✔</span> hook + OS sandbox</div>
+        <div class="hi gap">Next steps</div>
+        <div class="pre">  1. Try it: openmoat policy check "cat ~/.ssh/id_rsa"</div>
+        <div class="dim">Backups saved · undo everything: openmoat uninstall · check any time: openmoat status</div>
+      </div>
+      <p class="note"><b>d</b> shows exactly what changes before you answer. <code>init</code> asks once per agent it finds, and lists the steps left to you only for agents you have: in Codex, trust OpenMoat’s hooks once in <code>/hooks</code>; for OpenClaw, restart the Gateway. Then start a new agent session.</p>
+    </li>
+
+    <li class="step card">
+      <div class="step-head"><span class="num" aria-hidden="true">3</span><h2>See it work</h2></div>
+      <div class="two">
+        <div class="shell">
+          <div><span class="p">$ </span>openmoat policy check "cat ~/.ssh/id_rsa"</div>
+          <div class="deny">✕ deny</div>
+          <div class="dim pre">   rules : secrets-paths</div>
+          <div class="dim pre">   reason: secret material: read /Users/you/.ssh/id_rsa</div>
+          <div class="dim pre">   also  : shell "cat ~/.ssh/id_rsa"</div>
+        </div>
+        <div class="shell">
+          <div><span class="p">$ </span>openmoat doctor</div>
+          <div class="dim">…</div>
+          <div class="ok">All good.</div>
+          <div class="gap"><span class="p">$ </span>openmoat status</div>
+          <div class="dim">each agent’s protection, and what to fix</div>
+        </div>
+      </div>
+      <p class="note"><code>policy check</code> runs nothing: it shows the verdict, the rule and the reason for any command. While you work, <code>openmoat watch</code> follows the agents’ calls live and <code>openmoat why --last</code> explains the newest block.</p>
+    </li>
+  </ol>
+
+  <section class="next" aria-label="Next">
+    <a class="card" href="/where-to-use-it/"><b>Next: your situation</b><span>a laptop, unattended agents, MCP servers, a team, CI</span></a>
+    <a class="card" href="/docs/blocked/"><b>Something blocked?</b><span>why it happened, and one command to allow it</span></a>
+    <a class="card" href="/docs/turn-off/"><b>Turn it off or uninstall</b><span>every change undone</span></a>
+  </section>
+  <p class="foot"><MoatMark size={28} /><span>All the details: the <a href="/docs/quickstart/">quick start</a> in the docs and <a href="/docs/supported-features/">what each agent supports</a>.</span></p>
+</main>
+</Page>
+
+<script>
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.os-tab'));
+  const ways = Array.from(document.querySelectorAll<HTMLElement>('.way'));
+  const select = (i: number, focus = false) => {
+    tabs.forEach((t, j) => { t.setAttribute('aria-selected', String(i === j)); t.tabIndex = i === j ? 0 : -1; });
+    ways.forEach((w, j) => { w.hidden = i !== j; });
+    if (focus) tabs[i].focus();
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(i));
+    t.addEventListener('keydown', (e) => {
+      const keys: Record<string, number> = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 };
+      if (!(e.key in keys)) return;
+      e.preventDefault();
+      select((keys[e.key] + tabs.length) % tabs.length, true);
+    });
+  });
+  // The tab named in the link (#linux), else the visitor's own system, read in the browser only.
+  const byHash = tabs.findIndex((t) => t.id === location.hash.slice(1));
+  const ua = navigator.userAgent;
+  const guess = /Windows/.test(ua) ? 'windows' : /Mac/.test(ua) ? 'macos' : /Linux|X11/.test(ua) ? 'linux' : '';
+  const byOs = tabs.findIndex((t) => t.id === guess);
+  if (byHash >= 0) select(byHash); else if (byOs >= 0) select(byOs);
+  const note = document.getElementById('os-note');
+  if (note && byHash < 0 && byOs >= 0) note.textContent = 'chosen for your system';
+
+  // Copy buttons: the command text only, never the prompt.
+  document.querySelectorAll<HTMLButtonElement>('.copy').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const text = b.parentElement?.querySelector('.text')?.textContent ?? '';
+      try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; } catch { b.textContent = 'Select and copy'; }
+      window.setTimeout(() => { b.textContent = 'Copy'; }, 1800);
+    });
+  });
+</script>
+<noscript><style>.way[hidden] { display: block !important; margin-top: 10px; } .os-tabs, .copy { display: none !important; }</style></noscript>
+
+<style>
+  .gs { max-width: 1000px; padding-top: 40px; padding-bottom: 80px; display: flex; flex-direction: column; gap: 36px; }
+  .head { display: flex; flex-direction: column; gap: 14px; }
+  .head h1 { font-size: clamp(40px, 7vw, 68px); }
+  .head code { font-size: 0.9em; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+  .step { padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; border-radius: 24px; }
+  .step-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .step-head h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+  .num { width: 38px; height: 38px; border-radius: 50%; background: var(--button); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 600; flex: none; }
+  .aside { margin-left: auto; font-size: 13px; color: var(--muted-2); }
+  .os-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .os-tab { min-height: 44px; padding: 10px 18px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font-weight: 600; font-size: 14px; }
+  .os-tab:hover { border-color: var(--line-2); }
+  .os-tab[aria-selected='true'] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .way[hidden] { display: none; }
+  .cmd { display: flex; align-items: flex-start; gap: 12px; background: var(--term); border-radius: 14px; padding: 14px 16px; }
+  .cmd code { flex: 1 1 auto; min-width: 0; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; color: var(--t-fg); }
+  .p { color: #8fa69a; user-select: none; }
+  .copy { flex: none; background: transparent; border: 1px solid #3a5045; color: var(--t-fg); border-radius: 8px; padding: 8px 12px; font: 600 12px var(--font); cursor: pointer; min-height: 36px; }
+  .copy:hover { border-color: var(--t-allow); }
+  .note { margin: 0; font-size: 15px; color: var(--muted); line-height: 1.55; }
+  .note.more { font-size: 14px; color: var(--muted-2); }
+  .note code { font-size: 0.92em; }
+  .out { font-size: 13px; }
+  .shell .pre { white-space: pre; }
+  .shell .hi { color: #fff; }
+  .shell .dim { color: #9fb5aa; }
+  .shell .ok { color: var(--t-allow); }
+  .shell .deny { color: var(--t-deny); font-weight: 600; }
+  .shell .gap { margin-top: 8px; }
+  .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .two .shell { font-size: 13px; line-height: 1.75; }
+  .next { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .next a { padding: 18px 20px; text-decoration: none; color: var(--fg); display: flex; flex-direction: column; gap: 4px; border-radius: 18px; }
+  .next a:hover { border-color: var(--line-2); color: var(--fg); }
+  .next span { color: var(--muted); font-size: 14px; }
+  .foot { margin: 0; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 15px; }
+  .foot svg { flex: none; }
+  @media (max-width: 760px) {
+    .two, .next { grid-template-columns: 1fr; }
+    .step { padding: 18px; }
+    .aside { margin-left: 0; flex-basis: 100%; }
+  }
+</style>
