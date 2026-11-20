@@ -6,6 +6,19 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"The agent cannot edit the policy or a hook, approve its own blocked call, read the audit log or switch OpenMoat off. A pinned file changed behind OpenMoat's back blocks every call until you look."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat policy check \"openmoat allow --last\""}
+  out={"✕ deny\n   rules : kernel-self\n   reason: OpenMoat protects its own policy, hooks and binary: shell \"openmoat allow --last\""}
+  outNote={"A real run with the default policy: the same call from an agent is denied. You run `openmoat allow` in your own terminal."}
+  change={"Self-protection has no switch. After a change of your own, `openmoat doctor` shows what changed and `openmoat doctor --accept` pins it again."}
+  limits={"The lock is a list of digests, with no key: a program that runs as you outside any sandbox can change the policy and write new digests."}
+  related={[["OS sandboxes", "/docs/sandboxes/"], ["Audit log", "/docs/see-what-happened/"], ["Turn it off for a project", "/docs/turn-off/"]]}
+/>
+
 
 **Protects against** an agent, or a prompt injection steering it, turning OpenMoat off or loosening it: editing the policy or a hook, approving its own blocked call, reading the audit log, stopping the proxy.
 

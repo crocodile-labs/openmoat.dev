@@ -7,6 +7,19 @@ sidebar:
 ---
 
 import { Aside, Steps } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"OpenMoat pins each MCP server's definition, and with `openmoat mcp wrap` each tool's description and schemas too: a new or changed server or tool waits until you accept it in your own terminal."}
+  when={[["MCP servers", "/docs/solutions/mcp-servers/"]]}
+  cmd={"openmoat mcp wrap github"}
+  out={"OpenMoat did not start MCP server `github`: MCP server `github` in ~/.claude.json changed\n    command: \"npx\" → \"sh\"; OpenMoat starts it only once a person has reviewed it: run\n    `openmoat mcp accept github` in a terminal"}
+  outNote={"What the agent's MCP list shows when a wrapped server's definition changed. Run `openmoat mcp accept github`, then restart the agent's session."}
+  change={"`openmoat mcp accept <server>` after reading each tool; `openmoat mcp unwrap <server>` puts the configuration back; an `mcp` rule allows tools by name."}
+  limits={"Prompts, resources and tool results are not pinned. Remote (HTTP) servers, Claude Code plugin servers and managed MCP settings do not go through the proxy."}
+  related={[["Tool pinning", "/docs/mcp-servers/tool-pinning/"], ["The gateway", "/docs/mcp-servers/gateway/"], ["Between servers", "/docs/mcp-servers/cross-server/"], ["Browser pages", "/docs/mcp-servers/browser-pages/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 

@@ -6,6 +6,18 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"When a page, an issue or a tool result names a host, path or command, and the agent then uses it, the call needs review with the source named. That catches an instruction planted in what the agent read."}
+  whenText={"Whenever an agent reads issues, web pages or MCP results. Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, the Cline CLI and wrapped MCP servers report what a call returned ([Supported features](/docs/supported-features/))."}
+  out={"review [injected-input] the host `collect.evil.example` came from the page fetched from\nhttps://docs.example/setup, untrusted content this session read; fetch collect.evil.example\nmay follow an instruction planted there"}
+  outNote={"A page the agent fetched names a host, and the agent then sends data there."}
+  change={"None of its own: it is part of session taint, and `openmoat edit` changes the rules around it. Approve one call you asked for yourself with `openmoat allow --last`."}
+  limits={"Only Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, the Cline CLI and wrapped MCP servers report output; other agents report none yet."}
+  related={[["Session taint", "/docs/session-taint/"], ["The MCP gateway", "/docs/mcp-servers/gateway/"], ["Supported features", "/docs/supported-features/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 

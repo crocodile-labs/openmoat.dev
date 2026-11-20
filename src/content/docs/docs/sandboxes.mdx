@@ -6,6 +6,19 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"The hook decides each call, but an allowed `npm test` can run any code. So OpenMoat also writes your policy into an OS sandbox, which confines every process the agent's commands start: the agent's own sandbox (Claude Code, Codex, Cursor), or `openmoat run` for any agent."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"], ["MCP servers", "/docs/solutions/mcp-servers/"]]}
+  cmd={"openmoat run --write ~/.claude --write ~/.claude.json -- claude"}
+  out={"# the project's test script, started as npm test inside the run\ncat \"$HOME/.ssh/id_rsa\"\n  macOS, openmoat run (Seatbelt)                 EPERM\n  Linux, openmoat run --no-isolate (Landlock)    EACCES\n  Linux, openmoat run --isolate (bubblewrap)     ENOENT\ncurl -fsS -o /dev/null -m 30 http://evil.example/\n  every tier                                     proxy 403"}
+  outNote={"What the operating system answered, from the table below that CI checks on every pull request (EVIDENCE.md in the openmoat repository). ENOENT: the path does not exist inside the sandbox."}
+  change={"`openmoat sandbox show` prints what your policy compiles to; run `openmoat sandbox sync` after `openmoat edit`. `sandbox.read_roots` lists what sandboxed commands may read beyond the rules."}
+  limits={"Claude Code's sandbox covers `Bash`, `PowerShell` and `Monitor`: file tools, `WebFetch` and MCP servers are checked by the hook only. `openmoat run` refuses on macOS 12 and earlier and on Windows."}
+  related={[["openmoat run", "/docs/sandboxes/openmoat-run/"], ["Egress proxy", "/docs/egress-proxy/"], ["Snapshots", "/docs/snapshots/"], ["Supported features", "/docs/supported-features/"]]}
+/>
+
 
 **Protects against** code inside an allowed command (a test script, a build step, an install script) reading your keys, writing outside the project or connecting to hosts the policy does not allow.
 

@@ -6,6 +6,19 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"OpenMoat reads each shell command the way the shell will: variables, quoting, `$'…'`, decoders, globs, braces, symlinks and here-documents are resolved first. Each command, file and host inside the line is then checked against your policy, and the strictest verdict wins."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat policy check 'd=~/.ssh; cat $d/id_rsa'"}
+  out={"✕ deny\n   rules : secrets-paths\n   reason: secret material: read /Users/you/.ssh/id_rsa\n   also  : env set d\n   also  : shell \"cat /Users/you/.ssh/id_rsa\""}
+  outNote={"A real run with the default policy (your home shown as /Users/you, the project as ~/code/shop). `policy check` runs nothing: it only decides."}
+  change={"Add an `allow` or `deny` rule with `openmoat edit` ([The policy file](/docs/policy-file/)), or approve the last review with `openmoat allow --last`. An allow rule never overrides a deny."}
+  limits={"Outside an OS sandbox the hook decides alone: on a hook-only agent an allowed call runs with your permissions."}
+  related={[["Check a command", "/docs/check-a-command/"], ["Secrets and .env files", "/docs/env-files/"], ["Network allowlist", "/docs/allow-a-site/"], ["OS sandboxes", "/docs/sandboxes/"]]}
+/>
+
 
 **Protects against** a command that reads your keys, sends them out, destroys work or switches OpenMoat off, however it is spelled.
 

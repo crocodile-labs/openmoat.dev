@@ -6,6 +6,18 @@ sidebar:
 ---
 
 import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"A read-only companion app for the menu bar (macOS) and the tray (Linux, Windows): which agents are protected, what was blocked and why, and what needs you. Every fix is a command you copy."}
+  whenText={"On any machine where OpenMoat runs, when you want to see its state without opening a terminal."}
+  cmd={"brew install --cask crocodile-labs/tap/openmoat-bar"}
+  outNote={"It needs OpenMoat installed first, and runs only OpenMoat's read-only commands (`openmoat status`, `show`, `report` and a few more, with `--format json`). The screens: [OpenMoat Bar](/openmoat-bar/)."}
+  change={"It changes nothing itself: to act, copy the command it shows into your own terminal."}
+  limits={"It shows what `openmoat` reports; it adds no protection of its own."}
+  related={[["The OpenMoat Bar page", "/openmoat-bar/"], ["Audit log", "/docs/see-what-happened/"]]}
+/>
+
 
 **What it does:** shows what OpenMoat decides, without opening a terminal. It reads only what
 `openmoat` prints, never allows anything or changes a rule, and every fix is a command you copy.

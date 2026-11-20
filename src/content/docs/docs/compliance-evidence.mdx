@@ -6,6 +6,19 @@ sidebar:
 ---
 
 import { Aside, Steps } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"`openmoat audit evidence` maps the audit log to OWASP Top 10 for LLM Applications 2025, SOC 2 and ISO/IEC 27001:2022 controls, and says whether the log's hash chain is intact. Evidence, not a certification."}
+  when={[["Audit and compliance", "/docs/solutions/audit-evidence/"]]}
+  cmd={"openmoat audit evidence --since 2026-10-01 --until 2026-11-01"}
+  out={"# OpenMoat evidence report\n\nEvidence, not a certification. …\n\n- Window: 2026-10-01T00:00:00Z to 2026-11-01T00:00:00Z (UTC, end not included)\n- Decisions: 6 (allow 1 · defer 1 · review 1 · deny 3)\n\n## Audit log\n\n- Hash chain: intact over 6 events, head `3f1c…`"}
+  outNote={"Shortened, for a log of six decisions (the unit tests' fixture; hashes cut)."}
+  change={"`--format json` for tools. `openmoat audit export` and `openmoat audit verify --anchor <hash>` give a reviewer the events and a way to check them."}
+  limits={"State, not history: the policy, lock and protections are read when you run the report, not when each call was decided."}
+  related={[["Audit log", "/docs/see-what-happened/"], ["Audit and compliance", "/docs/solutions/audit-evidence/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 

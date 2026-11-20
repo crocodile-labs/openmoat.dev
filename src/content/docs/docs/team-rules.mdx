@@ -7,6 +7,18 @@ sidebar:
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"A repository's committed `.moat/policy.yaml` adds `deny` and `review` rules for everyone who works in it, with any agent; its `allow` rules apply only after a person trusts that exact file. A signed policy pack brings a team's rules to every project."}
+  when={[["A team, one policy", "/docs/solutions/team-policy/"]]}
+  out={"moat: deny [protection-required] — your policy requires hook + OS sandbox for Gemini CLI;\nthis call has hook only: OpenMoat writes no OS sandbox for Gemini CLI; to meet it, start\nGemini CLI with `openmoat run`"}
+  outNote={"What an agent below the level a policy's `require:` sets is told, for each call."}
+  change={"`openmoat trust` lets a repository's allow rules in (`--revoke` takes them back); `openmoat policy trust-key` and `openmoat policy install` add a signed pack; `require:` sets a minimum protection level."}
+  limits={"Repository rules apply in the hook only, not in the agents' OS sandboxes; a pack's rules reach the sandboxes at the next `openmoat sandbox sync`."}
+  related={[["Repository policy", "/docs/team-rules/repository-policy/"], ["Policy packs", "/docs/team-rules/policy-packs/"], ["Required protection", "/docs/team-rules/required-protection/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 
