@@ -1,0 +1,16 @@
+---
+title: "OpenMoat 0.24.0"
+description: "openmoat policy migrate, clearer errors for a policy's schema version, and JSON Schemas so your editor checks a policy as you type."
+sidebar:
+  label: "0.24.0"
+  order: 1
+---
+
+Released 2026-11-20. [GitHub release v0.24.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.24.0).
+
+- **`openmoat policy migrate`.** Rewrites a policy file in the current policy schema without changing a rule: it adds a missing `version:` and renames the old `ask` to `review`. It shows the diff first, applies only when you run it yourself in a terminal, keeps the previous file as `<file>.before-migrate`, and re-pins the installed policy. `--dry-run` shows the changes and writes nothing. [Policy file](/docs/policy-file/#schema-version-and-migrate).
+- **Clearer errors for a policy's version.** A policy's `version:` is read first. A file written for a newer schema says to upgrade OpenMoat, a file without `version:` says to add `version: 1` (or run `openmoat policy migrate`), and an error in a field names the schema version it was read against.
+- **JSON Schemas for policy files.** Point your editor's YAML support at them to get completion and a mark on a misspelt key as you type. A test keeps them in step with the policy OpenMoat reads. [Policy file](/docs/policy-file/#check-it-in-your-editor).
+- **Upgrades are tested from every older release.** The tests now start from the state each older release leaves behind (every audit log format before the audit key, an older policy and lock) and run this release through a long session, so a lockout like the one 0.23.1 fixed is caught before release.
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0240---2026-11-20).

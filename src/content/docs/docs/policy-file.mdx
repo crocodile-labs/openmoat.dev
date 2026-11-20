@@ -75,9 +75,31 @@ openmoat policy check "~/.aws/credentials" --kind fs-read --policy ./policy.yaml
 duplicate rule id `push`
 rule `push` has no patterns
 bad shell pattern `git push "*` (unbalanced quotes?)
-unsupported policy version 2; this build supports 1
+unsupported policy version 2: the policy is written for policy schema version 2, which a newer OpenMoat reads; this build reads schema version 1: upgrade OpenMoat
 ```
 
 With `--policy`, only that file decides: not the `openmoat allow` rules, packs or a repository's policy. Without it, `openmoat policy check` decides as the hook does.
+
+## Schema version and migrate
+
+Every policy starts with `version: 1`, the policy schema it is written in. OpenMoat reads that line first: a file for a newer schema says to upgrade OpenMoat, and a file without it says to add `version: 1`. Within a schema version, new keys are only ever optional, so a policy that loads today keeps loading.
+
+```bash
+openmoat policy migrate --dry-run   # show what would change; writes nothing
+openmoat policy migrate             # show the diff, ask, then write it
+openmoat policy migrate --file ./policy.yaml
+```
+
+`openmoat policy migrate` rewrites how a policy is written, never what it decides: it adds a missing `version:` and renames the old `ask` to `review`. It shows the diff, writes only when you run it yourself in a terminal (an agent's call is denied), keeps the previous file as `<file>.before-migrate`, and re-pins the installed policy. New default rules come from `openmoat policy upgrade` instead.
+
+## Check it in your editor
+
+OpenMoat publishes a JSON Schema for policy files. With the YAML extension in VS Code (or any editor that uses the YAML language server), it completes keys and marks a misspelt one as you type. Add this first line with `openmoat edit` (the installed policy is pinned, so a line written into the file any other way counts as a change OpenMoat did not make):
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/crocodile-labs/openmoat/main/crates/openmoat-core/policies/policy-v1.schema.json
+```
+
+For a repository's `.moat/policy.yaml`, use `repo-policy-v1.schema.json` from the same folder. `openmoat policy lint` stays the check that counts.
 
 The full language and the default policy, rule by rule: [POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md).
