@@ -44,7 +44,7 @@ code, kbd, pre { font-family: var(--mono); }
 .btn-ghost:hover { color: var(--fg); border-color: var(--muted-2); }
 .btn-dark { background: var(--fg); color: var(--bg); }
 .btn-dark:hover { color: #fff; background: #000; }
-.chip { display: inline-flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 500; color: var(--fg); }
+.om-chip { display: inline-flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 500; color: var(--fg); }
 .shell { background: var(--term); color: var(--t-fg); border-radius: 16px; padding: 18px 22px; font-family: var(--mono); font-size: 14px; line-height: 1.8; overflow-x: auto; }
 .shell .p { color: #8fa69a; user-select: none; }
 .tab-btn { font-family: var(--font); cursor: pointer; }

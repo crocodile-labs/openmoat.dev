@@ -79,13 +79,13 @@ const os = [
     <span class="small">One install covers the agents you already use</span>
     <ul class="agent-chips">
       {row.map((a) => (
-        <li class="chip">
+        <li class="om-chip">
           {a.path ? <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d={a.path} /></svg>
             : a.glyph ? <span aria-hidden="true" class="glyph">{a.glyph}</span> : <span aria-hidden="true" class="dot"></span>}
           {a.name}
         </li>
       ))}
-      <li><a class="chip more" href="/docs/agents/">+{more} more</a></li>
+      <li><a class="om-chip more" href="/docs/agents/">+{more} more</a></li>
     </ul>
   </section>
 
@@ -175,7 +175,7 @@ const os = [
       <div><span class="p">$</span> openmoat init</div>
     </div>
     <p class="small"><code>openmoat init</code> asks before it changes each agent and backs up every file; <code>openmoat uninstall</code> puts it all back.</p>
-    <div class="os">{os.map((o) => <a class="chip" href={o.href}>{o.name}</a>)}</div>
+    <div class="os">{os.map((o) => <a class="om-chip" href={o.href}>{o.name}</a>)}</div>
     <p class="small"><a href="/openmoat-bar/">Also: OpenMoat Bar, for your menu bar →</a></p>
   </section>
 </main>
@@ -414,8 +414,8 @@ const os = [
   .h2c { font-size: clamp(40px, 6vw, 60px); letter-spacing: -0.04em; }
   .install .shell { text-align: left; font-size: 15px; line-height: 1.9; max-width: 100%; }
   .os { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-  .os .chip { text-decoration: none; border-radius: 12px; padding: 10px 16px; }
-  .os .chip:hover { border-color: var(--line-2); }
+  .os .om-chip { text-decoration: none; border-radius: 12px; padding: 10px 16px; }
+  .os .om-chip:hover { border-color: var(--line-2); }
 
   @media (max-width: 860px) {
     .three { grid-template-columns: 1fr; }

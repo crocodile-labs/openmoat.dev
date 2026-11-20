@@ -12,12 +12,13 @@ const { cmd, result, tone = 'ok', large = false } = Astro.props;
 <style>
   .cover { display: flex; flex-direction: column; justify-content: center; gap: 10px; box-sizing: border-box; width: 100%; aspect-ratio: 16 / 10; padding: 22px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--term); background-image: radial-gradient(var(--dots) 1px, transparent 1px); background-size: 14px 14px; position: relative; overflow: hidden; }
   .dots { position: absolute; top: 12px; left: 14px; display: flex; gap: 6px; }
-  .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-2); }
+  .cover { border-color: var(--term); border-radius: 16px; background-image: radial-gradient(#22342b 1px, transparent 1px); }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: #3a5045; }
   code { font-family: 'Geist Mono', monospace; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
-  .cmd { color: var(--fg); }
-  .prompt { color: var(--accent); }
-  .result.deny { color: var(--deny); }
-  .result.ok { color: var(--accent); }
+  .cmd { color: var(--t-fg); }
+  .prompt { color: var(--t-allow); }
+  .result.deny { color: var(--t-deny); }
+  .result.ok { color: var(--t-allow); }
   .large { aspect-ratio: auto; min-height: 100%; padding: 40px; }
   .large code { font-size: 17px; }
 </style>
