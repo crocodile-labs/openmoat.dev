@@ -6,6 +6,19 @@ sidebar:
 ---
 
 import { Aside, Steps } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"`openmoat policy check-diff` and the GitHub Action check what a change does before it merges, with the same rules as the hook: CI and hook edits, agent settings, the policy, secret files, look-alike dependencies and new hosts, whoever wrote it."}
+  when={[["CI and pull requests", "/docs/solutions/ci-and-pull-requests/"]]}
+  cmd={"openmoat policy check-diff --base origin/main"}
+  out={"review  .github/workflows/ci.yml [runs-later, session-taint]\n        CI, commit hooks, the editor or the agent host run this later, outside any sandbox: write .github/workflows/ci.yml\n        CI, a build or test tool, a commit hook or an AI agent runs or reads this file later\ndeny    .claude/settings.json [kernel-self]\n        OpenMoat protects its own policy, hooks and binary: write .claude/settings.json\nreview  package.json [session-taint]\n        CI, a build or test tool, a commit hook or an AI agent runs or reads this file later\ndeny: 1 deny, 2 review in 4 changed files (checked against the default policy)"}
+  outNote={"For a pull request that changes a workflow trigger, sets hooks in `.claude/settings.json`, adds a `postinstall` script and edits one source file (MERGE_CHECK.md in the openmoat repository)."}
+  change={"In the Action, `fail-on: review` (the default), `deny` or `never`; `policy:` checks against a policy file in the repository, read as the pull request's base has it."}
+  limits={"It reads the text a change adds, offline: a payload built from pieces at run time, a script the change does not touch, and a package's age or owner are not checked."}
+  related={[["Code that runs later", "/docs/runs-later/"], ["Team rules", "/docs/team-rules/"], ["Provenance", "/docs/see-what-happened/provenance/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 

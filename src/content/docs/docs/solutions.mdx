@@ -5,19 +5,12 @@ sidebar:
   label: "Overview"
 ---
 
-import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { Aside } from '@astrojs/starlight/components';
+import SituationCards from '../../../components/SituationCards.astro';
 
-Find the situation closest to yours. Each page is short and in the same order: the problem, the commands, what they stop, what they do not stop, and where to read more.
+Pick the situation closest to yours. Each page follows the same order: the problem, the commands, what they stop, what they do not stop. All of them side by side: [Where to use it](/where-to-use-it/).
 
-<CardGrid>
-  <LinkCard title="A developer with an agent on a laptop" href="/docs/solutions/on-a-laptop/" description="Check each tool call your agents' hooks report before it runs, in the agents you already use. Start with openmoat init." />
-  <LinkCard title="Agents running unattended" href="/docs/solutions/unattended-agents/" description="Auto-approve, background and overnight runs, when nobody is there to answer a prompt. Start with openmoat run." />
-  <LinkCard title="People connecting MCP servers" href="/docs/solutions/mcp-servers/" description="Start only the servers you accepted, and pin what each tool says it does. Start with openmoat mcp wrap." />
-  <LinkCard title="An engineering team that wants one policy" href="/docs/solutions/team-policy/" description="Rules in the repository, signed policy packs and a required protection level. Start with .moat/policy.yaml." />
-  <LinkCard title="CI and pull request checks" href="/docs/solutions/ci-and-pull-requests/" description="Report what a change does before it merges, whoever wrote it. Start with openmoat policy check-diff." />
-  <LinkCard title="Audit and compliance evidence" href="/docs/solutions/audit-evidence/" description="Records of what agents were allowed and denied. Evidence, not a certification. Start with openmoat audit evidence." />
-  <LinkCard title="People building an agent product" href="/docs/solutions/agent-products/" description="The same decisions in your own agent, from Rust or JavaScript and WebAssembly. Start with @openmoat/sdk." />
-</CardGrid>
+<SituationCards />
 
 <Aside type="note" title="Two facts that apply on several pages">
 

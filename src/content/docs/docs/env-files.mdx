@@ -7,6 +7,19 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"Your keys, credential files, `.env` files and secret environment variables are denied to the agent, however the path or the variable is spelled, so it cannot send them anywhere."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat policy check \"cat .env\""}
+  out={"✕ deny\n   rules : secrets-paths\n   reason: secret material: read /Users/you/code/shop/.env\n   also  : shell \"cat .env\""}
+  outNote={"A real run with the default policy (your home shown as /Users/you, the project as ~/code/shop). `policy check` runs nothing: it only decides."}
+  change={"Deny a variable or a file with another name yourself, with `openmoat edit`: an `env.read` or `fs.read` pattern in a `deny` rule."}
+  limits={"Only the names OpenMoat knows count as secrets: a password in `SENTRY_URL` is read unless you deny it. A variable you export before starting the agent still reaches the programs it runs."}
+  related={[["Agent logins", "/docs/env-files/agent-credentials/"], ["Card numbers", "/docs/env-files/card-numbers/"], ["Token broker", "/docs/keep-tokens-safe/"], ["Shell commands", "/docs/shell-commands/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 

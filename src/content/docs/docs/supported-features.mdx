@@ -1,0 +1,33 @@
+---
+title: "Supported features"
+description: "Which OpenMoat features work in which coding agent: the protection level, the hook entries openmoat init writes, what a review becomes, injected input and the review of code the session wrote."
+sidebar:
+  label: "Supported features"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import SupportedFeatures from '../../../components/SupportedFeatures.astro';
+
+Every agent gets the same policy through its own hook. What differs is what the agent lets a hook see and do: whether OpenMoat can also set up the agent's OS sandbox, which events the hook gets, and where you answer a `review`. `openmoat status` shows the level on your machine.
+
+## By agent
+
+<SupportedFeatures table="agents" />
+
+- **Protection**: *hook + OS sandbox*: OpenMoat also writes the agent's own sandbox from your policy, so the code an allowed call runs is confined. *Hook only*: an allowed call runs with your permissions; `openmoat run -- <agent>` puts any agent in an OS sandbox ([OS sandboxes](/docs/sandboxes/)).
+- **Hook entries**: the events `openmoat init` registers, from the table generated from each agent's host spec ([INSTALL.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/INSTALL.md#non-default-config-directories)). What each event covers, tool by tool: [Supported agents](/docs/agents/).
+- **Injected input** needs the agent to report what a call returned. "Not yet": the agent reports nothing after a call; results of its MCP servers that you wrap are still read by the gateway.
+- **Hook run by the real agent**: where a real copy of the agent ran OpenMoat's hook and the decision held ([Protection by agent and OS](/docs/agents/protection/)); every other system is preview.
+- **—**: no source states it yet, so the page does not guess.
+
+## By feature
+
+<SupportedFeatures table="features" />
+
+<Aside type="note" title="Not an agent: the Continue CLI">
+
+The released Continue CLI runs no hooks, so nothing is checked call by call; use `openmoat run` ([Supported agents](/docs/agents/#continue-cli)).
+
+</Aside>
+
+What no layer stops, in one place: [Limits](/docs/limits/).

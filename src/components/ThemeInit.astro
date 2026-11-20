@@ -1,9 +1,10 @@
 ---
-// Sets the stored theme (dark by default) before the page paints; the docs use the same key.
+// Sets the stored theme (light by default) before the page paints; the docs use the same
+// key. The home page and the blog have one light look; the docs also have a dark theme.
 import GitHubLinks from './GitHubLinks.astro';
 ---
 <GitHubLinks />
 <script is:inline>
   document.documentElement.dataset.theme =
-    (typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme')) === 'light' ? 'light' : 'dark';
+    (typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme')) === 'dark' ? 'dark' : 'light';
 </script>

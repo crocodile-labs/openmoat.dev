@@ -7,6 +7,7 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import TryIt from '../../../components/TryIt.astro';
 
 <Aside type="note" title="Read this when">
 
@@ -33,6 +34,8 @@ So `aws s3 ls` or `kubectl get pods` started by the agent go to your agent's pro
 | `aws configure export-credentials`, `gcloud auth print-access-token`, `az account get-access-token` | deny: they print a token |
 | `ssh deploy@myserver.example.com uptime` | deny: `default.net`, an unknown host |
 | `curl http://169.254.169.254/` | deny: the cloud metadata service |
+
+<TryIt cmd={"openmoat policy check \"cat ~/.aws/credentials\""} out={"✕ deny\n   rules : secrets-paths\n   reason: secret material: read /Users/you/.aws/credentials\n   also  : shell \"cat ~/.aws/credentials\""} note={"A real run with the default policy (your home shown as /Users/you). It runs nothing: it only decides."} />
 
 ## What to do instead
 

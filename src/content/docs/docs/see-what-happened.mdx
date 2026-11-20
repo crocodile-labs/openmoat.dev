@@ -7,6 +7,19 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"Every decision is in a local, hash-chained audit log. Read it as a one-line summary, follow it live, ask why a call was blocked, or replay a session."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"], ["Audit and compliance", "/docs/solutions/audit-evidence/"]]}
+  cmd={"openmoat"}
+  out={"Protecting Claude Code (hook + OS sandbox) · today: 14 decisions, 1 denied, 1 reviewed\nClaude Code asked to run \"git config core.pager less\" (rule git-internals, session 4f2a…)\nAllow? [o]nce for this session / [a]lways / [n]o"}
+  outNote={"Today's summary, then each review that waits for you."}
+  change={"`openmoat watch` follows the calls live, `openmoat why --last` explains the newest block, `openmoat replay --session <id>` shows one session, and `openmoat audit anchor` records the log's head outside the log."}
+  limits={"Tamper-evident, not tamper-proof: whoever can write the log file can delete its newest events; `openmoat audit verify --against` catches that only up to your last anchor."}
+  related={[["Watch and why", "/docs/see-what-happened/watch-and-why/"], ["Provenance", "/docs/see-what-happened/provenance/"], ["SIEM delivery", "/docs/see-what-happened/siem-delivery/"], ["Compliance evidence", "/docs/compliance-evidence/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 

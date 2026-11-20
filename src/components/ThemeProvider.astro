@@ -1,6 +1,6 @@
 ---
-// Starlight's ThemeProvider, with dark as the default like the home page: the
-// theme a visitor picks is kept; without one the docs open dark, not the system's.
+// Starlight's ThemeProvider, with light as the default like the rest of the site: the
+// theme a visitor picks is kept; without one the docs open light, not the system's.
 import { Icon } from '@astrojs/starlight/components';
 import GitHubLinks from './GitHubLinks.astro';
 ---
@@ -12,10 +12,10 @@ import GitHubLinks from './GitHubLinks.astro';
 	window.StarlightThemeProvider = (() => {
 		const storedTheme =
 			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
-		const theme = storedTheme === 'light' ? 'light' : 'dark';
+		const theme = storedTheme === 'dark' ? 'dark' : 'light';
 		document.documentElement.dataset.theme = theme;
 		return {
-			updatePickers(theme = storedTheme || 'dark') {
+			updatePickers(theme = storedTheme || 'light') {
 				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
 					const select = picker.querySelector('select');
 					if (select) select.value = theme;

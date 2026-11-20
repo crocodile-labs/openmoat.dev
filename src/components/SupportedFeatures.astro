@@ -1,0 +1,36 @@
+---
+// The Supported features tables, from src/data/features.ts (which names each source).
+import AgentFacts from './AgentFacts.astro';
+import { rows, byFeature } from '../data/features';
+interface Props { table: 'agents' | 'features' }
+const { table } = Astro.props;
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const tiles = rows.map((r) => ({
+  name: r.name, href: r.docs,
+  facts: [
+    ['Protection', r.protection],
+    ['Hook entries openmoat init writes', `<code>${esc(r.hooks)}</code>`],
+    ['A review becomes', r.answer],
+    ['Injected input', r.injected ?? '—'],
+    ['Review of code it wrote', r.written ?? '—'],
+    ['Hook run by the real agent', r.hookProven || 'preview on every OS'],
+  ] as [string, string][],
+}));
+---
+{table === 'agents' ? (
+  <AgentFacts rows={tiles} label="What each agent gets" />
+) : (
+  <ul class="feat not-content">
+    {byFeature.map((f) => (
+      <li><a href={f.href}>{f.name}</a><p set:html={f.where} /></li>
+    ))}
+  </ul>
+)}
+
+<style>
+  .feat { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.7rem; }
+  .feat li { padding: 1rem 1.1rem; border: 1px solid var(--om-line); border-left: 4px solid var(--sl-color-green); border-radius: 18px; background: var(--om-card); display: flex; flex-direction: column; gap: 0.35rem; }
+  .feat a { font-weight: 800; letter-spacing: -0.01em; color: var(--sl-color-white); text-decoration: none; }
+  .feat a:hover { text-decoration: underline; }
+  .feat p { margin: 0; font-size: var(--sl-text-sm); color: var(--sl-color-gray-2); }
+</style>

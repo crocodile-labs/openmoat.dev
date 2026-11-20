@@ -83,7 +83,11 @@ Any later change to `delivery.yaml` stops every call again until you run `openmo
 
 ## What is sent
 
-Each event becomes one record: its id, time, agent, session, call id, working directory, tool, action, verdict, rules, reasons, decision time, and its chain hash and the previous one, so a SIEM row can be matched with `openmoat audit export`. Every text is masked again before sending: the audit log's patterns, the values of the policy's brokered secrets with a file source, and the sink's own key and header values in every form an event could hold them (with and without the `Bearer ` prefix, and for `Basic` the decoded `user:password` and the password alone). A record over the batch size or 256 KiB has its long texts cut, each ending with `…[openmoat trimmed N bytes]`.
+Each event becomes one record: its id, time, agent, session, call id, working directory, tool, action, verdict, rules, reasons, decision time, and its chain hash and the previous one, so a SIEM row can be matched with `openmoat audit export`.
+
+Every text is masked again before sending: the audit log's patterns, the values of the policy's brokered secrets with a file source, and the sink's own key and header values in every form an event could hold them (with and without the `Bearer ` prefix, and for `Basic` the decoded `user:password` and the password alone).
+
+A record over the batch size or 256 KiB has its long texts cut, each ending with `…[openmoat trimmed N bytes]`.
 
 The records still say which commands ran, which files were read and which hosts were reached. Send them only where you would keep the audit log itself.
 

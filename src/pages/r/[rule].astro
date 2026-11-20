@@ -1,58 +1,103 @@
 ---
 // One page per rule id an OpenMoat block message links to ("more  openmoat why --last · https://openmoat.dev/r/<id>").
+// The message window shows the lines a block message carries for this rule, in the layout
+// of crates/openmoat-hosts/src/block.rs: the heading and title, the rule line with the
+// rule's reason, `why`, and for a default-policy rule the verdict's own `next`
+// (DENY_NEXT / REVIEW_NEXT there; OpenMoat's own checks have steps of their own).
 import Page from '../../layouts/Page.astro';
+import MoatMark from '../../components/MoatMark.astro';
 import { rules, type Rule } from '../../data/rules';
 
 export function getStaticPaths() {
   return rules.map((rule) => ({ params: { rule: rule.id }, props: { rule } }));
 }
 const { rule } = Astro.props as { rule: Rule };
-const heading = rule.verdict === 'deny' ? 'OpenMoat blocked' : 'OpenMoat is holding this for you';
+const deny = rule.verdict === 'deny';
+const heading = deny ? 'OpenMoat blocked' : 'OpenMoat is holding this for you';
 const title = `${rule.id}: ${rule.title} · OpenMoat`;
 const description = `What OpenMoat's ${rule.id} rule stops, why, and what you can do.`;
 const code = (text: string) => text.split('`').map((part, i) => ({ part, code: i % 2 === 1 }));
+const next = rule.source === 'policy' ? (deny ? 'if you need this, do it yourself in your own terminal' : 'approve it in this prompt only if you expected it') : null;
+const more = deny ? `openmoat why --last · https://openmoat.dev/r/${rule.id}` : 'openmoat why --last';
 ---
 <Page title={title} description={description}>
-  <main class="rule">
-    <p class="eyebrow">RULE · {rule.verdict.toUpperCase()}{rule.source === 'builtin' ? ' · BUILT-IN CHECK' : ''}</p>
-    <h1><code>{rule.id}</code></h1>
-    <p class="lead">{heading}: {rule.title}</p>
+  <main class="rule wrap">
+    <a class="back" href="/r/">← Every rule</a>
+    <div class="top">
+      <span class={`chip v-${rule.verdict}`}>{deny ? '✕ deny' : '? review'}</span>
+      {rule.source === 'builtin' && <span class="chip src">built-in check</span>}
+      {rule.source === 'policy' && <span class="chip src">in the default policy</span>}
+    </div>
+    <h1 class="display"><code>{rule.id}</code></h1>
+    <p class="lead">{rule.title[0].toUpperCase() + rule.title.slice(1)}.</p>
 
-    <h2>Why</h2>
-    <p>{rule.why[0].toUpperCase() + rule.why.slice(1)}.</p>
+    <figure class="msg">
+      <figcaption>What the agent, and you, read</figcaption>
+      <div class="shell">
+        <div class={deny ? 'h-deny' : 'h-review'}>{heading}: {rule.title}</div>
+        <div class="d">  call   …</div>
+        <div class="d">  rule   moat: {rule.verdict} [{rule.id}] — {rule.reason ? `${rule.reason}: …` : '…'}</div>
+        <div class="d">  why    {rule.why}</div>
+        {next && <div class="d">  next   {next}</div>}
+        <div class="d">  more   {more}</div>
+      </div>
+    </figure>
 
-    <h2>What you can do</h2>
-    {rule.next ? (
-      <p>{code(rule.next).map((p) => (p.code ? <code>{p.part}</code> : p.part))}</p>
-    ) : rule.verdict === 'deny' ? (
-      <p>A deny is never offered for approval, so the agent cannot talk its way past it. If you need this, do it yourself in your own terminal. If the rule is wrong for your work, change your policy: <code>openmoat why --last</code> shows where the rule is.</p>
-    ) : (
-      <p>Check the call is what you asked for, then approve it in your agent's prompt, or run <code>openmoat allow --last</code> in your own terminal.</p>
-    )}
-    <p>Run these in your own terminal, not through the agent: agents are denied every command that changes OpenMoat.</p>
-    <ul>
-      <li><code>openmoat why --last</code>: the full reason, and where the rule is in your policy</li>
-      <li><code>openmoat show</code>: the latest decisions</li>
-    </ul>
+    <div class="cards">
+      <section class="card">
+        <h2>Why</h2>
+        <p>{rule.why[0].toUpperCase() + rule.why.slice(1)}.</p>
+      </section>
+      <section class="card">
+        <h2>What you can do</h2>
+        {rule.next ? (
+          <p>{code(rule.next).map((p) => (p.code ? <code>{p.part}</code> : p.part))}</p>
+        ) : deny ? (
+          <p>A deny is never offered for approval, so the agent cannot talk its way past it. If you need this, do it yourself in your own terminal. If the rule is wrong for your work, change your policy: <code>openmoat why --last</code> shows where the rule is.</p>
+        ) : (
+          <p>Check the call is what you asked for, then approve it in your agent's prompt, or run <code>openmoat allow --last</code> in your own terminal.</p>
+        )}
+      </section>
+    </div>
 
-    <h2>More</h2>
-    <ul>
-      <li><a href="/docs/blocked/">Something was blocked</a>: every message and the command that gets you moving</li>
-      {rule.source === 'policy' && <li><a href="/docs/policy-file/">The policy file</a>: this rule is in the default policy, and you can change it</li>}
-      <li><a href="/r/">Every rule</a></li>
-    </ul>
+    <section class="card own">
+      <h2>In your own terminal</h2>
+      <p>Not through the agent: agents are denied every command that changes OpenMoat.</p>
+      <div class="shell">
+        <div><span class="p">$ </span>openmoat why --last   <span class="c"># the full reason, and where the rule is in your policy</span></div>
+        <div><span class="p">$ </span>openmoat show         <span class="c"># the latest decisions</span></div>
+      </div>
+    </section>
+
+    <p class="more"><MoatMark size={26} /><span><a href="/docs/blocked/">Something was blocked</a>: every message and the command that gets you moving{rule.source === 'policy' && <> · <a href="/docs/policy-file/">The policy file</a>: this rule is in the default policy, and you can change it</>}.</span></p>
   </main>
 </Page>
 
 <style>
-  .rule { max-width: 760px; margin: 0 auto; padding: 48px 24px 72px; color: var(--fg); font-family: 'Geist Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.6; }
-  .eyebrow { margin: 0 0 12px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.14em; color: var(--accent); font-weight: 600; }
-  .rule h1 { margin: 0 0 12px; font-size: 36px; line-height: 1.15; font-weight: 600; }
-  .rule h2 { margin: 32px 0 8px; font-size: 22px; font-weight: 600; }
-  .lead { color: var(--muted); font-size: 18px; margin: 0; }
-  .rule p, .rule ul { color: var(--muted); }
-  .rule ul { padding-left: 20px; }
-  .rule code { font-family: 'Geist Mono', monospace; font-size: 0.9em; color: var(--fg-2); }
-  .rule h1 code { color: var(--fg); font-size: 1em; }
-  .rule a { color: var(--accent); }
+  .rule { max-width: 860px; padding-top: 32px; padding-bottom: 72px; display: flex; flex-direction: column; gap: 18px; }
+  .back { align-self: flex-start; font-size: 14px; text-decoration: none; color: var(--muted); }
+  .back:hover { color: var(--fg); }
+  .top { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: var(--mono); font-size: 12px; font-weight: 600; border-radius: 999px; padding: 4px 12px; }
+  .v-deny { background: var(--deny-bg); color: var(--deny); }
+  .v-review { background: var(--review-bg); color: var(--review); }
+  .src { background: var(--panel); border: 1px solid var(--line); color: var(--muted); font-weight: 500; }
+  h1 { font-size: clamp(32px, 6vw, 52px); overflow-wrap: anywhere; }
+  h1 code { font-family: var(--mono); font-weight: 600; letter-spacing: -0.03em; }
+  .lead { font-size: 19px; }
+  .msg { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .msg figcaption { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-2); }
+  .shell { font-size: 13px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .h-deny { color: var(--t-deny); font-weight: 600; }
+  .h-review { color: var(--t-review); font-weight: 600; }
+  .d { color: #c8d6ce; }
+  .c { color: var(--t-dim); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .card { padding: 20px 22px; border-radius: 22px; }
+  .card h2 { margin: 0 0 6px; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+  .card p { margin: 0; color: var(--muted); }
+  .card code { font-size: 0.9em; }
+  .own { display: flex; flex-direction: column; gap: 10px; }
+  .more { margin: 0; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 15px; }
+  .more svg { flex: none; }
 </style>

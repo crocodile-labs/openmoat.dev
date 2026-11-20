@@ -1,22 +1,41 @@
 ---
-// The footer of the home page and the blog.
+// The footer of the home page, Get started, Where to use it, the rule pages and the blog.
+// The release checklist edits the version in the last line ("No tracking, no cookies · v…").
+import MoatMark from './MoatMark.astro';
 ---
-  <footer style="border-top: 1px solid var(--line); background: var(--bg-footer)">
-    <div style="max-width: 1240px; margin: 0 auto; padding: 56px 24px 32px; display: flex; flex-wrap: wrap; gap: 48px">
-      <div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 14px">
-        <span style="display: flex; gap: 10px; align-items: center; font-weight: 600; font-size: 18px"><img src="/assets/logo.svg" alt="" style="width: 32px; height: 32px">OpenMoat</span>
-        <p style="margin: 0; color: var(--muted); font-size: 14px; max-width: 300px">The security layer between your AI coding agents and your machine. Open source, runs on your machine.</p>
-        <code style="align-self: flex-start; font-family: 'Geist Mono', monospace; font-size: 13px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; padding: 8px 12px"><span style="color: var(--accent)">$</span> brew install crocodile-labs/tap/openmoat</code>
+  <footer class="site-footer">
+    <div class="wrap top">
+      <div class="about">
+        <span class="name"><MoatMark size={32} />openmoat</span>
+        <p>Checks what your AI coding agents do before it runs. Open source, runs on your machine.</p>
+        <code><span class="p">$</span> brew install crocodile-labs/tap/openmoat</code>
       </div>
-      <div style="flex: 3 1 600px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; font-size: 14px">
-        <div style="display: flex; flex-direction: column; gap: 10px"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--muted-2)">PRODUCT</span><a href="/#install" style="color: var(--muted); text-decoration: none">Install</a><a href="/#stops" style="color: var(--muted); text-decoration: none">What it stops</a><a href="/#architecture" style="color: var(--muted); text-decoration: none">Architecture</a><a href="/#sandbox" style="color: var(--muted); text-decoration: none">Sandbox</a><a href="/#supported" style="color: var(--muted); text-decoration: none">Supported agents</a></div>
-        <div style="display: flex; flex-direction: column; gap: 10px"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--muted-2)">DOCS</span><a href="/docs/quickstart/" style="color: var(--muted); text-decoration: none">Quick start</a><a href="/docs/blocked/" style="color: var(--muted); text-decoration: none">Something was blocked</a><a href="/docs/work-across-repos/" style="color: var(--muted); text-decoration: none">Work across repos</a><a href="/docs/allow-reference/" style="color: var(--muted); text-decoration: none">Every allow and its impact</a><a href="/docs/limits/" style="color: var(--muted); text-decoration: none">Limits</a></div>
-        <div style="display: flex; flex-direction: column; gap: 10px"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--muted-2)">PROJECT</span><a href="https://github.com/crocodile-labs/openmoat" style="color: var(--muted); text-decoration: none">GitHub</a><a href="https://github.com/crocodile-labs/openmoat/releases" style="color: var(--muted); text-decoration: none">Releases</a><a href="https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md" style="color: var(--muted); text-decoration: none">Changelog</a><a href="/blog/" style="color: var(--muted); text-decoration: none">Blog</a><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md" style="color: var(--muted); text-decoration: none">Report a bypass</a></div>
-        <div style="display: flex; flex-direction: column; gap: 10px"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--muted-2)">COMMUNITY</span><a href="https://www.reddit.com/r/openmoat/" style="color: var(--muted); text-decoration: none">r/openmoat</a><a href="https://github.com/crocodile-labs/openmoat/issues" style="color: var(--muted); text-decoration: none">Issues</a><a href="https://github.com/crocodile-labs/openmoat/blob/main/CONTRIBUTING.md" style="color: var(--muted); text-decoration: none">Contributing</a></div>
+      <div class="cols">
+        <div><span class="h">PRODUCT</span><a href="/get-started/">Get started</a><a href="/#see">See it work</a><a href="/where-to-use-it/">Where to use it</a><a href="/docs/supported-features/">Supported features</a><a href="/r/">Every rule</a></div>
+        <div><span class="h">DOCS</span><a href="/docs/quickstart/">Quick start</a><a href="/docs/blocked/">Something was blocked</a><a href="/docs/work-across-repos/">Work across repos</a><a href="/docs/allow-reference/">Every allow and its impact</a><a href="/docs/limits/">Limits</a></div>
+        <div><span class="h">PROJECT</span><a href="https://github.com/crocodile-labs/openmoat">GitHub</a><a href="https://github.com/crocodile-labs/openmoat/releases">Releases</a><a href="https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md">Changelog</a><a href="/blog/">Blog</a><a href="https://github.com/crocodile-labs/openmoat/blob/main/SECURITY.md">Report a bypass</a></div>
+        <div><span class="h">COMMUNITY</span><a href="https://www.reddit.com/r/openmoat/">r/openmoat</a><a href="https://github.com/crocodile-labs/openmoat/issues">Issues</a><a href="https://github.com/crocodile-labs/openmoat/blob/main/CONTRIBUTING.md">Contributing</a></div>
       </div>
     </div>
-    <div style="max-width: 1240px; margin: 0 auto; padding: 20px 24px 32px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted-2)">
+    <div class="wrap bottom">
       <span>© 2026 Crocodile Labs · MIT or Apache-2.0</span>
       <span>No tracking, no cookies · v0.24.0</span>
     </div>
   </footer>
+
+<style>
+  .site-footer { border-top: 1px solid var(--line); background: var(--bg-footer); }
+  .top { padding-top: 48px; padding-bottom: 28px; display: flex; flex-wrap: wrap; gap: 40px; }
+  .about { flex: 1 1 280px; display: flex; flex-direction: column; gap: 14px; }
+  .name { display: flex; gap: 10px; align-items: center; font-weight: 800; font-size: 20px; letter-spacing: -0.03em; }
+  .about p { margin: 0; color: var(--muted); font-size: 14px; max-width: 300px; }
+  .about code { align-self: flex-start; font-size: 13px; background: var(--term); color: var(--t-fg); border-radius: 10px; padding: 8px 12px; }
+  .about .p { color: var(--t-allow); }
+  .cols { flex: 3 1 560px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; font-size: 14px; }
+  .cols div { display: flex; flex-direction: column; gap: 10px; }
+  .h { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; color: var(--muted-2); }
+  .cols a { color: var(--muted); text-decoration: none; }
+  .cols a:hover { color: var(--fg); text-decoration: underline; }
+  .bottom { padding-top: 18px; padding-bottom: 28px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted-2); }
+  @media (max-width: 760px) { .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>

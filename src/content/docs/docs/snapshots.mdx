@@ -6,6 +6,20 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"`openmoat run` takes a snapshot of the project's files before the agent starts and after it exits. `openmoat restore` shows each change and asks before it puts the files back."}
+  when={[["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat restore"}
+  out={"snapshot 1a2b3c4d5e6f of 2026-11-10 09:12:04 (before the agent started), 214 files\n  changed back src/main.rs\n  added back   src/lib.rs\n  deleted      scratch.txt\n  not restored .env (a deny rule names it)\nRestore these 3 file(s)? [y/N] y\nrestored from snapshot 1a2b3c4d5e6f: 2 written, 1 deleted\nundo with `openmoat restore 9f8e7d6c5b4a`, the snapshot of the files before this restore"}
+  outNote={"The example on this page, after a session under `openmoat run`."}
+  change={"`openmoat snapshot --list` shows the project's snapshots; `openmoat restore <id>` picks one; `openmoat restore --patch -- src` restores only `src/` and prints each file's differences."}
+  limits={"Only the project's files: network sends, `git push`, database writes and files outside the project are not undone, and an agent started without `openmoat run` gets no snapshot."}
+  limitsHref={"#what-a-snapshot-leaves-out"}
+  related={[["openmoat run", "/docs/sandboxes/openmoat-run/"], ["Unattended agents", "/docs/solutions/unattended-agents/"], ["Audit log", "/docs/see-what-happened/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 

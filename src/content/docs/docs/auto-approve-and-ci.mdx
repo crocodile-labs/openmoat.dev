@@ -7,6 +7,20 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"With auto-approve or in CI nobody answers a prompt: a deny still never runs, a review stops the call, and what the policy has no rule for runs. `openmoat run` puts the whole agent in an OS sandbox for those runs."}
+  when={[["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat run -- claude --dangerously-skip-permissions"}
+  out={"OpenMoat blocked: reading or changing your keys and credential files\n  call   cat ~/.ssh/id_rsa\n  rule   moat: deny [secrets-paths] — secret material: read /Users/you/.ssh/id_rsa\n  why    a key or token that leaves this machine cannot be taken back\n  next   if you need this, do it yourself in your own terminal\n  more   openmoat why --last · https://openmoat.dev/r/secrets-paths"}
+  outNote={"What the agent is told when a call is denied, whether or not anyone is watching (USAGE.md in the openmoat repository)."}
+  change={"Approve a held call afterwards with `openmoat allow --last`, or from your phone with [remote approvals](/docs/remote-approvals/)."}
+  limits={"An allowed host can receive data: the proxy checks the host, not what is sent inside HTTPS."}
+  limitsHref={"/docs/solutions/unattended-agents/#what-it-does-not-stop"}
+  related={[["Unattended agents", "/docs/solutions/unattended-agents/"], ["OS sandboxes", "/docs/sandboxes/"], ["Snapshots", "/docs/snapshots/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 

@@ -1,0 +1,19 @@
+---
+// "Try it" for a guide page: one command and its real output (a run of
+// `openmoat policy check` with the default policy), in a terminal card.
+interface Props { cmd: string; out: string; note?: string }
+const { cmd, out, note } = Astro.props;
+---
+<figure class="try not-content">
+  <figcaption>Try it</figcaption>
+  <pre><span class="p" aria-hidden="true">$ </span>{cmd}{'\n'}{out}</pre>
+  {note && <p>{note}</p>}
+</figure>
+
+<style>
+  .try { margin: 1.25rem 0 1.75rem; padding: 0.9rem 1rem 1rem; border: 1px solid var(--om-line); border-radius: 18px; background: var(--om-card); box-shadow: 0 8px 22px rgba(60, 45, 20, 0.05); }
+  figcaption { font-family: var(--sl-font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--sl-color-accent-high); margin-bottom: 0.5rem; }
+  pre { margin: 0; background: var(--om-term); color: var(--om-term-fg); border-radius: 12px; padding: 0.8rem 0.9rem; font-family: var(--sl-font-mono); font-size: 0.8rem; line-height: 1.6; overflow-x: auto; white-space: pre; }
+  .p { color: var(--om-term-dim); }
+  p { margin: 0.55rem 0 0; font-size: 0.8rem; color: var(--sl-color-gray-2); }
+</style>

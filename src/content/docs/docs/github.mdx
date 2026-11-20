@@ -7,6 +7,7 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import TryIt from '../../../components/TryIt.astro';
 
 <Aside type="note" title="Read this when">
 
@@ -30,6 +31,8 @@ The agent commits, pushes, opens pull requests or reads issues.
 | `gh auth token`, `gh auth status -t`, `cat ~/.config/gh/hosts.yml`, `git credential fill` | deny: they print your token |
 | `gh gist create notes.txt`, `curl -X POST https://api.github.com/gists -d @notes.txt`, `gh api gists -f …` | deny: `request-rule`, a gist publishes what it is sent (from 0.23.0) |
 | `curl -d @notes.txt "$URL"`, a request whose address or method is built at run time | review: `request-rule` could refuse it, and the hook cannot tell |
+
+<TryIt cmd={"openmoat policy check \"git push --force origin main\""} out={"✕ deny\n   rules : destructive\n   reason: irreversible damage: shell \"git push --force origin main\""} note={"A real run with the default policy (your home shown as /Users/you). It runs nothing: it only decides."} />
 
 ## Let gh work without handing over the token
 

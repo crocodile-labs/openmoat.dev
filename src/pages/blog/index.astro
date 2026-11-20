@@ -3,10 +3,14 @@ import { getCollection } from 'astro:content';
 import Page from '../../layouts/Page.astro';
 import PostCover from '../../components/PostCover.astro';
 
-// Newest first; the first post is the featured one, the rest follow in a list.
+// Newest first; the newest post is the featured one, the rest follow in a list. A post
+// about something the site no longer presents (OpenMoat Bar) stays in the list as
+// history but is never featured.
 const posts = (await getCollection('blog')).sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
-const [featured, ...rest] = posts;
 const tagsOf = (post: (typeof posts)[number]) => (post.data.tags.length ? post.data.tags : [post.data.tag]);
+const notFeatured = ['OpenMoat Bar'];
+const featured = posts.find((p) => !tagsOf(p).some((t) => notFeatured.includes(t)));
+const rest = posts.filter((p) => p !== featured);
 const allTags = [...new Set(posts.flatMap(tagsOf))];
 const day = (d: Date) => d.toISOString().slice(0, 10);
 const long = (d: Date) => d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -73,35 +77,35 @@ const long = (d: Date) => d.toLocaleDateString('en-US', { year: 'numeric', month
 </script>
 
 <style>
-  .wrap { max-width: 1240px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 60vh; }
-  .intro { padding: 72px 48px 40px; background-image: radial-gradient(var(--dots) 1px, transparent 1px); background-size: 14px 14px; border-bottom: 1px solid var(--line); }
+  .wrap { max-width: 1180px; margin: 0 auto; min-height: 60vh; }
+  .intro { padding: 40px 48px 24px; }
   .label { margin: 0 0 12px; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.14em; color: var(--accent); font-weight: 600; }
-  h1 { margin: 0; font-size: 48px; line-height: 1.1; font-weight: 600; letter-spacing: -0.03em; max-width: 760px; }
+  h1 { margin: 0; font-size: clamp(34px, 5.5vw, 60px); line-height: 1; font-weight: 800; letter-spacing: -0.04em; max-width: 820px; }
   .lead { margin: 16px 0 0; color: var(--muted); font-size: 18px; max-width: 680px; }
   .lead a { color: var(--accent); }
   .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
-  .chip { font-family: 'Geist Mono', monospace; font-size: 12px; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: 4px; background: var(--bg); color: var(--muted); cursor: pointer; }
-  .chip:hover { color: var(--fg); }
-  .chip[aria-pressed='true'] { color: var(--accent); border-color: var(--accent-line); background: var(--accent-panel); }
-  .featured { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin: 40px 48px; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; background: var(--panel); text-decoration: none; color: var(--fg); }
+  .chip { font-size: 14px; font-weight: 600; min-height: 40px; padding: 8px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--fg); cursor: pointer; }
+  .chip:hover { border-color: var(--line-2); }
+  .chip[aria-pressed='true'] { color: var(--bg); border-color: var(--fg); background: var(--fg); }
+  .featured { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin: 24px 48px 40px; border: 1px solid var(--line); border-radius: 28px; overflow: hidden; background: var(--panel); text-decoration: none; color: var(--fg); }
   .featured:hover { border-color: var(--accent-line); }
   .featured :global(.cover) { border: 0; border-radius: 0; border-right: 1px solid var(--line-2); }
   .featured .text { padding: 40px; display: flex; flex-direction: column; justify-content: center; }
-  .featured h2 { margin: 10px 0 12px; font-size: 32px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; }
+  .featured h2 { margin: 10px 0 12px; font-size: 34px; line-height: 1.05; font-weight: 800; letter-spacing: -0.03em; }
   .featured[hidden] { display: none; }
   .meta { margin: 0; font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted-2); letter-spacing: 0.04em; }
   .summary { margin: 0; color: var(--muted); }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 0; }
-  .tags span, .tag { font-family: 'Geist Mono', monospace; font-size: 11px; padding: 3px 8px; border: 1px solid var(--line-2); border-radius: 4px; color: var(--muted); }
-  .posts { list-style: none; margin: 0 48px 56px; padding: 0; }
-  .posts li { border-top: 1px solid var(--line); }
+  .tags span, .tag { font-family: 'Geist Mono', monospace; font-size: 11px; padding: 3px 9px; border: 1px solid var(--line-2); border-radius: 999px; color: var(--muted); }
+  .posts { list-style: none; margin: 0 48px 56px; padding: 0; display: flex; flex-direction: column; gap: 14px; }
   .posts li[hidden] { display: none; }
-  .row { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 28px; padding: 28px 0; text-decoration: none; color: var(--fg); }
+  .row { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 28px; padding: 18px; text-decoration: none; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 24px; }
+  .row:hover { border-color: var(--line-2); }
   .row:hover h3 { color: var(--accent); }
   .row :global(.cover) { padding: 16px; }
   .row :global(.cover code) { font-size: 11px; }
   .row .text { display: flex; flex-direction: column; gap: 8px; }
-  h3 { margin: 0; font-size: 21px; line-height: 1.3; font-weight: 600; letter-spacing: -0.01em; }
+  h3 { margin: 0; font-size: 22px; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; }
   .byline { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted-2); }
   .byline .tag { margin-left: 4px; }
   .empty { margin: 0 48px 56px; color: var(--muted); }

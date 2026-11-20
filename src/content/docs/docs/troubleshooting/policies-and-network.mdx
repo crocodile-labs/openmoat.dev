@@ -8,7 +8,13 @@ sidebar:
 
 ## A repository policy denies every call
 
-Every call in one project is denied with `kernel-error`, and `openmoat status` there says `repo policy      ✗ …; every call in this project is denied`. The project's `.moat/policy.yaml` cannot be read or parsed, sets a key a repository may not (only `version`, `deny`, `review` and `allow` are accepted; `ask`, the name of `review` before 0.14.0, is still read, but a file with both `ask` and `review` is refused), or is not a regular file. OpenMoat never ignores it, because that would drop the team's deny rules. Fix the file in your own editor (the agent cannot write `.moat/`), then run `openmoat status` again. The rule syntax: [The policy file](/docs/policy-file/).
+Every call in one project is denied with `kernel-error`, and `openmoat status` there says `repo policy      ✗ …; every call in this project is denied`. The project's `.moat/policy.yaml`:
+
+- cannot be read or parsed;
+- sets a key a repository may not (only `version`, `deny`, `review` and `allow` are accepted; `ask`, the name of `review` before 0.14.0, is still read, but a file with both `ask` and `review` is refused);
+- or is not a regular file.
+
+OpenMoat never ignores it, because that would drop the team's deny rules. Fix the file in your own editor (the agent cannot write `.moat/`), then run `openmoat status` again. The rule syntax: [The policy file](/docs/policy-file/).
 
 ## A repository's allow rules do not apply
 
@@ -32,7 +38,9 @@ Since 0.9.0, `openmoat mcp proxy` pins more of each tool (its title, output sche
 
 ## A wrapped MCP server's calls fail with error -32001 (`mcp-unattributed`)
 
-From 0.12.0 `openmoat mcp proxy` is a gateway: it passes a call only when it finds the agent hook's decision for that exact call (the same tool and arguments, within the hour). The agent did not run OpenMoat's hook for it (`openmoat status` says whether each agent is set up), or something other than an agent is using the wrapped server. `openmoat mcp unwrap <server>` takes the gateway out of that server's path. With another rule in the message, the policy denies what the call's arguments name. See [The MCP gateway](/docs/mcp-servers/gateway/).
+From 0.12.0 `openmoat mcp proxy` is a gateway: it passes a call only when it finds the agent hook's decision for that exact call (the same tool and arguments, within the hour).
+
+The agent did not run OpenMoat's hook for it (`openmoat status` says whether each agent is set up), or something other than an agent is using the wrapped server. `openmoat mcp unwrap <server>` takes the gateway out of that server's path. With another rule in the message, the policy denies what the call's arguments name. See [The MCP gateway](/docs/mcp-servers/gateway/).
 
 ## Sandboxed commands get `407 Proxy Authentication Required`
 

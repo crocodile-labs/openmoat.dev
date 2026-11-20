@@ -26,11 +26,22 @@ OpenMoat checks {agentCount} agents: {agentList()}.
 
 <AgentTable variant="glance" />
 
-`openmoat status` prints the level each agent has right now. It says **not protected** when the hook is missing or out of date, when the agent's own settings turn hooks off, when OpenMoat's entry lacks the agent's fail-closed key (`failClosed: true` for Cursor, `fail_closed: true` for Hermes Agent), when Hermes Agent's `shell-hooks-allowlist.json` does not approve the hook, when the agent ran without loading OpenMoat's plugin, or when the agent's version does not load OpenMoat's hook (OpenCode before 1.3.4); the line names the file and the setting. When the agent's installed version has a published security advisory that a later version fixes, `openmoat status` and `openmoat doctor` add a warning line naming the version to upgrade to.
+`openmoat status` prints the level each agent has right now. It says **not protected** when:
+
+- the hook is missing or out of date;
+- the agent's own settings turn hooks off;
+- OpenMoat's entry lacks the agent's fail-closed key (`failClosed: true` for Cursor, `fail_closed: true` for Hermes Agent);
+- Hermes Agent's `shell-hooks-allowlist.json` does not approve the hook;
+- the agent ran without loading OpenMoat's plugin;
+- or the agent's version does not load OpenMoat's hook (OpenCode before 1.3.4).
+
+The line names the file and the setting. When the agent's installed version has a published security advisory that a later version fixes, `openmoat status` and `openmoat doctor` add a warning line naming the version to upgrade to.
 
 For any agent, `openmoat run -- <agent>` starts the whole agent inside one sandbox made from your policy, with network only through OpenMoat's proxy (macOS 13 or later, Linux). It answers nothing command by command; that is the hook's job. See [Auto-approve and CI](/docs/auto-approve-and-ci/#run-a-whole-agent-in-a-sandbox).
 
-Each week CI installs every agent's latest release and sets it up with `openmoat init`; where the agent runs without an account, CI checks that the real agent loads OpenMoat's hook, and (from 0.20.0) makes the hook fail under it to check what the agent then does ([what is checked per agent](https://github.com/crocodile-labs/openmoat/blob/main/scripts/ci/latest-agents/README.md)). The **Hook run by the real agent** column says on which systems a real copy of the agent ran OpenMoat's hook and the decision held; everywhere else, Windows included, the hook is set up and its payloads are tested, but it is preview. Each agent on each OS, with the tests behind every claim: [Protection by agent and OS](/docs/agents/protection/).
+Each week CI installs every agent's latest release and sets it up with `openmoat init`; where the agent runs without an account, CI checks that the real agent loads OpenMoat's hook, and (from 0.20.0) makes the hook fail under it to check what the agent then does ([what is checked per agent](https://github.com/crocodile-labs/openmoat/blob/main/scripts/ci/latest-agents/README.md)).
+
+The **Hook run by the real agent** column says on which systems a real copy of the agent ran OpenMoat's hook and the decision held; everywhere else, Windows included, the hook is set up and its payloads are tested, but it is preview. Each agent on each OS, with the tests behind every claim: [Protection by agent and OS](/docs/agents/protection/).
 
 `openmoat doctor` names each agent that runs a call when OpenMoat's hook cannot start, crashes or times out ("fails open"), with the way out: start it with `openmoat run`, and add [`require.run: full-boundary`](/docs/team-rules/required-protection/#require-openmoat-runs-full-boundary) so `openmoat run` refuses to start without its whole boundary.
 

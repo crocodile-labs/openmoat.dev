@@ -1,0 +1,45 @@
+---
+// The site's one "not found" page (Starlight's own is turned off in astro.config.mjs).
+import Page from '../layouts/Page.astro';
+const ways = [
+  { title: 'Get started', text: 'Install, protect your agents, see a verdict.', href: '/get-started/' },
+  { title: 'The docs', text: 'Every feature, situation and command.', href: '/docs/' },
+  { title: 'Something was blocked?', text: 'What the message means, and the one command.', href: '/docs/blocked/' },
+  { title: 'Every rule', text: 'What each rule in a block message stops.', href: '/r/' },
+];
+---
+<Page title="Page not found · OpenMoat" description="This page does not exist on openmoat.dev.">
+  <main class="nf wrap">
+    <svg class="moat" viewBox="0 0 400 300" role="img" aria-label="Moat, OpenMoat's crocodile, looking around">
+      <path d="M60 250 Q60 120 200 110 Q340 120 340 250 Z" fill="#2f9a62"></path>
+      <path d="M90 250 Q95 170 200 165 Q305 170 310 250 Z" fill="#3fb177"></path>
+      <circle cx="140" cy="125" r="46" fill="#2f9a62"></circle>
+      <circle cx="260" cy="125" r="46" fill="#2f9a62"></circle>
+      <circle cx="140" cy="125" r="32" fill="#fffdf8"></circle>
+      <circle cx="260" cy="125" r="32" fill="#fffdf8"></circle>
+      <circle class="eye" cx="128" cy="120" r="15" fill="#13201a"></circle>
+      <circle class="eye" cx="248" cy="120" r="15" fill="#13201a"></circle>
+      <circle cx="175" cy="205" r="5" fill="#1d6b45"></circle>
+      <circle cx="225" cy="205" r="5" fill="#1d6b45"></circle>
+      <path d="M30 262 Q70 236 110 262 T190 262 T270 262 T350 262 T390 262 V300 H30 Z" fill="#2b7fb8"></path>
+    </svg>
+    <p class="kicker">404</p>
+    <h1 class="display">Moat looked everywhere. This page isn’t here.</h1>
+    <p class="lead">The link may be old or mistyped. One of these is probably what you need.</p>
+    <div class="ways">
+      {ways.map((w) => <a class="card" href={w.href}><b>{w.title}</b><span>{w.text}</span></a>)}
+    </div>
+  </main>
+</Page>
+
+<style>
+  .nf { max-width: 900px; padding-top: 24px; padding-bottom: 80px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; }
+  .moat { width: min(300px, 70%); height: auto; }
+  .eye { animation: look 4s ease-in-out infinite; }
+  @keyframes look { 50% { transform: translateX(24px); } }
+  h1 { font-size: clamp(34px, 6vw, 56px); }
+  .ways { margin-top: 12px; width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; text-align: left; }
+  .ways a { padding: 16px 18px; border-radius: 18px; text-decoration: none; color: var(--fg); display: flex; flex-direction: column; gap: 4px; }
+  .ways a:hover { border-color: var(--line-2); color: var(--fg); }
+  .ways span { color: var(--muted); font-size: 14px; }
+</style>

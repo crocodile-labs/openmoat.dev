@@ -6,6 +6,19 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"Writes to what runs after the session ends, outside any sandbox (CI workflows, git hooks, editor and package-manager configuration, virtual environments, dev containers, login items) need review. Shell startup files and the agents' system-wide settings are denied."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["CI and pull requests", "/docs/solutions/ci-and-pull-requests/"]]}
+  cmd={"openmoat policy check \"$PWD/.github/workflows/ci.yml\" --kind fs-write"}
+  out={"? review\n   rules : runs-later\n   reason: CI, commit hooks, the editor or the agent host run this later, outside any sandbox: write /Users/you/code/shop/.github/workflows/ci.yml"}
+  outNote={"A real run with the default policy (your home shown as /Users/you, the project as ~/code/shop). `policy check` runs nothing: it only decides."}
+  change={"These are rule groups of your policy: narrow one with `openmoat edit`, or allow one call with `openmoat allow --last`."}
+  limits={"Only the agent's own writes: a script the agent runs in its sandbox may still write these files."}
+  related={[["Merge check", "/docs/check-a-pull-request/"], ["Session taint", "/docs/session-taint/"], ["Self-protection", "/docs/self-protection/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 

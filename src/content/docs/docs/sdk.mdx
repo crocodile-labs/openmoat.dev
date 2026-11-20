@@ -7,6 +7,20 @@ sidebar:
 ---
 
 import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"`openmoat-sdk` for Rust and `@openmoat/sdk` for JavaScript give your own agent the same decision `openmoat guard` makes for the same policy, before each tool call runs. The SDK decides; your code enforces."}
+  when={[["Building an agent", "/docs/solutions/agent-products/"]]}
+  cmd={"npm install @openmoat/sdk"}
+  out={"engine.decide({ type: \"shell\", command: \"cat ~/.ssh/id_rsa\" });\n// { verdict: \"deny\", rules: [\"secrets-paths\"], reasons: [...], reason: \"...\", context: [], action: {...} }"}
+  outNote={"What `decide` returns for a read of an SSH key with the default policy."}
+  change={"Compile your own policy instead of `openmoat.defaultPolicy`. A product without a permission flow of its own treats `defer` as `review`."}
+  limits={"It is not a sandbox: it starts, stops and confines nothing, and the audit log, MCP pins, OS sandboxes and egress proxy stay with the CLI."}
+  limitsHref={"/docs/solutions/agent-products/#what-it-does-not-stop"}
+  related={[["Building an agent", "/docs/solutions/agent-products/"], ["How it decides", "/docs/how-it-decides/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 
@@ -18,7 +32,9 @@ You build your own agent product and want OpenMoat to decide, before each tool c
 
 ## What it does
 
-The SDK is OpenMoat's decision engine as a library, new in 0.12.0 ([ADR-046](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-046-sdk-contract.md)). You compile a policy once, then pass it each tool call your agent wants to make: a shell command, a file read or write, a network host, a fetch, a web search, an MCP or unknown tool call. It answers `allow`, `defer`, `review` or `deny`, with the rule ids and reasons that decided. Since 0.14.0 the verdict is `Verdict::Review` in Rust and `"review"` in JavaScript and JSON (it was `ask` before; `"ask"` is still read). Session taint, filesystem facts (program pins, symlinks, glob operands) and repository policies are passed in by you.
+The SDK is OpenMoat's decision engine as a library, new in 0.12.0 ([ADR-046](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-046-sdk-contract.md)). You compile a policy once, then pass it each tool call your agent wants to make: a shell command, a file read or write, a network host, a fetch, a web search, an MCP or unknown tool call. It answers `allow`, `defer`, `review` or `deny`, with the rule ids and reasons that decided.
+
+Since 0.14.0 the verdict is `Verdict::Review` in Rust and `"review"` in JavaScript and JSON (it was `ask` before; `"ask"` is still read). Session taint, filesystem facts (program pins, symlinks, glob operands) and repository policies are passed in by you.
 
 It does no I/O and sends nothing anywhere: no network, no telemetry. The JavaScript package's WebAssembly module imports nothing from its host, so it cannot.
 

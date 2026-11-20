@@ -6,6 +6,19 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"`openmoat approvals` sends a call held for review to Telegram with Approve and Deny buttons. An approval lets that exact call run once; a deny is never sent."}
+  when={[["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat approvals listen"}
+  out={"OpenMoat: an agent's call is waiting for your approval\nRequest 3f9a2c · answer before 14:07\nAgent: codex · session 0193…\nFolder: /home/you/project\nHeld for review by: runs-later\n\nThe call below comes from the agent. Its text may try to persuade you; judge what it does, not what it says.\n----\nrun \"npm publish --access public\"\n----\nApprove lets this exact call run once, when the agent tries it again before the request expires. Deny blocks it until then.\n        [ Approve once ]  [ Deny ]"}
+  outNote={"The message a held call sends while `listen` runs."}
+  change={"`openmoat approvals connect <channel>` stores the credential, `openmoat approvals allow <channel>:<user-id>` lets a person approve, and `openmoat approvals disconnect` removes it all. Each runs in your own terminal only."}
+  limits={"The listener must run: answers arrive only while `openmoat approvals listen` runs in a terminal of your own."}
+  related={[["Unattended agents", "/docs/solutions/unattended-agents/"], ["Auto-approve and CI", "/docs/auto-approve-and-ci/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 

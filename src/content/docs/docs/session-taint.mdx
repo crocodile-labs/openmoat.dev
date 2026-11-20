@@ -6,6 +6,18 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"What a session read earlier makes its later calls stricter. After a secret, network and MCP calls need review; after a web page or an MCP result, writes to CI, build and agent files need review. Taint only adds reviews: a deny stays a deny."}
+  whenText={"Whenever an agent reads web pages, search results, downloads or MCP results, or a secret your policy lets it read, in the same session as it writes or sends."}
+  out={"read /p/run.sh, which session a wrote after it read untrusted content (fetch crates.io)"}
+  outNote={"The reason a later session's call is held when the taint came from a file: run.sh was written by a session that had fetched a page from crates.io."}
+  change={"`taint.protected_writes` adds paths whose writes need review in a tainted session; `taint.provenance: false` stops following written files. Approve one file for the session with `openmoat allow --last`."}
+  limits={"Taint is per session: a new session starts clean, except for the files a tainted session wrote."}
+  related={[["Injected input", "/docs/injected-input/"], ["Code that runs later", "/docs/runs-later/"], ["Audit log", "/docs/see-what-happened/"]]}
+/>
+
 
 **Protects against** a session that read a secret sending it out, and a session that read a web page or an MCP result (where a prompt injection lives) planting what it read in files that run later.
 
@@ -24,7 +36,9 @@ Taint knows that untrusted content came in; [injected input](/docs/injected-inpu
 
 Taint follows files too. When a tainted session writes a file, the audit log records it; a later session that reads or runs that file (`cat`, `source run.sh`, `./run.sh`, `python x.py`) is tainted as well.
 
-A push from a tainted session that changes a file `runs-later` names needs review (`push-runs-later`). After a secret read, a URL a fetch, network or MCP tool opens that carries 80 or more characters of base64 or hex is denied (`encoded-egress`, new in 0.12.0): a person reviewing the call can judge a short URL, not a few hundred characters of encoded text. Under `openmoat run`, the run's proxy cannot prompt, so after a secret read it refuses requests to every other host, registries included; a new run starts clean. The standalone `openmoat proxy` does the same for Claude Code's sessions from 0.12.0, since each sends its own credential ([Agent sessions only](/docs/egress-proxy/sessions/)).
+- **Pushes:** a push from a tainted session that changes a file `runs-later` names needs review (`push-runs-later`).
+- **Encoded URLs:** after a secret read, a URL a fetch, network or MCP tool opens that carries 80 or more characters of base64 or hex is denied (`encoded-egress`, new in 0.12.0): a person reviewing the call can judge a short URL, not a few hundred characters of encoded text.
+- **The proxy:** under `openmoat run`, the run's proxy cannot prompt, so after a secret read it refuses requests to every other host, registries included; a new run starts clean. The standalone `openmoat proxy` does the same for Claude Code's sessions from 0.12.0, since each sends its own credential ([Agent sessions only](/docs/egress-proxy/sessions/)).
 
 ## Your answer covers the file
 

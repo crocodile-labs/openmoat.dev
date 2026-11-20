@@ -1,0 +1,81 @@
+---
+// The same top block on every feature page: what it does in one paragraph, when you
+// need it, one command with its real output, how to change it, its limits, related pages.
+// Text props: `code` in backticks is shown as code, and [text](/docs/page/) is a link.
+// `out` must be real: a run of `openmoat policy check`, or output the docs show.
+interface Props {
+  does: string;
+  when?: [string, string][]; // [label, href] of the situation pages that use it
+  whenText?: string; // when no situation page names it: when it applies, in a sentence
+  cmd?: string; // the one command to try
+  out?: string; // its real output
+  outNote?: string; // where the output comes from, or what it shows
+  change: string;
+  limits: string;
+  limitsHref?: string;
+  related: [string, string][];
+}
+const { does, when = [], whenText, cmd, out, outNote, change, limits, limitsHref = '#limits', related } = Astro.props;
+const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const render = (s: string) =>
+  escape(s)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(((?:\/|#)[^)\s"]*)\)/g, '<a href="$2">$1</a>');
+---
+<section class="ft not-content" aria-label="At a glance">
+  <p class="ft-does" set:html={render(does)} />
+  <div class="ft-grid">
+    <div class="ft-card">
+      <p class="ft-tag">When you need it</p>
+      {when.length > 0 && <ul class="ft-chips">{when.map(([label, href]) => <li><a href={href}>{label}</a></li>)}</ul>}
+      {whenText && <p set:html={render(whenText)} />}
+    </div>
+    <div class="ft-card ft-try">
+      <p class="ft-tag">Try it</p>
+      {cmd && <div class="ft-cmd"><code><span class="ft-p" aria-hidden="true">$ </span><span class="ft-text">{cmd}</span></code><button type="button" class="ft-copy" aria-label="Copy the command">Copy</button></div>}
+      {out && <pre class="ft-out">{out}</pre>}
+      {outNote && <p class="ft-note" set:html={render(outNote)} />}
+    </div>
+    <div class="ft-card">
+      <p class="ft-tag">Change it</p>
+      <p set:html={render(change)} />
+    </div>
+    <div class="ft-card">
+      <p class="ft-tag">What it does not stop</p>
+      <p><span set:html={render(limits)} /> <a href={limitsHref}>All its limits</a></p>
+    </div>
+  </div>
+  <p class="ft-related"><span class="ft-tag">Related</span>{related.map(([label, href]) => <a href={href}>{label}</a>)}</p>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.ft-copy').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const text = b.parentElement?.querySelector('.ft-text')?.textContent ?? '';
+      try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; } catch { b.textContent = 'Select it'; }
+      window.setTimeout(() => { b.textContent = 'Copy'; }, 1800);
+    });
+  });
+</script>
+
+<style>
+  .ft { margin: 0 0 2.5rem; display: flex; flex-direction: column; gap: 1rem; }
+  .ft-does { margin: 0; font-size: 1.15rem; line-height: 1.6; color: var(--sl-color-white); }
+  .ft-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; }
+  .ft-card { border: 1px solid var(--om-line); border-radius: 18px; background: var(--om-card); padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; font-size: var(--sl-text-sm); }
+  .ft-card p { margin: 0; }
+  .ft-try { grid-column: 1 / -1; }
+  .ft-tag { font-family: var(--sl-font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--sl-color-accent-high); margin: 0; }
+  .ft-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .ft-chips a { display: inline-block; border: 1px solid var(--om-line); border-radius: 999px; padding: 0.2rem 0.7rem; text-decoration: none; color: var(--sl-color-white); background: var(--sl-color-bg); }
+  .ft-chips a:hover { border-color: var(--sl-color-accent); }
+  .ft-cmd { display: flex; align-items: flex-start; gap: 0.6rem; background: var(--om-term); border-radius: 12px; padding: 0.7rem 0.9rem; }
+  .ft-cmd code { flex: 1 1 auto; min-width: 0; background: none; color: var(--om-term-fg); padding: 0; font-size: 0.85rem; overflow-wrap: anywhere; border: 0; }
+  .ft-p { color: var(--om-term-dim); }
+  .ft-copy { flex: none; font: 600 0.75rem var(--sl-font); color: var(--om-term-fg); background: transparent; border: 1px solid #3a5045; border-radius: 8px; padding: 0.3rem 0.7rem; cursor: pointer; min-height: 32px; }
+  .ft-copy:hover { border-color: #7fe3b8; }
+  .ft-out { margin: 0; background: var(--om-term); color: var(--om-term-fg); border-radius: 12px; padding: 0.8rem 0.9rem; font-family: var(--sl-font-mono); font-size: 0.8rem; line-height: 1.6; overflow-x: auto; white-space: pre; }
+  .ft-note { color: var(--sl-color-gray-2); font-size: 0.8rem; }
+  .ft-related { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; font-size: var(--sl-text-sm); }
+  .ft-related .ft-tag { margin-right: 0.25rem; }
+</style>

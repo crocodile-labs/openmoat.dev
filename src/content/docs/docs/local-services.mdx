@@ -8,6 +8,7 @@ sidebar:
 
 import { Aside } from '@astrojs/starlight/components';
 import Impact from '../../../components/Impact.astro';
+import TryIt from '../../../components/TryIt.astro';
 
 <Aside type="note" title="Read this when">
 
@@ -26,6 +27,8 @@ Services on your machine can do a lot: the Docker daemon can start a container w
 | `docker build .` | allow |
 | `docker build --network host .`, `--secret`, `--ssh` | review: `docker-secrets` |
 | `curl http://169.254.169.254/` | deny: the cloud metadata service hands out credentials |
+
+<TryIt cmd={"openmoat policy check \"curl http://localhost:3000/health\""} out={"→ defer\n   rules : default · local-net\n   reason: no rule matched shell \"curl http://localhost:3000/health\"\n   reason: local service; may expose a control API (Docker, databases, cloud agents): net localhost"} note={"A real run with the default policy (your home shown as /Users/you). It runs nothing: it only decides."} />
 
 ## Stop the prompts
 

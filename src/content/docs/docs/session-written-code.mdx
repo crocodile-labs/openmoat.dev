@@ -6,6 +6,19 @@ sidebar:
 ---
 
 import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"Where no OS sandbox from OpenMoat holds the command, running a script the same session wrote needs review first: the script can do what the hook cannot see in the command line."}
+  whenText={"On agents without an OS sandbox from OpenMoat, and on Claude Code and Cursor on native Windows ([Supported features](/docs/supported-features/))."}
+  cmd={"python3 x.py"}
+  out={"moat: review [session-written-code] — runs code this session wrote, with no OS sandbox below the hook: /p/x.py"}
+  outNote={"What the agent is told when it runs /p/x.py, a file it wrote in the same session."}
+  change={"Read the script, then run `openmoat allow --last`: it covers that command until the agent writes the file again. `--always` is refused here, since a rule cannot vouch for code the agent may rewrite."}
+  limits={"Test runners, build tools and package scripts (`pytest`, `npm test`, `cargo test`, `make`, `go run .`) running files the session wrote do not need review."}
+  related={[["Opaque code", "/docs/session-written-code/opaque-code/"], ["OS sandboxes", "/docs/sandboxes/"], ["Code that runs later", "/docs/runs-later/"]]}
+/>
+
 
 <Aside type="note" title="Read this when">
 
