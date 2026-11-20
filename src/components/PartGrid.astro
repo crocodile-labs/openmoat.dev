@@ -1,0 +1,58 @@
+---
+// The docs home's overview: OpenMoat's eight parts as cards, each with what it stops, a
+// small real terminal, the command to start with and a link (data: src/data/parts.ts).
+import { parts } from '../data/parts';
+const icons: Record<string, string> = {
+  policy: '<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  sandbox: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M10 10v10"/>',
+  egress: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.6 3 2.6 13 0 16M12 4c-2.6 3-2.6 13 0 16"/>',
+  secrets: '<circle cx="8" cy="12" r="3.5"/><path d="M11.5 12H20M17 12v3M20 12v2"/>',
+  mcp: '<path d="M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0zM12 16v5"/>',
+  audit: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="5" cy="6" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="18" r="1"/>',
+  merge: '<circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 7v10M6 9c0 3 3 3 10 3"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+};
+---
+<ol class="parts not-content">
+  {parts.map((p, i) => (
+    <li class={`part p-${p.id}`}>
+      <div class="head">
+        <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={icons[p.id]} /></span>
+        <span class="num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+      </div>
+      <h3><a href={p.href}>{p.name}</a></h3>
+      <p class="stops"><span class="sr-only">Stops: </span>{p.stops}</p>
+      <div class="term" role="group" aria-label={`${p.name}: an example`}>
+        {p.term.map((l) => <div class={`tl ${l.tone ?? ''}`}>{l.t}</div>)}
+      </div>
+      <p class="start"><span>Start with</span> <code>{p.start}</code></p>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .parts { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.9rem; }
+  .part { position: relative; display: flex; flex-direction: column; gap: 0.55rem; padding: 1.1rem; border: 1px solid var(--om-line); border-radius: 20px; background: var(--om-card); transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
+  .part:hover { border-color: var(--sl-color-accent); transform: translateY(-2px); box-shadow: 0 14px 30px rgba(60, 45, 20, 0.08); }
+  .part:focus-within { border-color: var(--sl-color-accent); }
+  .head { display: flex; align-items: center; justify-content: space-between; }
+  .icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--sl-color-accent-low); color: var(--sl-color-accent-high); }
+  .p-sandbox .icon, .p-egress .icon, .p-audit .icon { background: var(--sl-color-blue-low); color: var(--sl-color-blue-high); }
+  .p-mcp .icon, .p-merge .icon { background: var(--sl-color-orange-low); color: var(--sl-color-orange-high); }
+  .num { font-family: var(--sl-font-mono); font-size: 0.75rem; color: var(--sl-color-gray-3); }
+  h3 { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
+  h3 a { color: var(--sl-color-white); text-decoration: none; }
+  h3 a::after { content: ''; position: absolute; inset: 0; border-radius: 20px; }
+  h3 a:focus-visible { outline: none; }
+  h3 a:focus-visible::after { outline: 3px solid var(--sl-color-blue); outline-offset: 2px; }
+  .stops { margin: 0; font-size: var(--sl-text-sm); color: var(--sl-color-gray-2); line-height: 1.5; }
+  .term { margin-top: auto; background: var(--om-term); color: var(--om-term-fg); border-radius: 12px; padding: 0.65rem 0.75rem; font-family: var(--sl-font-mono); font-size: 0.72rem; line-height: 1.55; display: flex; flex-direction: column; gap: 2px; }
+  .tl { overflow-wrap: anywhere; }
+  .tl.deny { color: #ff9a8a; font-weight: 600; }
+  .tl.review { color: #f5c46b; }
+  .tl.allow { color: #7fe3b8; }
+  .tl.dim { color: var(--om-term-dim); }
+  .start { margin: 0; font-size: 0.78rem; color: var(--sl-color-gray-3); display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+  .start code { font-size: 0.78rem; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>

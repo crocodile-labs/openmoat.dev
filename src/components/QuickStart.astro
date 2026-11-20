@@ -1,0 +1,35 @@
+---
+// Three numbered cards, each a small terminal: install, protect, see a verdict. The
+// install line is docs/INSTALL.md's Homebrew line; the verdict is a real policy check.
+---
+<ol class="qs not-content">
+  <li>
+    <span class="n" aria-hidden="true">1</span>
+    <b>Install</b>
+    <div class="term"><div><span class="p">$ </span>brew install crocodile-labs/tap/openmoat</div></div>
+    <a href="/get-started/">Linux, Windows and cargo →</a>
+  </li>
+  <li>
+    <span class="n" aria-hidden="true">2</span>
+    <b>Protect your agents</b>
+    <div class="term"><div><span class="p">$ </span>openmoat init</div><div class="dim">asks before it sets up each agent it finds</div></div>
+    <a href="/docs/quickstart/">What init does →</a>
+  </li>
+  <li>
+    <span class="n" aria-hidden="true">3</span>
+    <b>See a verdict</b>
+    <div class="term"><div><span class="p">$ </span>openmoat policy check "cat ~/.ssh/id_rsa"</div><div class="deny">✕ deny</div><div class="dim">   rules : secrets-paths</div></div>
+    <a href="/docs/check-a-command/">Check any command →</a>
+  </li>
+</ol>
+
+<style>
+  .qs { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.8rem; }
+  .qs li { display: flex; flex-direction: column; gap: 0.55rem; padding: 1rem; border: 1px solid var(--om-line); border-radius: 20px; background: var(--om-card); }
+  .n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--sl-color-accent); color: var(--sl-color-black); font-family: var(--sl-font-mono); font-weight: 600; font-size: 0.85rem; }
+  b { font-size: 1.02rem; font-weight: 800; letter-spacing: -0.02em; color: var(--sl-color-white); }
+  .term { background: var(--om-term); color: var(--om-term-fg); border-radius: 12px; padding: 0.6rem 0.75rem; font-family: var(--sl-font-mono); font-size: 0.74rem; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .p, .dim { color: var(--om-term-dim); }
+  .deny { color: #ff9a8a; font-weight: 600; }
+  a { margin-top: auto; font-size: var(--sl-text-sm); }
+</style>

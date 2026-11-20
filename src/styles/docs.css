@@ -95,9 +95,11 @@ h1#_top { font-size: clamp(2.1rem, 4vw, 2.9rem); line-height: 1.05; }
 .sidebar-content a { border-radius: 10px; }
 
 /* rounded cards: tables, code, asides, link cards */
+/* Starlight makes a table a scrolling block on narrow screens: keep that (overflow auto),
+   so a wide table scrolls sideways on a phone instead of being cut off */
 .sl-markdown-content table {
   border-radius: 14px;
-  overflow: hidden;
+  overflow: auto;
   border: 1px solid var(--om-line);
   background: var(--om-card);
 }

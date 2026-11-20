@@ -1,0 +1,49 @@
+---
+// The docs home's map: the menu's groups as cards of links, and every feature as a chip.
+const groups = [
+  { title: 'Start here', tone: 'green', links: [['Get started in three steps', '/get-started/'], ['Quick start', '/docs/quickstart/'], ['How it decides', '/docs/how-it-decides/'], ['Use it in your projects', '/docs/your-projects/'], ['Upgrade', '/docs/upgrade/']] },
+  { title: 'By situation', tone: 'blue', links: [['On a laptop', '/docs/solutions/on-a-laptop/'], ['Unattended agents', '/docs/solutions/unattended-agents/'], ['MCP servers', '/docs/solutions/mcp-servers/'], ['A team, one policy', '/docs/solutions/team-policy/'], ['CI and pull requests', '/docs/solutions/ci-and-pull-requests/'], ['Audit and compliance', '/docs/solutions/audit-evidence/'], ['Building an agent', '/docs/solutions/agent-products/']] },
+  { title: 'Something blocked?', tone: 'amber', links: [['Why it was blocked', '/docs/blocked/'], ['Check a command first', '/docs/check-a-command/'], ['Every allow and its impact', '/docs/allow-reference/'], ['Troubleshooting', '/docs/troubleshooting/'], ['Turn it off', '/docs/turn-off/']] },
+  { title: 'Reference', tone: 'gray', links: [['Commands', '/docs/commands/'], ['The policy file', '/docs/policy-file/'], ['Change the rules', '/docs/change-the-rules/'], ['Glossary', '/docs/glossary/'], ['Limits', '/docs/limits/'], ['Break OpenMoat', '/docs/break-openmoat/'], ['Releases', '/docs/releases/']] },
+];
+const features = [
+  ['Shell commands', '/docs/shell-commands/'], ['Secrets and .env files', '/docs/env-files/'], ['Card numbers', '/docs/env-files/card-numbers/'],
+  ['Network allowlist', '/docs/allow-a-site/'], ['Token broker', '/docs/keep-tokens-safe/'], ['MCP pinning', '/docs/mcp-servers/'],
+  ['MCP data between servers', '/docs/mcp-servers/cross-server/'], ['Browser pages', '/docs/mcp-servers/browser-pages/'], ['OS sandboxes', '/docs/sandboxes/'],
+  ['Egress proxy', '/docs/egress-proxy/'], ['Session taint', '/docs/session-taint/'], ['Injected input', '/docs/injected-input/'],
+  ['Code the agent wrote', '/docs/session-written-code/'], ['Code that runs later', '/docs/runs-later/'], ['Self-protection', '/docs/self-protection/'],
+  ['Snapshots', '/docs/snapshots/'], ['Audit log', '/docs/see-what-happened/'], ['Watch and why', '/docs/see-what-happened/watch-and-why/'],
+  ['Provenance', '/docs/see-what-happened/provenance/'], ['Merge check', '/docs/check-a-pull-request/'], ['Team rules and packs', '/docs/team-rules/'],
+  ['Compliance evidence', '/docs/compliance-evidence/'], ['Auto-approve and CI', '/docs/auto-approve-and-ci/'], ['Phone approvals', '/docs/remote-approvals/'],
+  ['The SDK', '/docs/sdk/'], ['Supported features', '/docs/supported-features/'],
+];
+---
+<div class="map not-content">
+  {groups.map((g) => (
+    <nav class={`group ${g.tone}`} aria-label={g.title}>
+      <p class="title">{g.title}</p>
+      <ul>{g.links.map(([label, href]) => <li><a href={href}>{label}</a></li>)}</ul>
+    </nav>
+  ))}
+</div>
+<nav class="features not-content" aria-label="Every feature">
+  <p class="title">Every feature</p>
+  <ul>{features.map(([label, href]) => <li><a href={href}>{label}</a></li>)}</ul>
+</nav>
+
+<style>
+  .map { margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.8rem; }
+  .group { border: 1px solid var(--om-line); border-radius: 20px; background: var(--om-card); padding: 1rem 1.1rem; border-top-width: 4px; }
+  .green { border-top-color: var(--sl-color-green); }
+  .blue { border-top-color: var(--sl-color-blue); }
+  .amber { border-top-color: var(--sl-color-orange); }
+  .gray { border-top-color: var(--sl-color-gray-4); }
+  .title { margin: 0 0 0.5rem; font-family: var(--sl-font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--sl-color-gray-2); }
+  ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: var(--sl-text-sm); }
+  .group a { text-decoration: none; }
+  .group a:hover { text-decoration: underline; }
+  .features { margin-top: 1rem; }
+  .features ul { flex-direction: row; flex-wrap: wrap; gap: 0.4rem; }
+  .features a { display: inline-block; padding: 0.25rem 0.75rem; border: 1px solid var(--om-line); border-radius: 999px; background: var(--om-card); color: var(--sl-color-white); text-decoration: none; font-size: 0.82rem; }
+  .features a:hover { border-color: var(--sl-color-accent); color: var(--sl-color-accent-high); }
+</style>
