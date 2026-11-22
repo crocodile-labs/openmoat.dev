@@ -47,7 +47,7 @@ From 0.20.0 `openmoat run` on Linux starts the Isolated tier (bubblewrap) where 
 
 **Snapshots.** Before the agent starts and after it exits, `openmoat run` takes a snapshot of the project's files into OpenMoat's own store; `openmoat restore` puts them back ([Undo an agent's changes](/docs/snapshots/)). `--no-snapshot` takes none, on record.
 
-**Environment.** Every inherited variable reaches the agent except brokered secrets; one line says how many look like credentials. Under [`require.run: full-boundary`](/docs/team-rules/required-protection/#require-openmoat-runs-full-boundary) only an allowlist does; add a name with `--env NAME` or `sandbox.env_allow`.
+**Environment.** Every inherited variable reaches the agent except brokered secrets; one line says how many look like credentials. Under [`require.run: full-boundary`](/docs/team-rules/required-protection/#require-openmoat-runs-full-boundary) only an allowlist does; add a name with `--env NAME` or `sandbox.env_allow`. Since 0.25.0, `sandbox.env: scrubbed` and `--scrub-env` turn the allowlist on by themselves ([Scrubbed environment](/docs/sandboxes/scrubbed-environment/)), and `openmoat init` can make typing a hook-only agent's name start it in `openmoat run` ([Start agents sandboxed](/docs/sandboxes/sandboxed-start/)).
 
 More on auto-approve: [Auto-approve and CI](/docs/auto-approve-and-ci/#run-a-whole-agent-in-a-sandbox).
 

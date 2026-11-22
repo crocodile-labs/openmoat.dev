@@ -1,0 +1,96 @@
+---
+title: "Is my agent still protected?"
+description: "An agent can stop running OpenMoat's hook without a word. openmoat status, doctor and watch warn when an agent ran sessions since its hook, settings or program changed and OpenMoat saw no call from it."
+sidebar:
+  label: "Is my agent still protected?"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"An agent can stop running OpenMoat's hook and say nothing: an update reads its hooks elsewhere, a setting turns hooks off, an edit loses the entry, or a session started before `openmoat init` keeps the hooks it read at start. `openmoat status`, `openmoat doctor` and `openmoat watch` warn when the agent wrote sessions since the last such change and no call of its reached OpenMoat."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat doctor"}
+  outNote={"Under each agent's hook line `doctor` prints one of the lines below; `openmoat status` shows only the warning."}
+  change={"There is nothing to turn on: every agent `openmoat init` set up is looked at. Nothing is decided from it, so no call is held, denied or allowed because of it."}
+  limits={"A session that used no tool, or ran on another machine that shares the agent's folder, looks the same as one whose calls went unchecked. For goose, Hermes Agent, Antigravity CLI and Crush OpenMoat cannot tell whether the agent ran."}
+  related={[["Plugin loading", "/docs/agents/plugin-loading/"], ["Self-protection", "/docs/self-protection/"], ["Hooks, lock and binary", "/docs/troubleshooting/hooks-and-lock/"], ["Watch and why", "/docs/see-what-happened/watch-and-why/"]]}
+/>
+
+**Protects against** an agent that looks protected but no longer runs OpenMoat's hook, so its tool calls run unchecked and nobody is told.
+
+## What it does
+
+`openmoat status` reads the hook file, so it catches a lost entry and the settings it knows. It cannot see an agent that no longer runs an entry that is still there. So OpenMoat compares three things:
+
+- **The last change that could have stopped the hook:** OpenMoat writing the hook, the hook file or a settings file that turns hooks off changing (Codex's `config.toml`), or the agent's program on the search path changing (an update).
+- **The newest call the guard recorded** for that agent in the audit log.
+- **The agent's own session files** written since that change.
+
+A call since the change means the hook runs. No call and no sessions means nothing to check yet. Sessions and no call is the warning.
+
+## What you see
+
+| Line | Shown by | Means |
+|---|---|---|
+| `· hook runs: last call <time>` | `doctor` | A call reached OpenMoat after the last change |
+| `· no call since OpenMoat wrote its hook (<time>); <agent> has not run a session since, as far as OpenMoat can tell` (or `since its settings changed`, `since <agent> was updated`) | `doctor` | Nothing to check yet: start the agent |
+| `· no call since …; OpenMoat cannot tell whether <agent> ran since (<why>)` | `doctor` | An agent whose session files OpenMoat does not know ([below](#which-agents)) |
+| `! <agent> ran 3 sessions since … (last <time>), and OpenMoat saw no call from it: if they used tools, the hook did not run and the calls were not checked` | `status`, `doctor`, `watch` | Sessions at least ten minutes old were written since the change, and no call came |
+
+`openmoat status` shows the warning under "needs attention" and leaves out the other lines, to stay short. `openmoat status --format json` lists every set-up hook agent under `hooks`, in the form of `plugins`.
+
+## What to do
+
+The fix `status` and `doctor` print with the warning:
+
+1. **Restart the agent.** A session started before the change may not run the new hook: most agents read their hooks when a session starts.
+2. **If the line stays, run `openmoat init`** in your own terminal, and check that nothing turns the agent's hook off: the "Turned off" column of [If the hook fails](https://github.com/crocodile-labs/openmoat/blob/main/docs/LIMITS.md#if-the-hook-fails) (`disableAllHooks`, Codex's `[features] hooks = false`, …).
+3. **For Codex, trust OpenMoat's hooks in `/hooks`.**
+
+Any later call from the agent clears the warning.
+
+## `openmoat watch`
+
+`openmoat watch` looks at the set-up agents every thirty seconds. It prints one line when an agent's plugin or hook turns missing, ending in ``Run `openmoat doctor` for the fix``, and one line, `<agent>: OpenMoat sees its calls again`, when its calls come back. It says nothing while the state stays the same.
+
+## Which agents
+
+Where OpenMoat knows the agent's session files, it can warn. The places it looks, in the agent's configuration folder:
+
+| Agent | Session files OpenMoat looks at |
+|---|---|
+| Claude Code | `projects/*/*.jsonl` |
+| Codex | `sessions/<year>/<month>/<day>/*.jsonl`; `config.toml` changing counts as a change |
+| Cursor | `chats/*/*/store.db` (the Cursor CLI; the editor's chats are not seen) |
+| GitHub Copilot CLI | `session-state/*/events.jsonl` |
+| Gemini CLI | `tmp/*/chats/*.jsonl` (and `*.json` from older releases) |
+| Qwen Code | `projects/*/chats/*.jsonl` |
+| Cline CLI | `data/sessions/*/*.messages.json` (`CLINE_DATA_DIR` and `CLINE_SESSION_DATA_DIR` move it) |
+
+For these agents OpenMoat does not know where a session is written, so `doctor` gives only the note that no call came, with the reason:
+
+| Agent | Why OpenMoat cannot tell |
+|---|---|
+| goose | it keeps its sessions in one database in its data folder, which commands that run no session open too |
+| Hermes Agent | it keeps every session in one database, `state.db`, which gateway, cron and ACP sessions write too, and those never run the shell hook |
+| Antigravity CLI | its documentation does not say where `agy` writes a conversation |
+| Crush | it keeps its sessions in a database in each project's `.crush` folder, not in its configuration folder |
+
+OpenClaw, pi and OpenCode run OpenMoat through a plugin, which reports as it loads: [Did the agent load the plugin?](/docs/agents/plugin-loading/)
+
+## Settings
+
+None. The look happens in `status`, `doctor` and `watch` only, and reads up to 4096 folder entries per agent.
+
+## Limits
+
+- **It comes only after a session is ten minutes old.** A question answered without a tool still writes a session file, so a session counts only once it started at least ten minutes ago.
+- **A session that used no tool looks the same** as one whose calls went unchecked, so the warning says "if they used tools". It is a warning, never a lower protection level, and `require:` in your policy is not affected.
+- **Another machine.** Sessions synced from another machine that shares the agent's folder count here, though their calls were checked there.
+- **File times.** OpenMoat compares file times with the audit log's times on this machine, so a file restored from a backup or written with a wrong clock can raise the warning until the next call.
+- **Unknown places stay quiet.** For the five agents above, and Cursor's editor, there is no warning. A wrong place can only lose warnings, never add them.
+- **A settings change by the agent itself** (a model choice Claude Code saves in `settings.json`) counts as a change; the next call clears it.
+
+More in [Limits](/docs/limits/).

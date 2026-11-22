@@ -1,0 +1,97 @@
+---
+title: "Scrubbed environment"
+description: "With sandbox.env: scrubbed or openmoat run --scrub-env, what openmoat run starts gets only an allowlist of your environment variables: cloud credentials, tokens and database URLs stay behind."
+sidebar:
+  label: "Scrubbed environment"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+<FeatureTop
+  does={"A program reads its whole environment, and so does everything it starts. With a scrubbed environment, what `openmoat run` starts gets only an allowlist of the variables it was started with: what programs and builds need, the agent's own variables and the names you add. Cloud credentials, tokens and database URLs stay behind, so no spelling of a command can read them."}
+  when={[["Unattended agents", "/docs/solutions/unattended-agents/"], ["On a laptop", "/docs/solutions/on-a-laptop/"]]}
+  cmd={"openmoat run --print-boundary -- claude"}
+  outNote={"Prints what a run here would start with, the environment included: which names would pass, which would be withheld and which hold a placeholder. Names only, never a value."}
+  change={"`sandbox.env: scrubbed` in your own policy (`openmoat edit`) for every run, or `openmoat run --scrub-env` for one. Pass a name on with `--env NAME` once, or `sandbox.env_allow` for good."}
+  limits={"Only what `openmoat run` starts is scrubbed. An agent started without it gets your whole environment, and the agent's own API key stays on its list, so its commands can read that key."}
+  related={[["openmoat run", "/docs/sandboxes/openmoat-run/"], ["Token broker", "/docs/keep-tokens-safe/"], ["Secrets and .env files", "/docs/env-files/"], ["Required protection", "/docs/team-rules/required-protection/"]]}
+/>
+
+**Protects against** a secret in an environment variable being read by something the hook cannot see: an alias (`e = os.environ`), a script the agent wrote, a test runner that prints its environment when it fails, or any program that reads its own variables.
+
+The hook still denies the commands that print variables (`env-secrets`, `env-dump`); a scrubbed environment removes the variables themselves, and those rules stay as they are.
+
+## What passes
+
+| Reaches the program when scrubbed | Where it comes from |
+|---|---|
+| `PATH`, `HOME`, `USER`, `SHELL`, `TERM`, locale, `TZ`, temp folders, `EDITOR`, `VISUAL`, `PAGER`, the XDG folders | built in |
+| Toolchain locations: `JAVA_HOME`, `GOPATH`, `GOROOT`, `GOBIN`, `CARGO_HOME`, `RUSTUP_HOME`, `RUSTUP_TOOLCHAIN`, `NVM_DIR`, `NVM_BIN`, `PYENV_ROOT`, `VIRTUAL_ENV`, `CONDA_PREFIX`, `CONDA_DEFAULT_ENV`, `HOMEBREW_PREFIX`, `HOMEBREW_CELLAR`, `HOMEBREW_REPOSITORY`, `MANPATH`, `INFOPATH`, `LESS`, `GPG_TTY` | built in; none holds a secret |
+| The platform's own (`__CF_USER_TEXT_ENCODING`, `XPC_*` on macOS; `HOSTNAME`, `DISPLAY`, `WAYLAND_DISPLAY` on Linux) | built in |
+| The agent's own API key and configuration folder variables | the agent's spec in OpenMoat |
+| Names you add | `sandbox.env_allow`, or `--env NAME` for one run |
+| What `openmoat run` sets itself | the proxy, the hook relay, the temp folder, git's settings, the CA files |
+
+**Everything else is withheld:** cloud credentials, tokens, database URLs, and any variable the list does not name. MCP servers started with `openmoat mcp proxy --sandbox` run under `openmoat run`, so they are scrubbed when the run is, and keep the names their accepted definition sets.
+
+## Brokered secrets hold their placeholder
+
+A brokered secret with `source: { env: NAME }` never reaches the program, scrubbed or not: `NAME` holds the secret's placeholder, `moat-secret:<id>:placeholder`. A tool that refuses to start without its token starts, and what it sends is the placeholder:
+
+- to the secret's host, through a proxy that terminates TLS for it, the placeholder is replaced by the value, which is what the [token broker](/docs/keep-tokens-safe/) is for;
+- anywhere else, the hook denies the call (`placeholder-egress`) and the proxy refuses the request (`proxy-secret`).
+
+## Turn it on
+
+```yaml
+sandbox:
+  env: scrubbed               # default: inherited
+  env_allow: [MY_TOOL_HOME]   # optional: more names to pass on
+```
+
+```bash
+openmoat run --scrub-env -- claude                     # scrub this run only
+openmoat run --scrub-env --env NPM_TOKEN -- claude     # and pass one name on
+openmoat run --print-boundary -- claude                # what would pass, names only
+```
+
+- **What chooses it**, in this order: [`require.run: full-boundary`](/docs/team-rules/required-protection/#require-openmoat-runs-full-boundary), which scrubs whatever `sandbox.env` says; then `--scrub-env`; then `sandbox.env`; then the default, `inherited`. The run's notice and its boundary record name which one chose.
+- **`--scrub-env` only raises.** No flag inherits when your policy scrubs, so a script cannot undo your choice; pass a name on with `--env NAME`.
+- **Only your own policy** can set `env` or `env_allow`, and the policy lock pins it. A repository policy or a pack has no `sandbox:` section; it scrubs only through `require.run: full-boundary`.
+
+## What it tells you
+
+No line ever shows a value.
+
+| Where | What it says |
+|---|---|
+| `openmoat run`, scrubbed | ``moat run: <n> inherited variables withheld from the agent (--verbose names them; `--env NAME` or `sandbox.env_allow` in your policy passes one on)`` |
+| `openmoat run`, not scrubbed | ``moat run: <n> inherited variables that look like credentials reach the agent (<names>); `sandbox.env: scrubbed` in your policy or `--scrub-env` withholds them`` |
+| `openmoat run --verbose` | the names withheld, or that would be withheld |
+| `openmoat run --print-boundary` | `environment: scrubbed: only the allowlist passes` or `inherited: every variable passes`, with what chose it, then the names passed, withheld and holding a placeholder |
+| `openmoat doctor` | the `run environment` row: the names a run here withholds, or would with `sandbox.env: scrubbed` |
+| The audit log | every run's [boundary record](/docs/sandboxes/boundary-record/) holds the same names |
+
+## Off by default, for now
+
+`sandbox.env` absent means `inherited` in this release:
+
+- **Normal work must not break.** A variable a tool needs and no list names is removed without the tool saying why; the run's one line says how many it withheld, but a build that fails a minute later does not point back at it.
+- **The lists are not checked enough yet.** The agents' lists come from their documentation, several are not checked, and no real agent has run under a scrubbed environment yet.
+
+The default should become `scrubbed` in a release whose notes say so, once real Claude Code and Codex runs pass under `--scrub-env`. Until then the run's warning line names `sandbox.env: scrubbed` and `--scrub-env`.
+
+## Which agents
+
+Every agent started with `openmoat run`, on macOS 13 or later and Linux. The agents' own sandboxes are not scrubbed: Claude Code's settings can set a variable but not remove one, and Claude Code's `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` and Codex's `shell_environment_policy` are documented but not yet tried against OpenMoat's hook, so `openmoat init` writes neither. A hook-only agent started without `openmoat run` is not scrubbed; [sandboxed start](/docs/sandboxes/sandboxed-start/) makes typing its name start it in `openmoat run`.
+
+## Limits
+
+- **It is the environment at the start.** A value kept in a file, the keychain or a helper is outside it.
+- **The agent's own key reaches its commands.** It is on the list for that agent, and the agent passes its environment to what it starts.
+- **A tool that stops working** under `--scrub-env` needs a variable no list names: add it with `--env NAME` once, or `sandbox.env_allow` for good. A login through a cloud account (Bedrock, Google Cloud) needs you to add those names on purpose.
+- **Another process's environment.** Under `openmoat run` the environment of `openmoat run` itself, which still has the variables, is out of reach: the macOS profile denies it, on Linux no grant covers `/proc`. A policy that grants `/proc` reopens it on Linux.
+- **An agent started without `openmoat run`**, and its commands, get your whole environment; the hook's rules are all that holds there.
+
+More in [Limits](/docs/limits/).

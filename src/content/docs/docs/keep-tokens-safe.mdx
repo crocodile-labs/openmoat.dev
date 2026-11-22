@@ -18,7 +18,7 @@ import FeatureTop from '../../../components/FeatureTop.astro';
   outNote={"A real run with the default policy: the agent cannot print the token. To broker it, run `openmoat secret add gh` in your own terminal: it brokers `GITHUB_TOKEN` for `api.github.com`, shows the change to your policy and asks before it applies it."}
   change={"`openmoat secret add <name> --host <host> --env <VAR>` brokers another service's token; `openmoat secret list` shows what is brokered."}
   limits={"HTTPS injection works through Claude Code's own sandbox broker, and inside `openmoat run` for a `tls: terminate` secret; elsewhere a request over HTTPS keeps the placeholder."}
-  related={[["Tokens sent to the wrong host", "/docs/keep-tokens-safe/token-egress/"], ["Where it works", "/docs/keep-tokens-safe/where-it-works/"], ["Egress proxy", "/docs/egress-proxy/"], ["Secrets and .env files", "/docs/env-files/"]]}
+  related={[["Tokens sent to the wrong host", "/docs/keep-tokens-safe/token-egress/"], ["Where it works", "/docs/keep-tokens-safe/where-it-works/"], ["Egress proxy", "/docs/egress-proxy/"], ["Secrets and .env files", "/docs/env-files/"], ["Scrubbed environment", "/docs/sandboxes/scrubbed-environment/"], ["Decoy keys", "/docs/env-files/decoy-keys/"]]}
 />
 
 

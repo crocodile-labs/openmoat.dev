@@ -1,0 +1,26 @@
+---
+title: "OpenMoat 0.25.0"
+description: "OpenMoat warns when an agent stops running its hook, can start agents with a scrubbed environment, can plant decoy keys and start agents sandboxed at your yes, and denies reading other programs' environments."
+sidebar:
+  label: "0.25.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-22. [GitHub release v0.25.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.25.0).
+
+<Aside type="caution" title="Upgrading">
+
+Run `openmoat policy upgrade` in your own terminal for the changed default rules, then `openmoat init` once: it pins two new records and asks the two new questions below, both answered no unless you type `y`.
+
+</Aside>
+
+- **Know when protection stops.** `openmoat status`, `doctor` and `watch` now warn when an agent ran sessions since its hook, settings or program changed and none of its calls reached OpenMoat. [Is my agent still protected?](/docs/hook-liveness/)
+- **A scrubbed environment for `openmoat run`.** With `sandbox.env: scrubbed` or `--scrub-env`, the agent and everything it starts get only an allowlist of your environment, so a token in your shell is not there to read. Off by default. [Scrubbed environment](/docs/sandboxes/scrubbed-environment/)
+- **Decoy keys, at your yes.** `openmoat init` can plant fake keys beside your real ones; reading or sending one is denied and flagged. [Decoy keys](/docs/env-files/decoy-keys/)
+- **Start agents sandboxed, at your yes.** `openmoat init` can make typing a hook-only agent's name start it in `openmoat run`. [Start agents sandboxed](/docs/sandboxes/sandboxed-start/)
+- **Other programs' environments stay private.** `ps eww`, `ps -E` and `pargs -e` are denied like reading `/proc/<pid>/environ`; everyday `ps`, `ps aux` and `ps -ef` run as before.
+- **Linux sandbox check.** On Linux, `openmoat doctor` says when an agent's own sandbox cannot start commands on this machine, and how to fix it.
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0250---2026-11-22).

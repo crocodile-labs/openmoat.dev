@@ -57,6 +57,14 @@ The project's `.moat/policy.yaml` does not parse. [Details](/docs/troubleshootin
 
 The log was cut short or rewritten after you anchored it. [Details](/docs/troubleshooting/policies-and-network/#openmoat-audit-verify---against-fails).
 
+### `openmoat status` says an agent ran sessions and OpenMoat saw no call
+
+The agent may not run OpenMoat's hook: restart it first. [Details](/docs/troubleshooting/hooks-and-lock/#openmoat-status-says-an-agent-ran-sessions-and-openmoat-saw-no-call).
+
+### A call is denied with `canary`
+
+It touched a decoy key you had `openmoat init` plant: something in that session went looking for keys. [Details](/docs/env-files/decoy-keys/#a-call-was-denied-with-canary).
+
 ### An older OpenMoat cannot open the audit log
 
 Upgrade every `openmoat` on the machine to the same release. [Details](/docs/troubleshooting/policies-and-network/#an-older-openmoat-cannot-open-the-audit-log).
