@@ -1,0 +1,76 @@
+---
+title: "Decoy keys"
+description: "At your yes, openmoat init plants fake key files beside the real ones. No real work touches them, so a call that reads or sends one is denied with rule canary and flagged: something in that session went looking for keys."
+sidebar:
+  label: "Decoy keys"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+<Aside type="tip" title="New in the next release">
+
+This page describes OpenMoat's next release. 0.24.0 does not have it yet.
+
+</Aside>
+
+<FeatureTop
+  does={"A denied read of a key file tells little: the agent may have asked by mistake. Decoy keys tell more. At your yes, `openmoat init` plants fake keys beside the real files, at names no program loads. No real work touches them, so a call that reads, changes or sends one is denied with rule `canary`, and `openmoat status` flags it: something in that session went looking for keys."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat init"}
+  out={"  Decoy keys       plant 3 fake key file(s) (~/.aws/credentials.bak, ~/.git-credentials.bak, ~/.npmrc.bak) so that any attempt to read or send them is caught? No real file is touched  [y/N/d] y\n✔ decoy keys       3 planted: ~/.aws/credentials.bak, ~/.git-credentials.bak, ~/.npmrc.bak; reading or sending one is denied (rule canary)"}
+  outNote={"The question and the answer as INSTALL.md in the openmoat repository shows them. `init` asks only at a terminal; Enter is no, and `d` shows each file whole before you answer."}
+  change={"Say yes at `openmoat init`; a no is not recorded, so the next `init` asks again. `openmoat uninstall` deletes the decoys."}
+  limits={"A decoy's value is caught as exact text: encoded (base64, hex), split across calls or rebuilt by a program before it is sent, it is not seen."}
+  related={[["Secrets and .env files", "/docs/env-files/"], ["Token broker", "/docs/keep-tokens-safe/"], ["Why it was blocked", "/docs/blocked/"], ["Watch and why", "/docs/see-what-happened/watch-and-why/"]]}
+/>
+
+**Protects against** a session hunting for keys going unnoticed: a prompt injection in a page, a file or a tool result that tells the agent to find credentials, or a script that sweeps the home folder.
+
+## Where the decoys go
+
+| Decoy | What it holds | Planted when |
+|---|---|---|
+| `~/.aws/credentials.bak` | an AWS access key id and secret | `~/.aws` exists (no folder is made) |
+| `~/.git-credentials.bak` | a GitHub token in a git credential URL | nothing is at that name |
+| `~/.npmrc.bak` | an npm token | nothing is at that name |
+
+- **Never over a real file.** Each decoy is created only where nothing is at its name, owner-only; it never replaces, appends to or follows a link to anything. No real file is read, changed or replaced.
+- **Not where tools load keys.** The standard paths (`~/.aws/credentials`, `~/.git-credentials`, `~/.npmrc`) are loaded by the AWS tools, git and npm on their own, so a fake key there would change what your tools do. A `.bak` beside the real file is what a key hunter finds, and no program reads it unasked. The standard paths stay denied by `secrets-paths`.
+- **You can tell them apart.** Each key has the shape key scanners look for and carries `OpenMoatDecoy` (`OPENMOATDECOY` in the AWS key id, and the git login `openmoat-decoy`); the rest is random per install, so a value seen on the wire is this machine's.
+- **Agents may not read which files are decoys.** The record, `~/.moat/canaries.json`, is pinned by the policy lock and denied to agents (`kernel-self`).
+
+## What happens when one is touched
+
+- **Its path.** A call that reads or changes a decoy, by a file tool, a shell word, a copy, a link or an MCP argument, is denied with rule `canary`. The decoys are the first deny group OpenMoat decides with, so a decoy in `~/.aws` is reported as `canary`, not `secrets-paths`. No other call's verdict changes.
+- **Its value.** A command, a URL, a query, a file the agent writes or an MCP call's arguments that carry a decoy's value, in any letter case, are denied with rule `canary`. At `openmoat proxy`, a request to any host that carries one is refused.
+- **The words.** `canary` reads "touching a decoy key OpenMoat planted": no real work reads or sends a decoy, so whatever asked for it was looking for keys to take. The values are masked in the audit log, as brokered secrets are.
+- **The flag.** `openmoat status` and `openmoat doctor` raise the calls of the last seven days that touched a decoy first among what needs attention, naming the latest and the `openmoat why` command that shows it. `openmoat report` counts them; `openmoat watch` shows them as every deny.
+
+With none touched, `status` reads `<n> planted; none touched in the last 7 days` on its `Decoy keys` row.
+
+## A call was denied with `canary`
+
+This is not OpenMoat in your way: something in that session went looking for keys, often an instruction in a page, a file or a tool result the agent read. Nothing real was exposed.
+
+```bash
+openmoat why --last     # the call
+openmoat watch          # the session
+```
+
+## Undo
+
+`openmoat uninstall` deletes every decoy that still holds what was planted; a decoy written to since is kept and named. The record stays, emptied, so the lock keeps pinning it; `--purge` deletes it with the state folder.
+
+## Settings
+
+The `canary` rule is not in your policy file, since the decoys' paths are this machine's, and it only tightens. There is nothing to set beyond your yes at `openmoat init`. The rule in the policy reference: [POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md).
+
+## Limits
+
+- **Exact text.** A decoy's value is found in any letter case, but not encoded (base64, hex), split across calls or rebuilt by a program before it is sent, as for brokered secrets.
+- **A read the hook does not see.** A decoy read by a program the agent started, or by a sweep such as `grep -r` over the home folder, is caught only when its value goes out through a checked call or `openmoat proxy`.
+- **Inside `openmoat run`** the OS sandbox does not deny the decoy files themselves; their values are refused at the run's proxy, which is the run's only network.
+- **Only at a terminal.** `init` asks only a person at a terminal: never with `--yes`, in a dry run or without a terminal.
+
+More in [Limits](/docs/limits/).
