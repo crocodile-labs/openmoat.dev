@@ -1,0 +1,100 @@
+---
+title: "Start agents sandboxed"
+description: "At your yes, openmoat init writes a small shim per hook-only agent and puts its folder first on PATH, so typing the agent's name starts it in openmoat run's OS sandbox."
+sidebar:
+  label: "Start agents sandboxed"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+<Aside type="tip" title="New in the next release">
+
+This page describes OpenMoat's next release. 0.24.0 does not have it yet.
+
+</Aside>
+
+<FeatureTop
+  does={"OpenMoat writes no OS sandbox for hook-only agents, so typing `gemini` starts it with the hook only, and `openmoat run` had to be typed every time. At your yes, `openmoat init` writes a shim per agent in `~/.moat/bin` and puts that folder first on `PATH`, so typing the agent's name starts it in `openmoat run`'s sandbox."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat init"}
+  out={"  Sandboxed start  make typing gemini, opencode start it in `openmoat run`'s sandbox? It writes 2 shim(s) to ~/.moat/bin and 2 lines to ~/.zshrc  [y/N/d] y\n✔ sandboxed start  gemini, opencode: shims in ~/.moat/bin; ~/.zshrc puts it first on PATH (backup ~/.zshrc.moat-backup); open a new shell to use it"}
+  outNote={"The question and the answer as INSTALL.md in the openmoat repository shows them. `init` asks only at a terminal; Enter is no, and `d` shows each shim and the added lines whole before you answer."}
+  change={"Say yes at `openmoat init`; a no is not recorded, so the next `init` asks again. `openmoat uninstall --hosts <agent>` removes one agent's shim."}
+  limits={"It works only from a shell that read the added line, and only when you type the agent's name: a program started by its full path, by an editor or by another tool starts outside the sandbox, as before."}
+  related={[["openmoat run", "/docs/sandboxes/openmoat-run/"], ["OS sandboxes", "/docs/sandboxes/"], ["Scrubbed environment", "/docs/sandboxes/scrubbed-environment/"], ["Supported agents", "/docs/agents/"]]}
+/>
+
+**Protects against** a hook-only agent's allowed commands running with your full permissions because `openmoat run` was not typed this time.
+
+## What it writes
+
+**A shim per agent** in `~/.moat/bin`, named as the agent's program. It is the `openmoat run` command `openmoat status` already prints for that agent, nothing more, with both programs by the absolute path `init` found:
+
+```sh
+#!/bin/sh
+# OpenMoat: `gemini` starts Gemini CLI in `openmoat run`'s sandbox (ADR-106).
+# Written by `openmoat init`; `openmoat uninstall` removes it.
+exec '/opt/homebrew/bin/openmoat' run --write '/Users/me/.gemini' -- '/opt/homebrew/bin/gemini' "$@"
+```
+
+The real agent is found on the search path with the shim folder left out, so a shim never finds itself.
+
+**Two lines at the end of your shell's start-up file**, on the same yes, after backing the file up (`<file>.moat-backup`):
+
+```sh
+# Added by `openmoat init` (sandboxed start); `openmoat uninstall` removes these two lines.
+export PATH="$HOME/.moat/bin:$PATH"
+```
+
+| Your shell (`$SHELL`) | The file |
+|---|---|
+| zsh | `~/.zshrc` |
+| bash | `~/.bash_profile` on macOS, `~/.bashrc` elsewhere |
+| another shell | none: `init` writes the shims and prints the line for you to add |
+
+Nothing changes how an agent starts until a new shell reads that line. The default policy's `shell-rc` rule keeps agents from writing these files; only `init`, run by you after the question, writes them.
+
+## Which agents
+
+Offered where `openmoat run` works (macOS 13 and later, Linux), for each agent set up by this `init` that OpenMoat knows how to start in `openmoat run` and that has no shim yet:
+
+| Agent | Shim |
+|---|---|
+| Gemini CLI, OpenCode, Hermes Agent, pi, goose, Antigravity CLI, GitHub Copilot CLI, the Cline CLI | offered |
+| Claude Code, Codex, Cursor | not offered: OpenMoat sets up their own OS sandbox ([OS sandboxes](/docs/sandboxes/)) |
+| OpenClaw | not offered: its Gateway serves a local port, which `openmoat run`'s sandbox does not allow |
+| Qwen Code, Crush | not offered: which folders it writes outside the project was not checked |
+
+On Linux without a network namespace for the run, an agent that needs a `--write` path outside the project is not offered either.
+
+## Check it
+
+`openmoat status` and `openmoat doctor` say per agent whether typing its command starts it sandboxed from the current shell:
+
+| Line | Run |
+|---|---|
+| ``typing `<name>` starts it in `openmoat run` `` | nothing |
+| `a shim is in ~/.moat/bin, but this shell's PATH does not include it: …` | open a new shell, or put `~/.moat/bin` first on `PATH` |
+| `a shim is in ~/.moat/bin, but this shell's PATH finds <program> first, which starts outside the sandbox: …` | the same |
+| ``the shim … is not the one `openmoat init` wrote: run `openmoat init` to write it again`` | `openmoat init` |
+| ``the shim starts <program>, which is gone: run `openmoat init` to find `<name>` again`` | `openmoat init` |
+
+An agent cannot replace a shim: `~/.moat` is denied to its writes (`kernel-self`), and the policy lock pins every shim, so a changed one is drift and every call is denied (`kernel-integrity`) until you look.
+
+## Typing the agent's name in your home folder
+
+`openmoat run` refuses to start outside a project, as always, so typing the agent's name in your home folder says so. Start the agent in a project, or run the program the shim in `~/.moat/bin` names to start it without the sandbox there.
+
+## Undo
+
+`openmoat uninstall --hosts <agent>` removes that agent's shim while it is what `init` wrote (otherwise it is kept and named). With the last shim the two lines go: the start-up file is given back from its backup when the rest is as it was, deleted when `init` created it and nothing else is in it, and otherwise only the two lines are taken out. `openmoat uninstall` does all of it for every agent.
+
+## Limits
+
+- **It depends on your shell's `PATH`.** Only a shell that read the added line, and only a name you type: a program started by its full path, by an editor or by another tool's own lookup starts outside the sandbox.
+- **A shim starts the program `init` found.** After the agent moves, or its configuration folder changes (`GEMINI_CLI_HOME`), run `openmoat init` again; `status` says so.
+- **An agent that starts itself again** from inside its sandbox finds the shim there and cannot start, since the sandbox hides OpenMoat's folder.
+- **Only hook-only agents.** Starting Claude Code, Codex and Cursor in `openmoat run` as well is not offered.
+
+More in [Limits](/docs/limits/).
