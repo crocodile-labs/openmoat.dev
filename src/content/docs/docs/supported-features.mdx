@@ -18,6 +18,8 @@ Every agent gets the same policy through its own hook. What differs is what the 
 - **Hook entries**: the events `openmoat init` registers, from the table generated from each agent's host spec ([INSTALL.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/INSTALL.md#non-default-config-directories)). What each event covers, tool by tool: [Supported agents](/docs/agents/).
 - **Injected input** needs the agent to report what a call returned. "Not yet": the agent reports nothing after a call; results of its MCP servers that you wrap are still read by the gateway.
 - **Hook run by the real agent**: where a real copy of the agent ran OpenMoat's hook and the decision held ([Protection by agent and OS](/docs/agents/protection/)); every other system is preview.
+- **Says when it stops running the hook** (next release): whether `openmoat status`, `doctor` and `watch` can warn when the agent ran sessions and no call of its reached OpenMoat, or give only a note ([Is my agent still protected?](/docs/hook-liveness/)).
+- **Sandboxed start** (next release): whether `openmoat init` offers a shim so that typing the agent's name starts it in `openmoat run` ([Start agents sandboxed](/docs/sandboxes/sandboxed-start/)).
 - **—**: no source states it yet, so the page does not guess.
 
 ## By feature
