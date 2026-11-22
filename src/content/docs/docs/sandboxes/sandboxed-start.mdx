@@ -8,12 +8,6 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../../components/FeatureTop.astro';
 
-<Aside type="tip" title="New in the next release">
-
-This page describes OpenMoat's next release. 0.24.0 does not have it yet.
-
-</Aside>
-
 <FeatureTop
   does={"OpenMoat writes no OS sandbox for hook-only agents, so typing `gemini` starts it with the hook only, and `openmoat run` had to be typed every time. At your yes, `openmoat init` writes a shim per agent in `~/.moat/bin` and puts that folder first on `PATH`, so typing the agent's name starts it in `openmoat run`'s sandbox."}
   when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}

@@ -5,9 +5,9 @@ import { rows, byFeature } from '../data/features';
 interface Props { table: 'agents' | 'features' }
 const { table } = Astro.props;
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-// What is in the next release, not in 0.24.0: at that release, set NEXT to '' and delete
-// every `next: true` in src/data/features.ts.
-const NEXT = ' (next release)';
+// For features documented before they ship: set NEXT to ' (next release)' and mark them
+// `next: true` in src/data/features.ts; at the release, set NEXT back to '' and drop the marks.
+const NEXT = '';
 const tiles = rows.map((r) => ({
   name: r.name, href: r.docs,
   facts: [

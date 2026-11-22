@@ -8,12 +8,6 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../components/FeatureTop.astro';
 
-<Aside type="tip" title="New in the next release">
-
-This page describes OpenMoat's next release. 0.24.0 does not have it yet.
-
-</Aside>
-
 <FeatureTop
   does={"An agent can stop running OpenMoat's hook and say nothing: an update reads its hooks elsewhere, a setting turns hooks off, an edit loses the entry, or a session started before `openmoat init` keeps the hooks it read at start. `openmoat status`, `openmoat doctor` and `openmoat watch` warn when the agent wrote sessions since the last such change and no call of its reached OpenMoat."}
   when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}

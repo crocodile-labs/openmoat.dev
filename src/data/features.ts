@@ -8,14 +8,12 @@
 //   written (running code the session wrote needs review): docs/USAGE.md, the list of
 //     agents without an OS sandbox from OpenMoat; Codex, Claude Code and Cursor get an
 //     OS sandbox from OpenMoat (data/agents.ts), where the rule does not apply
-//   liveness (next release; says when the agent stops running the hook): ADR-104's
+//   liveness (since 0.25.0; says when the agent stops running the hook): ADR-104's
 //     table of session places and docs/USAGE.md "Does the agent still run OpenMoat's
 //     hook?"; for the plugin agents, USAGE.md "Did the agent load OpenMoat's plugin?"
-//   start (next release; a sandboxed-start shim at `openmoat init`): ADR-106 §4, which
+//   start (since 0.25.0; a sandboxed-start shim at `openmoat init`): ADR-106 §4, which
 //     offers one to agents whose spec has `RunFacts::Known`; the others' `RunFacts::Unknown`
 //     reasons are from their host specs
-// `next: true` marks what is in the next release, not in 0.24.0: at that release, delete
-// every `next: true` and set NEXT to '' in components/SupportedFeatures.astro.
 import { agents } from './agents';
 
 type Extra = { hooks: string; injected: string | null; written: string | null; liveness: string | null; start: string | null };
@@ -60,8 +58,8 @@ export const byFeature: { name: string; href: string; where: string; next?: bool
   { name: 'Review of code the session wrote', href: '/docs/session-written-code/', where: 'Agents without an OS sandbox from OpenMoat, and Claude Code and Cursor on native Windows or with their sandbox not in place.' },
   { name: 'MCP gateway (tool pinning, cross-server check)', href: '/docs/mcp-servers/gateway/', where: 'A stdio server you wrap with <code>openmoat mcp wrap</code>, or every one with <code>openmoat init --mcp-proxy</code>.' },
   { name: 'Merge check', href: '/docs/check-a-pull-request/', where: 'Any pull request, whoever wrote it: <code>openmoat policy check-diff</code> and the GitHub Action.' },
-  { name: 'Is my agent still protected?', href: '/docs/hook-liveness/', where: 'A warning in <code>status</code>, <code>doctor</code> and <code>watch</code> for Claude Code, Codex, the Cursor CLI, GitHub Copilot CLI, Gemini CLI, Qwen Code and the Cline CLI; a note only for goose, Hermes Agent, Antigravity CLI and Crush.', next: true },
-  { name: 'Scrubbed environment', href: '/docs/sandboxes/scrubbed-environment/', where: 'Every agent started with <code>openmoat run</code>, with <code>sandbox.env: scrubbed</code> or <code>--scrub-env</code>; off by default. Not the agents’ own sandboxes.', next: true },
-  { name: 'Decoy keys', href: '/docs/env-files/decoy-keys/', where: 'Every agent, at your yes in <code>openmoat init</code>; a decoy’s value is also refused at <code>openmoat proxy</code>.', next: true },
-  { name: 'Start agents sandboxed', href: '/docs/sandboxes/sandboxed-start/', where: 'Gemini CLI, OpenCode, Hermes Agent, pi, goose, Antigravity CLI, GitHub Copilot CLI and the Cline CLI, at your yes in <code>openmoat init</code>, on macOS 13 or later and Linux.', next: true },
+  { name: 'Is my agent still protected?', href: '/docs/hook-liveness/', where: 'A warning in <code>status</code>, <code>doctor</code> and <code>watch</code> for Claude Code, Codex, the Cursor CLI, GitHub Copilot CLI, Gemini CLI, Qwen Code and the Cline CLI; a note only for goose, Hermes Agent, Antigravity CLI and Crush.' },
+  { name: 'Scrubbed environment', href: '/docs/sandboxes/scrubbed-environment/', where: 'Every agent started with <code>openmoat run</code>, with <code>sandbox.env: scrubbed</code> or <code>--scrub-env</code>; off by default. Not the agents’ own sandboxes.' },
+  { name: 'Decoy keys', href: '/docs/env-files/decoy-keys/', where: 'Every agent, at your yes in <code>openmoat init</code>; a decoy’s value is also refused at <code>openmoat proxy</code>.' },
+  { name: 'Start agents sandboxed', href: '/docs/sandboxes/sandboxed-start/', where: 'Gemini CLI, OpenCode, Hermes Agent, pi, goose, Antigravity CLI, GitHub Copilot CLI and the Cline CLI, at your yes in <code>openmoat init</code>, on macOS 13 or later and Linux.' },
 ];

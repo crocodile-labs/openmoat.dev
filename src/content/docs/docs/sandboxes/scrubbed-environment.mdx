@@ -8,12 +8,6 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../../components/FeatureTop.astro';
 
-<Aside type="tip" title="New in the next release">
-
-This page describes OpenMoat's next release. 0.24.0 does not have it yet.
-
-</Aside>
-
 <FeatureTop
   does={"A program reads its whole environment, and so does everything it starts. With a scrubbed environment, what `openmoat run` starts gets only an allowlist of the variables it was started with: what programs and builds need, the agent's own variables and the names you add. Cloud credentials, tokens and database URLs stay behind, so no spelling of a command can read them."}
   when={[["Unattended agents", "/docs/solutions/unattended-agents/"], ["On a laptop", "/docs/solutions/on-a-laptop/"]]}
