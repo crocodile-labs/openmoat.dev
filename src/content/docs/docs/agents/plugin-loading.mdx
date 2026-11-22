@@ -58,4 +58,6 @@ You never run `openmoat guard --heartbeat` yourself; the plugins do. The default
 - **A plugin that loaded once and stops loading** without its file or the agent's program changing (a Node update) shows as "loaded" with an old time. The line says "last report or call" with the time so you can judge.
 - **Inside `openmoat run`** the plugin cannot write its report; the run's decisions for the agent count instead.
 
+The agents that run a hook command instead get a check of their own in the next release: [Is my agent still protected?](/docs/hook-liveness/)
+
 More in [Supported agents](/docs/agents/) and [Limits](/docs/limits/).

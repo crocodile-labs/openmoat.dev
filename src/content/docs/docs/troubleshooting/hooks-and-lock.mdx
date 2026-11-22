@@ -58,6 +58,10 @@ openmoat status
 
 Codex shows its hook as installed but runs it only after you trust it: open `/hooks` in Codex and trust OpenMoat's. `openmoat doctor` reminds you on Codex's line. See [Supported agents](/docs/agents/).
 
+## `openmoat status` says an agent ran sessions and OpenMoat saw no call
+
+In the next release, `openmoat status`, `openmoat doctor` and `openmoat watch` warn when an agent wrote sessions since its hook, settings or program changed and none of its calls reached OpenMoat. Restart the agent; if the line stays, run `openmoat init` and check what turns its hook off, and for Codex trust OpenMoat's hooks in `/hooks`. See [Is my agent still protected?](/docs/hook-liveness/)
+
 ## `openmoat doctor` warns about a project's `.claude` settings
 
 The project's `.claude/settings.json` or `.claude/settings.local.json` turns hooks off (`disableAllHooks`) or sets its own hooks, `env` or a command. Claude Code loads it when a session starts, before OpenMoat's hook runs, so check the file before you start an agent there. See [Project settings that turn hooks off](/docs/blocked/#project-settings-that-turn-hooks-off).
