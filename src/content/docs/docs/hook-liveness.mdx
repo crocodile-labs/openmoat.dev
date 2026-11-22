@@ -20,7 +20,7 @@ This page describes OpenMoat's next release. 0.24.0 does not have it yet.
   cmd={"openmoat doctor"}
   outNote={"Under each agent's hook line `doctor` prints one of the lines below; `openmoat status` shows only the warning."}
   change={"There is nothing to turn on: every agent `openmoat init` set up is looked at. Nothing is decided from it, so no call is held, denied or allowed because of it."}
-  limits={"A session that used no tool, or ran on another machine that shares the agent's folder, looks the same as one whose calls went unchecked. For Cline, goose, Hermes Agent, Antigravity CLI and Crush OpenMoat cannot tell whether the agent ran."}
+  limits={"A session that used no tool, or ran on another machine that shares the agent's folder, looks the same as one whose calls went unchecked. For goose, Hermes Agent, Antigravity CLI and Crush OpenMoat cannot tell whether the agent ran."}
   related={[["Plugin loading", "/docs/agents/plugin-loading/"], ["Self-protection", "/docs/self-protection/"], ["Hooks, lock and binary", "/docs/troubleshooting/hooks-and-lock/"], ["Watch and why", "/docs/see-what-happened/watch-and-why/"]]}
 />
 
@@ -71,16 +71,16 @@ Where OpenMoat knows the agent's session files, it can warn. The places it looks
 | Codex | `sessions/<year>/<month>/<day>/*.jsonl`; `config.toml` changing counts as a change |
 | Cursor | `chats/*/*/store.db` (the Cursor CLI; the editor's chats are not seen) |
 | GitHub Copilot CLI | `session-state/*/events.jsonl` |
-| Gemini CLI | `tmp/*/chats/*.json` |
-| Qwen Code | `projects/*/chats/*.jsonl`, `tmp/*/chats/*.json` |
+| Gemini CLI | `tmp/*/chats/*.jsonl` (and `*.json` from older releases) |
+| Qwen Code | `projects/*/chats/*.jsonl` |
+| Cline CLI | `data/sessions/*/*.messages.json` (`CLINE_DATA_DIR` and `CLINE_SESSION_DATA_DIR` move it) |
 
 For these agents OpenMoat does not know where a session is written, so `doctor` gives only the note that no call came, with the reason:
 
 | Agent | Why OpenMoat cannot tell |
 |---|---|
-| Cline | where the CLI writes a task under `data/` was not checked, and `CLINE_DATA_DIR` moves it |
 | goose | it keeps its sessions in one database in its data folder, which commands that run no session open too |
-| Hermes Agent | gateway, cron and ACP sessions are kept with the rest but never run the shell hook, so a session there is no sign the hook should have run |
+| Hermes Agent | it keeps every session in one database, `state.db`, which gateway, cron and ACP sessions write too, and those never run the shell hook |
 | Antigravity CLI | its documentation does not say where `agy` writes a conversation |
 | Crush | it keeps its sessions in a database in each project's `.crush` folder, not in its configuration folder |
 
