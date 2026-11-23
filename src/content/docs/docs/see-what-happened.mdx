@@ -117,6 +117,12 @@ An anchor holds the newest event's id, its hash and the time. Event ids are hexa
 
 `openmoat audit verify --against` fails when an anchored event was deleted or rewritten, and names the first such anchor. Events after the newest anchor are not covered. `openmoat doctor` shows when you last anchored. The agent cannot run `openmoat audit anchor` (`kernel-self`).
 
+<Aside type="tip" title="New in the next release">
+
+**Signed checkpoints** can be checked on any machine, without the audit key: `openmoat audit checkpoint` signs the log's size and Merkle root with a key of its own, and `openmoat audit verify week.jsonl --checkpoint <file> --pubkey <key>` checks an export against it. A review's row also records the exact text the agent's prompt showed you, and for Claude Code whether what ran is what you were shown ([Signed audit checkpoints](/docs/see-what-happened/signed-checkpoints/)).
+
+</Aside>
+
 <Aside type="tip" title="Private by design">
 
 The log is a SQLite file in `~/.moat`. Each event carries a MAC made with a key kept beside the log (`~/.moat/audit.key`, which the agent's calls cannot read), so a rewrite by someone who cannot read the key is caught: `openmoat audit verify` and `openmoat doctor` say where. Credentials are redacted before anything is stored, and nothing leaves your machine unless you export or anchor it somewhere that does, or set up [audit delivery](/docs/see-what-happened/siem-delivery/). The agent's own reads and writes of the log file are denied (`kernel-self`).

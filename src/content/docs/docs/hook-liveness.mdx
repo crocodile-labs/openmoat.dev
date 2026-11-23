@@ -15,7 +15,7 @@ import FeatureTop from '../../../components/FeatureTop.astro';
   outNote={"Under each agent's hook line `doctor` prints one of the lines below; `openmoat status` shows only the warning."}
   change={"There is nothing to turn on: every agent `openmoat init` set up is looked at. Nothing is decided from it, so no call is held, denied or allowed because of it."}
   limits={"A session that used no tool, or ran on another machine that shares the agent's folder, looks the same as one whose calls went unchecked. For goose, Hermes Agent, Antigravity CLI and Crush OpenMoat cannot tell whether the agent ran."}
-  related={[["Plugin loading", "/docs/agents/plugin-loading/"], ["Self-protection", "/docs/self-protection/"], ["Hooks, lock and binary", "/docs/troubleshooting/hooks-and-lock/"], ["Watch and why", "/docs/see-what-happened/watch-and-why/"]]}
+  related={[["Plugin loading", "/docs/agents/plugin-loading/"], ["Other hooks the agents run", "/docs/other-hooks/"], ["Self-protection", "/docs/self-protection/"], ["Hooks, lock and binary", "/docs/troubleshooting/hooks-and-lock/"], ["Watch and why", "/docs/see-what-happened/watch-and-why/"]]}
 />
 
 **Protects against** an agent that looks protected but no longer runs OpenMoat's hook, so its tool calls run unchecked and nobody is told.
@@ -38,6 +38,12 @@ A call since the change means the hook runs. No call and no sessions means nothi
 | `· no call since OpenMoat wrote its hook (<time>); <agent> has not run a session since, as far as OpenMoat can tell` (or `since its settings changed`, `since <agent> was updated`) | `doctor` | Nothing to check yet: start the agent |
 | `· no call since …; OpenMoat cannot tell whether <agent> ran since (<why>)` | `doctor` | An agent whose session files OpenMoat does not know ([below](#which-agents)) |
 | `! <agent> ran 3 sessions since … (last <time>), and OpenMoat saw no call from it: if they used tools, the hook did not run and the calls were not checked` | `status`, `doctor`, `watch` | Sessions at least ten minutes old were written since the change, and no call came |
+
+<Aside type="tip" title="New in the next release">
+
+For Claude Code the warning comes at once, without the ten minutes: when a session that started since the last change called a tool OpenMoat's hook covers, and no call of it arrived within 30 seconds of the transcript's last write. `! a Claude Code session started <time> and called Bash (last written <time>), but no call of it reached OpenMoat: …`. A resumed session waits for the general check ([A faster check for Claude Code](/docs/other-hooks/#a-faster-check-for-claude-code)).
+
+</Aside>
 
 `openmoat status` shows the warning under "needs attention" and leaves out the other lines, to stay short. `openmoat status --format json` lists every set-up hook agent under `hooks`, in the form of `plugins`.
 

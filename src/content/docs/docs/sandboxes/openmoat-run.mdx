@@ -33,6 +33,14 @@ The two `--write` paths are Claude Code's own state, which it must write to run.
 
 Before the agent starts, `openmoat run` prints how many places the sandbox is stricter or wider than the policy; `--verbose` lists each one. It needs macOS 13 or later, or Linux; it refuses on Windows.
 
+<Aside type="tip" title="New in the next release">
+
+- **Protection score:** the run's boundary record carries a 0 to 100 score, and `sandbox.strict: true` refuses a run below 100 ([Protection score and strict mode](/docs/sandboxes/protection-score/)).
+- **Qwen Code and Crush:** `openmoat run --write ~/.qwen -- qwen` and `openmoat run --write ~/.local/share/crush --write ~/.cache/crush -- crush` (Linux adds `--isolate`).
+- **Windows:** a preview tier that refuses writes outside the project and ends every process with the run; reads and the network are not held ([openmoat run on Windows](/docs/sandboxes/windows/)).
+
+</Aside>
+
 <Aside type="caution" title="Linux: the Isolated tier is the default">
 
 From 0.20.0 `openmoat run` on Linux starts the Isolated tier (bubblewrap) where bubblewrap works, so commands the agent starts can no longer read `.env` or write `.git/hooks` and `.moat` in the project.

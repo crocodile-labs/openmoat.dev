@@ -77,6 +77,12 @@ sandbox:
 | 11 | 7.3 | nothing to add (`no_new_privs` is set already) |
 | 12 | 7.4 | not used yet (capabilities, namespaces): seccomp refuses new namespaces |
 
+<Aside type="tip" title="New in the next release">
+
+ABI 10 (Linux 7.2) is used: every UDP bind, connect and send is refused by Landlock too, beside seccomp's refusal of UDP sockets, and the boundary record gains `landlock_udp`. `openmoat doctor` also shows one 0 to 100 protection score per tier, naming each missing step and the Linux release that brings it ([Protection score and strict mode](/docs/sandboxes/protection-score/)).
+
+</Aside>
+
 See what applies on your kernel:
 
 ```bash
@@ -88,6 +94,27 @@ openmoat run --verbose -- claude   # prints the same before the agent starts
 Every run also writes it to the audit log, as Landlock's `restrict_self` reported it, in the run's boundary record (rule `run-boundary`, which from 0.21.0 replaces the `run-landlock-abi` row), and checks after the agent starts that the ruleset and the seccomp filters are in force ([The boundary record](/docs/sandboxes/boundary-record/)).
 
 **Datagram socket pairs.** From 0.20.0 the seccomp filter allows `socketpair()` only for stream and sequenced-packet sockets (which Node, Python and Chromium use). A datagram pair fails with `EPERM`, because it could reach a pathname socket outside the sandbox such as `/dev/log`.
+
+## The agents' own sandboxes on Linux
+
+`openmoat init` turns on the agents' own sandboxes (Claude Code, Codex, Cursor). On Linux each needs what its documentation lists: Claude Code needs `bwrap` and `socat` on `PATH`, and all three need to create user namespaces as you, which Ubuntu 23.10 and later restrict through AppArmor by default (`kernel.apparmor_restrict_unprivileged_userns=1`). Since 0.25.0, `openmoat doctor` says when an agent's own sandbox cannot start commands on this machine, and why. Nothing needs root, and nothing on the machine changes; the fixes are yours to run.
+
+<Aside type="tip" title="New in the next release">
+
+`openmoat doctor` gives each agent the AppArmor fix its own documentation gives, and catches Ubuntu's `bwrap-userns-restrict` profile for Claude Code, whose sandbox fails under it although a plain `bwrap` works. So follow the fix `doctor` names for each agent:
+
+```console
+$ openmoat doctor
+! Claude Code      the agent's own sandbox cannot start commands on this machine: kernel.apparmor_restrict_unprivileged_userns is 1 (Ubuntu's AppArmor restriction on user namespaces), so its Bash commands fail (`failIfUnavailable`, no unsandboxed commands). To fix it: the AppArmor profile the agent's sandboxing documentation gives for /usr/bin/bwrap, in /etc/apparmor.d/bwrap (`profile bwrap /usr/bin/bwrap flags=(unconfined) { userns, }`, with its `abi` and `include` lines), then `sudo systemctl reload apparmor` and restart the agent; or `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0`, which lifts the restriction for every program until the next reboot; …
+$ openmoat status
+! Claude Code      own sandbox cannot start commands here: user namespaces are blocked → openmoat doctor lists the fixes
+```
+
+`openmoat status --format json` lists the same under `own_sandbox_linux`, with `bwrap_userns_restrict` when Ubuntu's profile applies.
+
+</Aside>
+
+OpenMoat never runs `sysctl` or `sudo`, and no policy setting leaves one agent's sandbox off: its hook still decides each call. The details: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#can-the-agents-own-sandbox-start-commands-here-linux).
 
 ## Limits
 

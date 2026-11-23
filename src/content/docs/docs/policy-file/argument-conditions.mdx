@@ -1,0 +1,87 @@
+---
+title: "Argument conditions (when:)"
+description: "A deny or review rule group can test what a call's arguments hold: a recipient outside the team, a URL outside the docs, a path outside the project, a URL that came from untrusted content."
+sidebar:
+  label: "Argument conditions (when:)"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+<Aside type="tip" title="New in the next release">
+
+`when:` comes with the next OpenMoat release. 0.25.0, and any older binary, refuses a policy that uses it, so update every machine before you share such a rule.
+
+</Aside>
+
+<FeatureTop
+  does={"A `deny` or `review` group with `when:` matches a call only when one of its patterns matches and every condition holds. So a rule can deny sending mail to anyone outside the team instead of all mail. A condition can only narrow the group it is on."}
+  when={[["MCP servers", "/docs/solutions/mcp-servers/"], ["Team policy", "/docs/solutions/team-policy/"]]}
+  cmd={"openmoat policy lint"}
+  outNote={"Rejects `when` on an `allow` or `defer` group, a condition with no test or two, an empty list, an exclusion (`!`) and a name with spaces."}
+  change={"Add `when:` to a deny or review group in your policy with `openmoat edit`."}
+  limits={"Only on `deny` and `review`. An OS sandbox cannot read arguments, so there a conditional group's paths and hosts apply as if every condition held. The SDK passes no MCP arguments."}
+  related={[["The policy file", "/docs/policy-file/"], ["Patterns", "/docs/policy-file/patterns/"], ["Verdicts", "/docs/policy-file/verdicts/"], ["MCP servers", "/docs/mcp-servers/"]]}
+/>
+
+**Protects against** a tool that is fine for some arguments and not others: a mail tool sending to an outside address, a browser tool opening a page outside your docs, a notes tool saving outside the project, a post to a URL an injected page planted.
+
+## Example
+
+```yaml
+deny:
+  - id: mail-outside-team
+    reason: sends mail to a recipient outside the team
+    mcp: ["mcp__mail__send_email", "mcp__gmail__send_*"]
+    when:
+      - { arg: [to, cc, bcc], not_in: ["*@example.com"] }
+review:
+  - id: browse-outside-docs
+    mcp: ["mcp__browser__*"]
+    when:
+      - { arg: url, host_not_in: ["docs.example", "*.docs.example"] }
+  - id: notes-outside-project
+    mcp: ["mcp__notes__save"]
+    when:
+      - { arg: file, not_under: ["${project}"] }
+  - id: planted-url
+    reason: posts to a URL that came from content the agent read
+    mcp: ["mcp__http__post"]
+    when:
+      - { arg: url, provenance: untrusted }
+  - id: key-in-chat
+    mcp: ["mcp__slack__post_message"]
+    when:
+      - { arg: text, matches: ["*BEGIN*PRIVATE KEY*"] }
+```
+
+## The tests
+
+Each condition names `arg` (optional: one name, a list, or `*` for every value; keys in snake case, so `ccList` is `cc_list`, or a dotted path such as `message.to`) and exactly one test:
+
+| Test | Holds when |
+|---|---|
+| `under: [paths]` | a path is one of these or below one (globs, `~` and `${project}`) |
+| `host_in: [hosts]` | a URL's host matches one of these globs |
+| `in: [globs]` | a value matches one of these globs, ignoring case; a recipient list is split at `,` and `;`, and `Name <a@b>` is read as `a@b` |
+| `matches: [globs]` | a whole value matches one of these globs |
+| `provenance: untrusted` | a host or path in a value is one the session kept from untrusted output |
+| `not_under`, `host_not_in`, `not_in`, `not_matches` | the call has no such value, its arguments were not read in full, or some value fails the positive test |
+
+A positive test holds when **some** value passes it. A negated one holds unless the call has values and **every** one passes the positive test. So a call that names no value for the condition (a server that calls the field `recipients`) is not shown to stay inside, and the deny or review applies. Name every key the tool uses.
+
+Without `arg`, `under` and `not_under` read the call's file paths, and `host_in` and `host_not_in` its hosts, as the engine resolved them (a Write tool's path, a fetch's URL); the others read every value.
+
+## How it is decided
+
+- **Decided after the rest.** The call is decided as if the conditional group were not there, then its deny or review is merged, strictest wins. `openmoat allow --last` answers a review from it, as for any review rule.
+- **What is read:** the arguments the agent sent for an MCP call (strings, numbers and booleans, nested up to 8 levels, at most 1024 values of 64 KiB each), and what a host tool names itself: its `path`, `url`, `command` or `query`.
+
+## Limits
+
+- **Only on `deny` and `review`.** An allow that depends on what the agent wrote into its arguments would be a way through, so `policy lint` rejects it.
+- **OS sandboxes cannot read arguments.** A conditional group's `fs.*`, `net` and `fetch` patterns are applied there as if every condition held: narrower, never wider. `openmoat policy compile` shows the loss.
+- **The SDK passes no MCP arguments**, so a negated condition on one holds there.
+- **Older binaries refuse the policy.** Update every machine before you share a rule with `when:`.
+
+The details: [POLICY.md §2.4](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#24-argument-conditions-when). More in [Limits](/docs/limits/).

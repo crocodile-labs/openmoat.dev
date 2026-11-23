@@ -1,0 +1,78 @@
+---
+title: "Signed audit checkpoints"
+description: "openmoat audit checkpoint signs the audit log's size and Merkle root with a key of its own, so anyone with the public key can check an export was not edited, cut or rewritten. Reviews also record what you were shown and what ran."
+sidebar:
+  label: "Signed checkpoints"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+<Aside type="tip" title="New in the next release">
+
+`openmoat audit checkpoint`, `openmoat audit verify --checkpoint --pubkey`, the checkpoint row in `openmoat doctor`, and the record of what a review showed and what ran come with the next OpenMoat release. 0.25.0 has anchors (below), not checkpoints.
+
+</Aside>
+
+<FeatureTop
+  does={"A checkpoint states how many events the audit log held and a Merkle root over them, signed with a key of its own, `~/.moat/audit.key.ed25519`. Anyone you give the public key can check an export against it, without the audit key and without your machine."}
+  when={[["Audit evidence", "/docs/solutions/audit-evidence/"], ["Team policy", "/docs/solutions/team-policy/"]]}
+  cmd={"openmoat audit checkpoint"}
+  outNote={"Signs one now; prints it, its file and the public key. `openmoat doctor` shows the public key and checks the newest checkpoint."}
+  change={"Nothing to turn on: the guard writes one every 1000 events and `openmoat audit anchor` writes one beside each anchor. `openmoat audit checkpoint --new-key` starts a new key and keeps the old one."}
+  limits={"Events after the newest checkpoint are covered by the chain only. Like the audit key, the signing key is a file that code running as you outside any sandbox can read; a checkpoint already copied elsewhere still shows a later rewrite."}
+  related={[["Audit log, watch and why", "/docs/see-what-happened/"], ["Compliance evidence", "/docs/compliance-evidence/"], ["Deliver to a SIEM", "/docs/see-what-happened/siem-delivery/"]]}
+/>
+
+**Protects against** someone who can write the audit log deleting or rewriting events and handing over a log that still looks whole, and a reviewer having to trust your machine to check it.
+
+## What it does
+
+Each event already carries a MAC made with the audit key, and an [anchor](/docs/see-what-happened/#keep-a-record-outside-the-log) records the log's head outside it, checkable on this machine only. A signed checkpoint can be checked anywhere: it fails when an event it covers was edited, deleted or rewritten, or the log was cut below it.
+
+The checkpoint is in the format transparency logs use (C2SP `tlog-checkpoint` in a `signed-note`), so you can keep it where others can see it: give the file and the public key to a reviewer, commit it with your anchors, or have a [transparency-dev witness](https://github.com/transparency-dev/witness) cosign it. OpenMoat sends nothing anywhere.
+
+## Example
+
+```bash
+openmoat audit checkpoint                    # signs one; prints it, its file and the public key
+openmoat doctor                              # shows the public key and checks the newest checkpoint
+openmoat audit export > audit.jsonl          # the whole log, no filter
+# on any machine, with the public key `doctor` shows:
+openmoat audit verify audit.jsonl --checkpoint ~/.moat/checkpoints/000000001000-3f2a9c1e.txt \
+  --pubkey 'openmoat.dev/audit/3f2a…+…+…'
+```
+
+`openmoat audit verify --checkpoint` checks the signature, then that the export (or, with no file, this machine's log) still holds the events the checkpoint covers, unchanged. It exits 64 when they do not verify.
+
+## What you were shown, and what ran
+
+When an agent's call is held for review, its row records the exact text the agent's prompt showed you (`shown:` in `openmoat show`). Where the agent reports a call after it ran (Claude Code), a `ran-after-review` row beside it says whether what ran is what you were shown:
+
+| Rule | Means |
+|---|---|
+| `review-ran-as-shown` | the action that ran is the one held for your review |
+| `review-ran-changed` | something else ran; the row records what |
+
+Both rows are chained, keyed and covered by checkpoints. A changed input is recorded, not blocked: the call has already run.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `openmoat audit checkpoint [--new-key] [--format json]` | sign a checkpoint of the log now; makes the signing key when missing (terminal only) |
+| `openmoat audit verify [<file>] --checkpoint <file> --pubkey <key or file>` | check a signed checkpoint without the audit key |
+| `openmoat audit anchor --git <repo>` · `--file <path>` | record the log's head outside it; writes a checkpoint beside it |
+
+## After an upgrade
+
+`openmoat init`, or the first `openmoat audit checkpoint`, makes the signing key. Logs from earlier releases keep verifying as before. Checkpoints are kept in `~/.moat/checkpoints/`.
+
+## Limits
+
+- **Only events up to the checkpoint** are covered by it; later ones by the chain only, until the next checkpoint.
+- **The key is a file.** Code running as you outside any sandbox can read it. A checkpoint already copied elsewhere still shows a later rewrite.
+- **Witnessing is your step.** A witness needs a consistency proof from the size it saw last; OpenMoat submits nothing.
+- **`ran-after-review` rows exist only where the agent reports the call after it ran**, with its call id (Claude Code). Elsewhere the `shown:` reason records what was shown, but nothing records what ran.
+
+The details: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#check-that-the-audit-log-was-not-changed). More in [Limits](/docs/limits/).

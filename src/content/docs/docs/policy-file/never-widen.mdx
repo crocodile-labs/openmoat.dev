@@ -1,0 +1,72 @@
+---
+title: "Does a change widen the policy?"
+description: "openmoat policy diff --widen lists every call a policy change decides less strictly, with the rules before and after; policy upgrade, trust, policy install and the merge check's diff-widens run the same check."
+sidebar:
+  label: "Does a change widen?"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+<Aside type="tip" title="New in the next release">
+
+`openmoat policy diff --widen`, `openmoat policy upgrade --accept-widening` and the merge check's `diff-widens` come with the next OpenMoat release. In 0.25.0 `policy diff` lists the changed rules only.
+
+</Aside>
+
+<FeatureTop
+  does={"A policy change widens when the new policy decides some call less strictly than the old one, on the order deny > review > defer > allow. `openmoat policy diff OLD NEW --widen` decides both policies over many calls and lists every one that moves toward allow, with the rules before and after."}
+  when={[["Team policy", "/docs/solutions/team-policy/"], ["CI and pull requests", "/docs/solutions/ci-and-pull-requests/"]]}
+  cmd={"openmoat policy diff old.yaml new.yaml --widen"}
+  outNote={"Exits 0 when nothing widens, 2 when something does, 3 when only a setting changed whose direction it does not rank."}
+  change={"Nothing to turn on. `--fixtures FILE` adds the calls of a conformance fixture file; `--format json` prints the whole report."}
+  limits={"File, host, fetch, environment and MCP rules are proven not to widen when the search finishes. Shell commands, request rules and whole calls are checked over cases only: a widening for a command none of the cases spells is not found."}
+  related={[["Change the rules", "/docs/change-the-rules/"], ["Merge check", "/docs/check-a-pull-request/"], ["Repository policies", "/docs/policy-file/repositories/"], ["Policy packs", "/docs/team-rules/policy-packs/"]]}
+/>
+
+**Protects against** a policy change that quietly lets something through: an edited rule, a pull request to `.moat/policy.yaml`, a pack or an upgrade that moves a call from deny or review toward allow without anyone seeing which call.
+
+## Example
+
+```console
+$ openmoat policy diff old.yaml new.yaml --widen
+✖ 2 cases move toward allow:
+    read /Users/me/.ssh/config: deny (secrets-paths) → defer (default.fs.read)
+    shell "git push --force": review (force-push) → allow (dev-shell)
+  rule secrets-paths (deny): changed
+Checked over 9312 cases from fixtures and both policies' rules; proven over every subject for: fs.write, net, …; checked over cases only: shell commands, requests: rules, whole calls (folders, taint, requests, pins).
+```
+
+The last line says which kind of call got which check.
+
+## What it decides
+
+Both policies, in two contexts (a macOS-like home with project `/p`, and a Linux home with file names compared without case), over:
+
+- the bundled MoatBench calls and any `--fixtures` calls, as whole calls;
+- cases made from both policies' rules, so a removed or changed rule's own edges are decided: each path pattern's matches, its folder and a sibling; each host and its lookalikes (`wgithub.com`, `github.com.w`); each shell pattern's argument lists; each request rule with common methods;
+- for `fs.read`, `fs.write`, `net`, `fetch`, `env.read`, `env.set` and `mcp`, a search of every subject. When the search finishes, that kind is **proven** not to widen in that context.
+
+**Settings** are compared one by one: a new `sandbox.read_roots` entry, a removed or wider `executables` pin, `require_signed_repo_policy` turned off, `unattended: defer`, `mcp.trust_first_sight`, `sandbox.strict` turned off, `hooks.foreign` back to `warn`, a lower `defaults` verdict and the like widen. `taint:` is ranked key by key: `trifecta: review` → `deny` narrows, `deny` → `review` widens. A changed `staging:`, `check_diff:`, `require:` or brokered secret is not ranked (exit 3).
+
+## Where the same check runs
+
+| Where | What it does with a widening |
+|---|---|
+| `openmoat policy upgrade` | lists it and applies the upgrade only with `--accept-widening`; without it the policy is left as it is and the command exits 3. An upgrade that only narrows says so and needs nothing more |
+| `openmoat trust` | shows what trusting a repository policy widens |
+| `openmoat policy install` | shows what a pack widens |
+| `openmoat policy check-diff --base` (the merge check) | reports each widening of a policy file it reads as a `diff-widens` deny, one finding per case, with the rules before and after |
+
+```bash
+openmoat policy upgrade                     # an upgrade that widens: listed, not applied (exit 3)
+openmoat policy upgrade --accept-widening   # apply it anyway, after reading the list
+```
+
+## Limits
+
+- **Proven for some kinds, sampled for the rest.** Shell commands, request rules and whole calls (their folder, taint and request layers) are checked over the bundled calls, the cases made from both policies' rules and `--fixtures` files only.
+- **Conditions.** A rule group with [`when:` conditions](/docs/policy-file/argument-conditions/) counts in the old policy as if its conditions held and not at all in the new one, unless both have it alike; a condition changed or removed can leave its kind checked over cases only.
+- **Some settings are not ranked.** A changed `staging:`, `check_diff:`, `require:` or brokered secret exits 3 for you to read.
+
+The details: [POLICY.md §8.3](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#83-does-a-change-widen-openmoat-policy-diff---widen-adr-111). More in [Limits](/docs/limits/).

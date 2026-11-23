@@ -13,7 +13,10 @@
 //     hook?"; for the plugin agents, USAGE.md "Did the agent load OpenMoat's plugin?"
 //   start (since 0.25.0; a sandboxed-start shim at `openmoat init`): ADR-106 §4, which
 //     offers one to agents whose spec has `RunFacts::Known`; the others' `RunFacts::Unknown`
-//     reasons are from their host specs
+//     reasons are from their host specs. Qwen Code and Crush: `RunFacts::Known` in the next
+//     release (ADR-108 §5, docs/SANDBOX.md "Agents OpenMoat writes no sandbox for")
+// The rows of byFeature marked `next: true` are the next release's, from its ADRs (108 to 115)
+// and docs/USAGE.md, POLICY.md, SANDBOX.md and INSTALL.md "From 0.25.0 to the next release".
 import { agents } from './agents';
 
 type Extra = { hooks: string; injected: string | null; written: string | null; liveness: string | null; start: string | null };
@@ -22,7 +25,8 @@ const sessions = 'warns when it ran sessions and no call came';
 const unknown = 'a note only: OpenMoat does not know where it writes a session';
 const shim = 'yes, for <code>openmoat run</code>';
 const ownSandbox = 'no: OpenMoat sets up its own OS sandbox';
-const unchecked = 'no: which folders it writes outside the project was not checked';
+// A cell that changes in the next release ends with this; drop it at the release.
+const NEXT_CELL = ' (next release)';
 
 const extra: Record<string, Extra> = {
   'claude-code': { hooks: 'PreToolUse, ConfigChange, SessionStart, PostToolUse', injected: 'yes, since 0.16.0 (PostToolUse)', written: 'only on native Windows or with its sandbox not in place', liveness: sessions, start: ownSandbox },
@@ -37,8 +41,8 @@ const extra: Record<string, Extra> = {
   cline: { hooks: 'PreToolUse, PostToolUse', injected: 'yes, since 0.17.0 (PostToolUse)', written: 'yes', liveness: sessions, start: shim },
   goose: { hooks: 'PreToolUse', injected: 'not yet', written: 'yes', liveness: unknown, start: shim },
   'antigravity-cli': { hooks: 'PreToolUse', injected: 'not yet', written: 'yes', liveness: unknown, start: shim },
-  'qwen-code': { hooks: 'PreToolUse', injected: 'not yet', written: null, liveness: sessions, start: unchecked },
-  crush: { hooks: 'PreToolUse', injected: 'not yet', written: null, liveness: unknown, start: unchecked },
+  'qwen-code': { hooks: 'PreToolUse', injected: 'not yet', written: null, liveness: sessions, start: `${shim}${NEXT_CELL}` },
+  crush: { hooks: 'PreToolUse', injected: 'not yet', written: null, liveness: unknown, start: `${shim}${NEXT_CELL}` },
 };
 
 export const rows = agents.map((a) => {
@@ -51,7 +55,7 @@ if (Object.keys(extra).length !== agents.length) throw new Error('features: an a
 // The features and where each one works, from the feature pages' own text.
 export const byFeature: { name: string; href: string; where: string; next?: boolean }[] = [
   { name: 'Policy check of each call the hook reports', href: '/docs/how-it-decides/', where: `Every agent above (${agents.length}).` },
-  { name: 'OS sandbox for what an allowed call runs', href: '/docs/sandboxes/', where: 'The agent’s own sandbox for Claude Code (macOS, Linux, WSL2), Codex, and Cursor (macOS, Linux); <code>openmoat run</code> for any agent, on macOS 13 or later and Linux.' },
+  { name: 'OS sandbox for what an allowed call runs', href: '/docs/sandboxes/', where: 'The agent’s own sandbox for Claude Code (macOS, Linux, WSL2), Codex, and Cursor (macOS, Linux); <code>openmoat run</code> for any agent, on macOS 13 or later and Linux; on native Windows a preview that holds writes and the process tree, not reads or the network (next release).' },
   { name: 'Egress proxy', href: '/docs/egress-proxy/', where: 'Under <code>openmoat run</code>; for the agents’ own sandboxes with <code>sandbox.proxy_port</code>. The standalone proxy gives a session credential to Claude Code’s sessions only.' },
   { name: 'Token broker over HTTPS', href: '/docs/keep-tokens-safe/', where: 'Through Claude Code’s own sandbox broker, and inside <code>openmoat run</code> for a <code>tls: terminate</code> secret. Elsewhere a request over HTTPS keeps the placeholder.' },
   { name: 'Injected input', href: '/docs/injected-input/', where: 'Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, the Cline CLI, and wrapped MCP servers (for every agent).' },
@@ -61,5 +65,14 @@ export const byFeature: { name: string; href: string; where: string; next?: bool
   { name: 'Is my agent still protected?', href: '/docs/hook-liveness/', where: 'A warning in <code>status</code>, <code>doctor</code> and <code>watch</code> for Claude Code, Codex, the Cursor CLI, GitHub Copilot CLI, Gemini CLI, Qwen Code and the Cline CLI; a note only for goose, Hermes Agent, Antigravity CLI and Crush.' },
   { name: 'Scrubbed environment', href: '/docs/sandboxes/scrubbed-environment/', where: 'Every agent started with <code>openmoat run</code>, with <code>sandbox.env: scrubbed</code> or <code>--scrub-env</code>; off by default. Not the agents’ own sandboxes.' },
   { name: 'Decoy keys', href: '/docs/env-files/decoy-keys/', where: 'Every agent, at your yes in <code>openmoat init</code>; a decoy’s value is also refused at <code>openmoat proxy</code>.' },
-  { name: 'Start agents sandboxed', href: '/docs/sandboxes/sandboxed-start/', where: 'Gemini CLI, OpenCode, Hermes Agent, pi, goose, Antigravity CLI, GitHub Copilot CLI and the Cline CLI, at your yes in <code>openmoat init</code>, on macOS 13 or later and Linux.' },
+  { name: 'Start agents sandboxed', href: '/docs/sandboxes/sandboxed-start/', where: 'Gemini CLI, OpenCode, Hermes Agent, pi, goose, Antigravity CLI, GitHub Copilot CLI and the Cline CLI, at your yes in <code>openmoat init</code>, on macOS 13 or later and Linux; Qwen Code and Crush too from the next release.' },
+  { name: 'Protection score and strict mode', href: '/docs/sandboxes/protection-score/', where: 'Every <code>openmoat run</code> tier in <code>openmoat doctor</code> and the boundary record; <code>sandbox.strict: true</code> in your own policy refuses a run below 100. Landlock UDP rules on Linux 7.2 or later.', next: true },
+  { name: 'openmoat run on Windows (preview)', href: '/docs/sandboxes/windows/', where: 'Native Windows: a write-restricted token in a job object. Writes outside the project and the process tree are held; reads and the network are not. Scores at most 55 of 100.', next: true },
+  { name: 'Other hooks the agents run', href: '/docs/other-hooks/', where: 'The hook files, helper commands, plugin hooks and project hook files of the agents OpenMoat reads, and every repository’s <code>.git/config</code> programs; <code>openmoat hooks list</code> and <code>accept</code>. Fail-safe hook commands for Codex, Gemini CLI, Qwen Code and Crush.', next: true },
+  { name: 'Signed audit checkpoints', href: '/docs/see-what-happened/signed-checkpoints/', where: 'Every agent’s audit log: <code>openmoat audit checkpoint</code>, checked anywhere with <code>audit verify --checkpoint --pubkey</code>. What ran after a review: Claude Code only.', next: true },
+  { name: 'Does a change widen?', href: '/docs/policy-file/never-widen/', where: '<code>openmoat policy diff --widen</code>, <code>policy upgrade</code> (<code>--accept-widening</code>), <code>trust</code>, <code>policy install</code> and the merge check’s <code>diff-widens</code>.', next: true },
+  { name: 'Private data, untrusted content and a way out', href: '/docs/lethal-trifecta/', where: 'Every agent’s sessions, by default (<code>lethal-trifecta</code>), and <code>staging-egress</code> after <code>openmoat policy upgrade</code>. Not inside <code>openmoat run</code>’s proxy.', next: true },
+  { name: 'Argument conditions (when:)', href: '/docs/policy-file/argument-conditions/', where: 'Deny and review rules of a policy; the hook and the MCP gateway read the arguments, OS sandboxes do not.', next: true },
+  { name: 'MCP 2026-07-28, sampling and package releases', href: '/docs/mcp-servers/protocol-2026-07-28/', where: 'Stdio servers through <code>openmoat mcp proxy</code>; package release pins for wrapped and unwrapped servers started with <code>npx</code>, <code>uvx</code> or <code>docker run</code>.', next: true },
+  { name: 'Default rules from outside benchmarks', href: '/docs/benchmarks/#what-the-measurement-changed', where: 'Every agent, after <code>openmoat policy upgrade</code>: <code>system-files</code>, <code>stops-system</code>, <code>credential-egress</code> and more in <code>secrets-paths</code>, <code>persistence</code> and <code>token-egress</code>.', next: true },
 ];

@@ -52,6 +52,19 @@ OpenMoat checks the tool calls an agent's hook reports. It does not confine ever
 - **The pull request check reads added lines, not programs.** It matches the text a change adds (and the lockfile lines it removes), offline: a payload built from pieces at run time, a script the change does not touch and a package's age or owner are not checked, and a benign line can match (set its level in `check_diff.levels`). A finding is a report: it holds a merge only where the job is a required status check ([Check a pull request](/docs/check-a-pull-request/#limits)).
 - **Provenance notes are local evidence of what the hook saw.** A script, an editor or an agent without OpenMoat leaves no record. Notes are not signed and can be stripped or left unpushed: a missing note proves nothing, and only the machine that wrote a note can verify it; in CI it is a claim ([Provenance](/docs/see-what-happened/provenance/#limits)).
 
+<Aside type="tip" title="New in the next release">
+
+What changes in the gaps above, and the new limits:
+
+- **Hook failures.** For Codex, Gemini CLI, Qwen Code and Crush a missing or killed `openmoat` blocks the call; a timeout still runs it ([Other hooks the agents run](/docs/other-hooks/#fail-safe-hook-commands)).
+- **Git configuration and other hooks** are recorded and named until you accept them; a program that runs at session start may still have run before ([Other hooks the agents run](/docs/other-hooks/#limits)).
+- **Sending what a session collected**: a send of a file it packed, or after it copied private data into a file, needs review (`staging-egress`); a send after many reads alone stays recorded only ([Private data and a way out](/docs/lethal-trifecta/#limits)).
+- **Native Windows** gets an `openmoat run` preview that holds writes and the process tree only; reads and the network stay the hook's ([openmoat run on Windows](/docs/sandboxes/windows/#limits)).
+- **The never-widen check proves file, host, fetch, environment and MCP rules, and samples the rest**: a widening for a shell command none of its cases spells is not found ([Does a change widen?](/docs/policy-file/never-widen/#limits)).
+- **MCP package releases are read offline**, from what `npx`, `uv tool` and an image digest left ([MCP 2026-07-28 and releases](/docs/mcp-servers/protocol-2026-07-28/#limits)).
+
+</Aside>
+
 ## Per agent
 
 - **Gemini CLI** runs no hooks in a folder it does not trust (it asks you before every tool there instead). A project's `.gemini/settings.json` can turn hooks off or add a hook that rewrites a call's arguments, and extension hooks run beside OpenMoat's; `openmoat status` and `openmoat doctor` warn about such a project file.
