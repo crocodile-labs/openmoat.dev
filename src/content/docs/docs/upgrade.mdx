@@ -109,6 +109,14 @@ Until you do, the old hooks keep working through `moat`. `openmoat doctor` says 
 
 ## What each release needs
 
+**To [0.26.0](/docs/releases/v0-26-0/), from 0.25.0:**
+
+- **`openmoat init` once.** Codex, Gemini CLI, Qwen Code and Crush show their hook as out of date until you do: the new entry blocks the call when `openmoat` is missing or killed. Codex then asks you to trust the changed hook in `/hooks`, once. The same `init` records the other hooks the agents load, so nothing already there is named or blocked ([Other hooks the agents run](/docs/other-hooks/)).
+- **`openmoat policy upgrade`** offers `system-files`, `stops-system`, `credential-egress`, `staging-egress` and more paths in `secrets-paths`, `persistence` and `token-egress`. After it, `ls /etc` needs review. An upgrade that would move any call toward allow is applied only with `--accept-widening`; the upgrade from the 0.25.0 default only narrows ([Benchmarks](/docs/benchmarks/#what-the-measurement-changed)).
+- **New reviews with no step:** a session that read private data and untrusted content needs review for any send ([Private data and a way out](/docs/lethal-trifecta/)).
+- **`when:` in rules** is refused by older binaries: update every machine before you share such a rule ([Argument conditions](/docs/policy-file/argument-conditions/)).
+- **`openmoat doctor`** shows the protection score of each `openmoat run` tier and the audit log's checkpoint public key; `openmoat status` lists hook-only agents `openmoat run` can confine here.
+
 | Upgrading to | Run |
 |---|---|
 | [0.21.0](/docs/releases/v0-21-0/) | `openmoat policy upgrade` (`wsl-crossing` on Windows, the agent-configuration paths generated from each agent's spec), then `openmoat init` once (the after-call hooks of Codex, Gemini CLI and GitHub Copilot CLI; on Windows the state directory's access list); in Codex, trust OpenMoat's new hook in `/hooks`; run a `git pull` or package install that changes agent configuration folders (`.claude/commands`, `.gemini/commands`, `.github/agents`, …) outside `openmoat run`; on Linux without bubblewrap nothing can be created at the project's top during a run: install bubblewrap, or set `sandbox.project_top: writable` in your own policy and accept that `.env` and git hooks there are open ([Project files on Linux](/docs/sandboxes/project-files/)) |

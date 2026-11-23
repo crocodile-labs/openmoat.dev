@@ -1,0 +1,32 @@
+---
+title: "OpenMoat 0.26.0"
+description: "OpenMoat shows how strong each sandbox is, records the other hooks agents run, signs audit checkpoints, refuses policy changes that widen without your yes, and holds sends after private data meets untrusted content."
+sidebar:
+  label: "0.26.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-23. [GitHub release v0.26.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.26.0).
+
+<Aside type="caution" title="Upgrading">
+
+Run `openmoat init` once in your own terminal: Codex, Gemini CLI, Qwen Code and Crush show their hook as out of date until you do, and Codex then asks you to trust the changed hook in `/hooks`, once. The same `init` records the other hooks the agents load, so nothing already there is named or blocked. Then run `openmoat policy upgrade` for the new default rules; after it, `ls /etc` or `grep -r … /etc` needs review. Rules with `when:` and `mcp: { allow_sampling: true }` are refused by older binaries, so update every machine before you share them. All the steps: [Upgrade](/docs/upgrade/#what-each-release-needs).
+
+</Aside>
+
+- **How strong is each sandbox.** `openmoat doctor` and the run's boundary record show a 0 to 100 protection score per `openmoat run` tier, naming each missing part; `sandbox.strict: true` refuses a run below 100. [Protection score and strict mode](/docs/sandboxes/protection-score/)
+- **Other hooks the agents run.** Plugin hooks, helper commands, a project's hook files and `.git/config` programs are recorded; a new or changed one is named until you run `openmoat hooks accept`. Codex, Gemini CLI, Qwen Code and Crush block a call when `openmoat` is missing or killed. [Other hooks the agents run](/docs/other-hooks/)
+- **Signed audit checkpoints.** `openmoat audit checkpoint` signs the log, and `audit verify --checkpoint --pubkey` checks an export on any machine. [Signed audit checkpoints](/docs/see-what-happened/signed-checkpoints/)
+- **A change that widens needs your yes.** `openmoat policy diff --widen`, `policy upgrade --accept-widening` and the merge check's `diff-widens` show every call a change decides less strictly. [Does a change widen?](/docs/policy-file/never-widen/)
+- **New default rules** from outside benchmarks: `system-files`, `stops-system`, `credential-egress`, `staging-egress`, and more in `secrets-paths`, `persistence` and `token-egress`, after `openmoat policy upgrade`. [Benchmarks](/docs/benchmarks/#what-the-measurement-changed)
+- **Private data, untrusted content and a way out.** Once a session read both, a call that can send data out needs review (`lethal-trifecta`). [Private data and a way out](/docs/lethal-trifecta/)
+- **Argument conditions.** Deny and review rules can test a call's arguments with `when:`. [Argument conditions](/docs/policy-file/argument-conditions/)
+- **MCP 2026-07-28 and package releases.** The gateway speaks the new revision, refuses sampling unless you allow it, and holds a server started with `npx`, `uvx` or `docker run` whose package release changed. [MCP 2026-07-28, sampling and package releases](/docs/mcp-servers/protocol-2026-07-28/)
+- **`openmoat run` on native Windows, preview.** It holds writes outside the project and the process tree, not reads or the network. [openmoat run on Windows](/docs/sandboxes/windows/)
+- **Linux: the AppArmor fix each agent's documentation gives.** `openmoat doctor` also catches Ubuntu's `bwrap-userns-restrict` profile, under which Claude Code's sandbox fails. [Linux tiers](/docs/sandboxes/linux-tiers/#the-agents-own-sandboxes-on-linux)
+- **Faster check for Claude Code.** The warning that an agent stopped running the hook comes at once for a Claude Code session that called a tool. [A faster check for Claude Code](/docs/other-hooks/#a-faster-check-for-claude-code)
+- **Benchmarks.** MoatBench and outside sets, with what the measurement changed. [Benchmarks](/docs/benchmarks/)
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0260---2026-11-23).

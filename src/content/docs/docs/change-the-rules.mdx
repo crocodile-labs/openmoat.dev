@@ -140,6 +140,12 @@ A change it cannot name is counted as `Other changes: N (d to see)`. Lines you c
 
 After a yes it re-pins the lock and writes the agents' sandbox settings, as `openmoat sandbox sync` does. Run it after each upgrade of the binary ([Upgrade](/docs/upgrade/)).
 
+Since 0.26.0:
+
+- **An upgrade that widens is not applied by itself.** `openmoat policy upgrade` lists every call the new default would decide less strictly and applies it only with `--accept-widening`; without it the policy stays as it is and the command exits 3. The upgrade from the 0.25.0 default only narrows ([Does a change widen?](/docs/policy-file/never-widen/)).
+- **New default rules** from outside benchmarks: `system-files`, `stops-system`, `credential-egress`, and more paths and patterns in `secrets-paths`, `persistence` and `token-egress`. After the upgrade, `ls /etc` or `grep -r … /etc` needs review, as do writes in the system's folders and stopping a system process ([Benchmarks](/docs/benchmarks/#what-the-measurement-changed)).
+- **`staging-egress`**: a send after the session packed files from outside the project, or copied private data into a file, needs review ([Private data and a way out](/docs/lethal-trifecta/#data-packed-or-copied-before-it-is-sent-staging)).
+
 From 0.17.0 it also adds a `title` and a `why` to each deny and review rule of the default, for the message the agent and you read when a call is stopped. Your own rules can have them too ([Titles and reasons for the block message](/docs/policy-file/other-keys/#titles-and-reasons-for-the-block-message)).
 
 The syntax of a rule: [The policy file](/docs/policy-file/). The full policy language and the default policy are in [POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md).

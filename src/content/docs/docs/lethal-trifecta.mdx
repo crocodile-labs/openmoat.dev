@@ -1,0 +1,73 @@
+---
+title: "Private data, untrusted content and a way out"
+description: "Once a session has read private data and content someone else may have written, every call that can send data out needs review (lethal-trifecta); a send after packing or copying private data needs review too (staging-egress)."
+sidebar:
+  label: "Private data and a way out"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+Since 0.26.0. Earlier releases record a send after collecting files, and decide nothing. The trifecta needs no upgrade step; `staging-egress` arrives with `openmoat policy upgrade`.
+
+<FeatureTop
+  does={"A prompt injection carries data away when one session has read private data, read content someone else may have written, and then sends something out. Each is ordinary alone, so OpenMoat watches for the three together: once both reads happened, every call that can send data out needs review, even to a host your policy allows."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"], ["MCP servers", "/docs/solutions/mcp-servers/"]]}
+  out={"review [lethal-trifecta] this session read private data (read /Users/me/.codex/auth.json)\nand content someone else may have written (the output of `gh issue view 7 --comments`),\nand this call can send data to git-push: …"}
+  outNote={"The review a `git push` gets after the session read an agent's login and an issue's comments."}
+  change={"`taint: { trifecta: deny }` in your own policy denies instead of reviewing; `taint.private_paths` names more files whose reads count as private data. Nothing turns it off."}
+  limits={"It is per session, and it does not apply inside `openmoat run`'s proxy, which applies session taint. A grant made before the reads did not see them."}
+  related={[["Session taint", "/docs/session-taint/"], ["Injected input", "/docs/injected-input/"], ["Secrets and .env files", "/docs/env-files/"], ["Decoy keys", "/docs/env-files/decoy-keys/"]]}
+/>
+
+**Protects against** a page, an issue or an MCP result telling the agent to send a key it read to an address the injection chose, through a host you allow (`git push`, a gist, an allowed API).
+
+## What counts
+
+| Part | What sets it |
+|---|---|
+| **Private data read** | a key or token file, an agent's or a build tool's login, a decoy key, the whole environment (`env-dump`, `env-secrets`), `gh auth token`, a folder that holds such paths (`tar czf k.tgz ~/.ssh`), or a file `taint.private_paths` names. Not a committed `.env.example` |
+| **Untrusted content seen** | a web page, a search, an MCP result, a forge's issue or pull-request text (`gh issue view`), a command's read from a host the policy does not allow, a file a tainted session wrote. Not a metadata tool's result (a tab list) |
+| **A way out** (needs review once both are set) | a connection or fetch to a host off this machine (an allowed host too), a web search, an MCP tool that writes, names a URL or whose name acts (`send`, `post`, `upload`, `create`, `publish`, `comment`, …), and commands that publish: `git push`, `gh pr create`, `gh gist create`, `gh api`, `npm publish`, `cargo publish`, `docker push` and the like |
+
+Two parts are quiet: a session that fetched docs and pushes code, or one that read an agent login and never read untrusted content, is not held. A brokered secret going to its own host is not a part.
+
+## Settings
+
+```yaml
+taint:
+  trifecta: deny                  # default review
+  private_paths: ["~/finance/**"] # reads of these count as private data (no `!`)
+```
+
+Answer the review in the agent's prompt. Changing `trifecta` from `deny` back to `review` counts as a widening in [`openmoat policy diff --widen`](/docs/policy-file/never-widen/).
+
+## Data packed or copied before it is sent (staging)
+
+A session that packs files from outside the project and then sends that file, or that copied private data into a file and then sends anything, needs review, rule `staging-egress`:
+
+```bash
+tar czf /tmp/a.tgz ~/notes          # packs files from outside the project
+curl -F f=@/tmp/a.tgz https://…     # sends the packed file: needs review (staging-egress)
+
+cp ~/.aws/credentials notes/        # copies private data into a file
+git push                            # any send after it: needs review (staging-egress)
+```
+
+| What set it off | When | Default policy |
+|---|---|---|
+| `private` | a call that read private data also wrote a file (`cp ~/.aws/credentials notes/`, `cat ~/.codex/auth.json > x`); then every call that can send data out carries it | review (`staging-egress`) |
+| `staged` | the send names a file the session packed or encoded from outside reads (`tar`, `zip`, `7z a`, `base64`, `xxd`, `openssl enc`, `gpg -c`, …) | review (`staging-egress`) |
+| `collected` | the session read many files or folders outside the project, and the send carries a body | recorded only; `openmoat report` counts these per session |
+
+A policy from an earlier release gets `staging-egress` with `openmoat policy upgrade` ([Change the rules](/docs/change-the-rules/#new-default-rules-after-an-upgrade)). To review the `collected` case too, name every trigger in a rule: `shell: ["@staging-egress *"]`.
+
+## Limits
+
+- **Per session.** A collection spread over sessions is not linked.
+- **Not inside `openmoat run`'s proxy**, which applies session taint, not the trifecta.
+- **After a grant.** It is applied after a grant, as session taint is: a grant made before the reads did not see them.
+- **What staging does not see:** a file a `Write` tool fills with private data the agent read in an earlier call (the hook does not know where the content came from), and data typed into a send's arguments rather than read from a file.
+- **`collected` stays recorded only:** its thresholds are estimates, and measured sessions come before a rule decides it.
+
+The details: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#private-data-untrusted-content-and-a-way-out-the-lethal-trifecta), [POLICY.md §4.5 and §4.6](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#46-the-lethal-trifecta). More in [Limits](/docs/limits/).

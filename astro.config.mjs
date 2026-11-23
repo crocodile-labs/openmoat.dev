@@ -111,14 +111,14 @@ export default defineConfig({
           ...['on-a-laptop', 'unattended-agents', 'mcp-servers', 'team-policy', 'ci-and-pull-requests', 'audit-evidence', 'agent-products']
             .map((p) => `solutions/${p}`)]),
         group('Features', [['Policy engine: shell commands', 'shell-commands'],
-          sub('OS sandboxes and run', 'sandboxes', ['openmoat-run', 'linux-tiers', 'boundary-record', 'project-files', 'scrubbed-environment', 'sandboxed-start']),
+          sub('OS sandboxes and run', 'sandboxes', ['openmoat-run', 'linux-tiers', 'boundary-record', 'project-files', 'scrubbed-environment', 'sandboxed-start', 'protection-score', 'windows']),
           sub('Egress proxy', 'egress-proxy', ['sessions']), ['Network allowlist', 'allow-a-site'],
           sub('Token broker', 'keep-tokens-safe', ['token-egress', 'another-service', 'where-it-works', 'https-injection', 'short-lived-tokens']),
           sub('Secrets and .env files', 'env-files', ['agent-credentials', 'protected-contents', 'card-numbers', 'decoy-keys']),
-          sub('MCP pinning, gateway and browsers', 'mcp-servers', ['tool-pinning', 'gateway', 'cross-server', 'browser-pages']),
-          'session-taint', 'injected-input',
-          sub('Code the agent wrote', 'session-written-code', ['opaque-code']), 'runs-later', 'self-protection', ['Is my agent still protected?', 'hook-liveness'], 'snapshots',
-          sub('Audit log, watch and why', 'see-what-happened', ['watch-and-why', 'provenance', 'siem-delivery']),
+          sub('MCP pinning, gateway and browsers', 'mcp-servers', ['tool-pinning', 'gateway', 'cross-server', 'browser-pages', 'protocol-2026-07-28']),
+          'session-taint', ['Private data and a way out', 'lethal-trifecta'], 'injected-input',
+          sub('Code the agent wrote', 'session-written-code', ['opaque-code']), 'runs-later', 'self-protection', ['Is my agent still protected?', 'hook-liveness'], 'other-hooks', 'snapshots',
+          sub('Audit log, watch and why', 'see-what-happened', ['watch-and-why', 'provenance', 'siem-delivery', 'signed-checkpoints']),
           ['Merge check', 'check-a-pull-request'],
           sub('Team rules and packs', 'team-rules', ['repository-policy', 'policy-packs', 'required-protection']),
           'compliance-evidence', 'auto-approve-and-ci', 'remote-approvals', 'sdk']),
@@ -130,12 +130,12 @@ export default defineConfig({
           'supported-features', 'editors']),
         group('Reference', [
           sub('Commands', 'commands', ['setup', 'allow', 'policy', 'sandboxes', 'mcp-and-secrets', 'audit-and-diagnostics']),
-          sub('The policy file', 'policy-file', ['verdicts', 'patterns', 'other-keys', 'repositories']), 'change-the-rules',
-          'glossary', 'limits', 'break-openmoat']),
+          sub('The policy file', 'policy-file', ['verdicts', 'patterns', 'other-keys', 'repositories', 'argument-conditions', 'never-widen']), 'change-the-rules',
+          'glossary', 'limits', 'benchmarks', 'break-openmoat']),
         {
           label: 'Releases',
           collapsed: true,
-          items: ['docs/releases', ...['v0-25-0', 'v0-24-0', 'v0-23-1', 'v0-23-0', 'v0-22-1', 'v0-22-0', 'v0-21-0', 'v0-20-0', 'v0-19-0', 'v0-18-0', 'v0-17-0', 'v0-16-0', 'v0-15-0', 'v0-14-0', 'v0-13-0', 'v0-12-1', 'v0-12-0', 'v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
+          items: ['docs/releases', ...['v0-26-0', 'v0-25-0', 'v0-24-0', 'v0-23-1', 'v0-23-0', 'v0-22-1', 'v0-22-0', 'v0-21-0', 'v0-20-0', 'v0-19-0', 'v0-18-0', 'v0-17-0', 'v0-16-0', 'v0-15-0', 'v0-14-0', 'v0-13-0', 'v0-12-1', 'v0-12-0', 'v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
             .map((v) => `docs/releases/${v}`)],
         },
       ],

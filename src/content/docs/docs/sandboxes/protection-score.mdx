@@ -1,0 +1,97 @@
+---
+title: "Protection score and strict mode"
+description: "openmoat doctor and openmoat run show one 0 to 100 score for how much of the OS boundary is in force, name each missing part and what brings it; sandbox.strict: true refuses any run below 100."
+sidebar:
+  label: "Protection score and strict mode"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+Since 0.26.0.
+
+<FeatureTop
+  does={"Each kernel feature `openmoat run` can use on your system has a weight, and the weights add up to 100. The score is the sum of the features in force, with each missing one named and what would bring it. `openmoat doctor` prints one score per tier this system can start, and one for the hook alone, which is 0."}
+  when={[["Unattended agents", "/docs/solutions/unattended-agents/"], ["Team policy", "/docs/solutions/team-policy/"]]}
+  cmd={"openmoat doctor"}
+  out={"protection  isolated    95/100; missing: landlock_udp (not on this system: needs Landlock ABI 10, Linux 7.2; …)\nprotection  lightweight 80/100; missing: landlock_udp (…); isolated_view (…)\nprotection  hook-only   0/100: no kernel feature is in force; …"}
+  outNote={"On Linux 7.1 with bubblewrap, as SANDBOX.md in the openmoat repository shows it."}
+  change={"`sandbox.strict: true` in your own policy (`openmoat edit`) makes `openmoat run` start only with the whole score. A repository policy or a pack cannot set it."}
+  limits={"A score compares runs on one system, not systems. On Linux strict mode needs the Isolated tier on Linux 7.2 or later; on other kernels it refuses every run."}
+  related={[["openmoat run", "/docs/sandboxes/openmoat-run/"], ["The boundary record", "/docs/sandboxes/boundary-record/"], ["Linux tiers and Landlock", "/docs/sandboxes/linux-tiers/"], ["Required protection", "/docs/team-rules/required-protection/"], ["openmoat run on Windows", "/docs/sandboxes/windows/"]]}
+/>
+
+**Protects against** an `openmoat run` that starts with less of the boundary than you think: an older kernel, a missing bubblewrap, or a Landlock step the kernel does not have, which before showed only as several rows of the boundary record.
+
+## What it does
+
+The score is a field of [the boundary record](/docs/sandboxes/boundary-record/) (`score`), so `openmoat run --print-boundary`, `--verbose` and the run's audit row carry it. Planned, a feature counts when the system has it and the run asks for it. After the start, it counts only when the launch confirmed it.
+
+| Linux feature | Weight | Linux feature | Weight |
+|---|--:|---|--:|
+| `landlock_filesystem` (Landlock ABI 4) | 25 | `landlock_resolve_unix` (ABI 9) | 5 |
+| `landlock_tcp_port` (ABI 4) | 10 | `landlock_udp` (ABI 10) | 5 |
+| `seccomp` | 15 | `network_namespace` (bubblewrap) | 15 |
+| `no_new_privs` | 5 | `isolated_view` (the Isolated tier) | 15 |
+| `landlock_scopes` (ABI 6) | 5 | | |
+
+- **macOS:** the Seatbelt profile is the whole 100. It holds files, the network (the proxy's address alone) and Mach services in one.
+- **Windows:** the weights are `restricted_token` 45, `job_object` 10, `wfp_network` 30 and `windows_read_deny` 15. The last two are not part of OpenMoat's Windows tier yet, so a Windows run scores at most 55 ([openmoat run on Windows](/docs/sandboxes/windows/)).
+- **The hook alone scores 0:** an allowed call runs with your permissions.
+
+## Example
+
+```bash
+openmoat doctor                                          # one score per tier, and the hook alone
+openmoat run --print-boundary -- gemini | tail -1        # protection score: 95/100; missing: …
+openmoat run --print-boundary --format json -- gemini | jq .score
+```
+
+## Strict mode
+
+With `sandbox.strict: true` in your own policy, `openmoat run` starts only with the whole score:
+
+```yaml
+sandbox:
+  strict: true    # default false
+```
+
+- **Before anything starts**, it refuses when the plan lacks a feature, naming each one (exit 64).
+- **`--print-boundary`** prints the plan, then refuses the same way.
+- **After the start**, a feature the launch did not confirm stops the agent and its processes, with a `deny` boundary row.
+
+On Linux that means the Isolated tier on Landlock ABI 10 (Linux 7.2) or later. On a kernel or system without it, strict mode refuses every run, which is what it is for. Windows runs are always refused under it.
+
+A repository policy or a pack cannot set or clear it. [`require.run: full-boundary`](/docs/team-rules/required-protection/#require-openmoat-runs-full-boundary) stays the lighter requirement: a sandbox and a network of the agent's own, whatever the kernel's newer steps. Turning `sandbox.strict` off counts as a widening in [`openmoat policy diff --widen`](/docs/policy-file/never-widen/).
+
+## UDP under Landlock
+
+On a kernel with Landlock ABI 10 (Linux 7.2), `openmoat run` also asks Landlock to refuse every UDP bind, connect and send, and grants no UDP rule. So no datagram leaves (DNS to any resolver included), beside the seccomp filter's refusal of UDP sockets that was there already. The record gains the restriction `landlock_udp`. A kernel without ABI 10 keeps exactly the previous behaviour.
+
+On a kernel at exactly ABI 9, the ruleset now asks for rights the kernel lacks, so Landlock reports it partly enforced and the record shows ABI 9's step as unknown rather than applied. No run stops for it; strict mode refuses such a run anyway.
+
+## An empty allowlist is no network
+
+The proxy refuses every host and every address no rule allows, the Landlock and Seatbelt rules reach only the proxy's port, and Claude Code's settings get an empty `allowedDomains` with `strictAllowlist`, never a missing list. A policy that lists no host gives the agent no network.
+
+## Hook-only agents in `openmoat status`
+
+`openmoat status` lists each agent at `hook only` that has an `openmoat run` command and no [sandboxed-start](/docs/sandboxes/sandboxed-start/) shim under `Needs your attention`: `hook only: no OS boundary`, with that one command as the fix. It is a warning; the status stays healthy. `openmoat init` names the same, per agent, before it asks whether typing the agent's name should start it confined.
+
+Qwen Code and Crush now get a command too:
+
+| Agent | Command (macOS 13 or later; Linux adds `--isolate`) |
+|---|---|
+| Qwen Code | `openmoat run --write ~/.qwen -- qwen` |
+| Crush | `openmoat run --write ~/.local/share/crush --write ~/.cache/crush -- crush` |
+
+Their directories come from each agent's documentation and source, not a real run: a directory either writes that is not named shows up as a refused write; add it with another `--write`. OpenClaw still gets no command: its Gateway serves a local port, which the sandbox does not allow.
+
+## Limits
+
+- **A score compares runs on one system**, not operating systems: a macOS 100 and a Linux 100 are not the same boundary.
+- **Strict mode refuses most Linux systems today.** It needs Linux 7.2 or later with bubblewrap; the refusal names the kernel release that would satisfy it.
+- **Every Windows run scores at most 55** and is refused under strict mode.
+- **`openmoat status` shows the warning** for every hook-only agent with a command until you confine it or set up sandboxed start.
+
+The full table and the Landlock ladder: [SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md#the-protection-score-and-strict-mode). More in [Limits](/docs/limits/).

@@ -14,6 +14,13 @@
     "why": "these files hold the passwords and tokens that publish under your name"
   },
   {
+    "id": "kerberos-tickets",
+    "verdict": "deny",
+    "reason": "a Kerberos ticket cache",
+    "title": "reading or changing your Kerberos tickets",
+    "why": "with a ticket anyone can act as you on the services it covers"
+  },
+  {
     "id": "agent-credentials",
     "verdict": "deny",
     "reason": "an AI agent's own login, API keys or OAuth tokens",
@@ -75,6 +82,13 @@
     "reason": "an agent's system-wide settings outrank the user's and can turn OpenMoat's hooks off; an administrator deploys them",
     "title": "changing an agent's system-wide settings",
     "why": "they outrank your own and can switch OpenMoat's hooks off for every later session"
+  },
+  {
+    "id": "wsl-crossing",
+    "verdict": "deny",
+    "reason": "hands work to the Windows Subsystem for Linux, whose files and commands no Windows rule names",
+    "title": "running commands or opening files inside WSL from Windows",
+    "why": "inside WSL a command reaches files this policy names only by their Windows paths"
   },
   {
     "id": "shell-rc",
@@ -154,11 +168,25 @@
     "why": "a scheduled job or service keeps running after this session ends"
   },
   {
+    "id": "system-files",
+    "verdict": "review",
+    "reason": "changes the operating system's own files, which outlive this session",
+    "title": "changing the operating system's files",
+    "why": "every program and user on this machine runs with them, after this session too"
+  },
+  {
     "id": "stops-openmoat",
     "verdict": "review",
     "reason": "stops a running OpenMoat process, such as the egress proxy service",
     "title": "stopping a running OpenMoat process",
     "why": "its protection, such as the egress proxy, stops with it"
+  },
+  {
+    "id": "stops-system",
+    "verdict": "review",
+    "reason": "stops a process the operating system or the login session needs",
+    "title": "stopping a system process",
+    "why": "this machine, its remote login or your session may stop working"
   },
   {
     "id": "home-sweep",
@@ -196,6 +224,13 @@
     "why": "typo-squats and made-up names are how malicious packages get installed"
   },
   {
+    "id": "package-run-unknown",
+    "verdict": "review",
+    "reason": "fetches a package that is not on the list of popular ones and runs its code at once; check that it is the one you meant",
+    "title": "running a package that is not a well-known one",
+    "why": "a made-up or squatted name runs whatever its author put in it, with your permissions"
+  },
+  {
     "id": "docker-secrets",
     "verdict": "review",
     "reason": "hands secrets, the SSH agent or the host to a build",
@@ -215,5 +250,19 @@
     "reason": "makes a new login token for an AI agent and prints it",
     "title": "making a new login token for an AI agent",
     "why": "the command prints a long-lived token into the agent's context"
+  },
+  {
+    "id": "credential-egress",
+    "verdict": "review",
+    "reason": "sends a login token or a database password off this machine",
+    "title": "sending a login token or a database password off this machine",
+    "why": "whoever receives it can sign in as you, or into that database"
+  },
+  {
+    "id": "staging-egress",
+    "verdict": "review",
+    "reason": "sends data after this session packed files from outside the project or wrote private data into a file",
+    "title": "sending data the session packed or copied out of private files",
+    "why": "collect, pack and send is how data leaves in steps that each look ordinary"
   }
 ]

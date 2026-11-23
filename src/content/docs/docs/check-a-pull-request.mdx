@@ -198,6 +198,8 @@ Use the `pull_request` event, not `pull_request_target`: the check needs no secr
 
 With `--base`, the policy files are read as the base revision has them, with git, not from the checked-out files: a relative `--policy` path, and the repository's `.moat/policy.yaml`, whose `deny` and `review` rules are added as the hook adds them for an untrusted repository. A change to either file is reported (`diff-policy`) and applies from the next change after it is merged. A diff on stdin has no base revision: `--policy` is read from disk and no repository policy is read.
 
+Since 0.26.0, with `--base`, a change that makes `.moat/policy.yaml` (or the `--policy` file) decide any call less strictly than the base revision's fails with `diff-widens` (deny; review for a setting whose direction is not ranked): one finding per call that moves toward allow, with the rules before and after. It is the same check as `openmoat policy diff --widen` ([Does a change widen?](/docs/policy-file/never-widen/)).
+
 ## Rule ids it adds
 
 | Rule id | Level | When |

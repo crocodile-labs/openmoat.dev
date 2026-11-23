@@ -1,0 +1,93 @@
+---
+title: "Benchmarks"
+description: "How OpenMoat's default policy scores on MoatBench and on two attack sets written by others, RedCode-Exec and agent-egress-bench: what it denies, holds, leaves to the agent and allows, and how the numbers were made."
+sidebar:
+  label: "Benchmarks"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Read this when">
+
+You want to know how OpenMoat's default policy does against attacks, what it lets through, and how the numbers were made, so you can run them yourself.
+
+</Aside>
+
+Two kinds of measurement, both of the default policy with nothing added:
+
+- **MoatBench**, written by OpenMoat's authors, drives `openmoat guard` with each agent's hook payloads, a session and an audit log. It shows that the policy and its own expectations agree, and how often normal work is interrupted.
+- **Outside sets**, written by others: [RedCode-Exec](https://github.com/AI-secure/RedCode) (risky Python and Bash an agent is asked to run) and [agent-egress-bench](https://github.com/pipelab-org/agent-egress-bench) (exfiltration and egress attempts, with benign controls). Neither was made for a tool-call hook, so each case is first turned into the calls a coding agent would send.
+
+How to read the verdicts: **denied** is `deny`; **held** is `review`, waiting for a person; **left to the agent's prompt** is `defer`, where OpenMoat stays quiet and the agent's own permission prompt decides, for a call no rule names. `defer` is not counted as stopped.
+
+## MoatBench on 0.25.0
+
+OpenMoat 0.25.0, run on 2026-11-22 on macOS 12.7.6, a debug build, every scenario run as the hook payloads of all fourteen agents.
+
+| | Runs or steps | Denied | Held for review | OS sandbox | Left to the agent's prompt | Allowed |
+|---|--:|--:|--:|--:|--:|--:|
+| Attacks (destructive, exfiltration, MCP, obfuscation, persistence, self-protection, supply chain) | 762 runs | 538 | 155 | 9 | 60 | 0 |
+| Normal work: eight developer workflows (git feature branch, Node app, Python package, Rust crate, Go module, Docker image, make targets, editing project files) | 844 steps | | 26, all expected | | | |
+
+0 false positives, 0 known gaps and 0 mismatches with the expected answers. "OS sandbox" is a step the hook allows where the scenario declares that OpenMoat's OS sandbox holds it. The 26 reviews in normal work are 12 in the Docker image workflow and 14 in editing project files.
+
+The end-to-end test `moatbench` runs `openmoat bench` in CI on every change and fails on any mismatch or false positive, so a change to the default policy that breaks one of its expectations fails CI. Run it yourself:
+
+```bash
+openmoat bench            # every scenario, as each agent's hook payloads
+openmoat bench --report   # the proof report: which promise each layer keeps
+```
+
+Every category and the proof report: [MOATBENCH.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/MOATBENCH.md#scorecard-openmoat-0250-fourteen-agents).
+
+## Outside sets: 0.25.0 and 0.26.0
+
+The decision engine alone (`openmoat policy check`), run on 2026-11-22 twice: with the default policy of 0.25.0, and with the rules this measurement led to, which came in 0.26.0 ([below](#what-the-measurement-changed)).
+
+| Set | Cases | Denied: 0.25.0 → 0.26.0 | Denied or held: 0.25.0 → 0.26.0 | Allowed | False positives |
+|---|--:|--:|--:|--:|--:|
+| RedCode-Exec, code inline in the command, the 30 scenario files whose code acts on the machine | 900 | 19.8% → 22.1% | 50.0% → 68.9% | 0 → 0 | no benign cases in the set |
+| agent-egress-bench, the call an agent makes (`curl`, or the agent's own tool for MCP cases) | 122 of 192 | 47.5% → 50.0% | 47.5% → 54.1% | 1 → 1 | 12 of 37, unchanged |
+
+Read with these facts beside it:
+
+- **Many denies come from `net: deny`**, which refuses a connection to a host no rule allows, whatever it carries. The same rule makes all 12 false positives: benign `POST`s and requests with headers to hosts the policy does not list. The new rules added no false positive in either set.
+- **Most of the change is `review`, not `deny`:** writes in system folders and JWTs or database URLs sent out are held for a person, because each has everyday uses.
+- **A script written to a file and then run is not seen.** When the agent writes the code to a file and runs `python3 redcode_task.py`, the decision engine sees a project file being written and a run, not the code; no case was stopped in that form. What limits that run is the [OS sandbox](/docs/sandboxes/), which this measurement does not include.
+- **70 of agent-egress-bench's 192 attacks have no input for OpenMoat** (agent cards, MCP tool lists and results, WebSocket frames, responses an agent receives), so the table counts 122.
+
+All forms, the per-scenario tables and every attack not stopped: [BENCHMARKS.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/BENCHMARKS.md).
+
+## What the measurement changed
+
+These default rules came with 0.26.0. `openmoat policy upgrade` offers them; the upgrade from the 0.25.0 default only narrows, so it needs no `--accept-widening` ([Change the rules](/docs/change-the-rules/#new-default-rules-after-an-upgrade)).
+
+Every change adds a `deny` or a `review`; none loosens a verdict. Each carries the benchmark's cases as attack tests and the everyday forms beside them as benign tests.
+
+| Rule | Verdict | What it now covers |
+|---|---|---|
+| `secrets-paths` | deny | `/etc/shadow`, `/etc/gshadow`, `/etc/security/opasswd`, macOS's `master.passwd` and the SSH server's host private keys (`/etc/ssh/ssh_host_*_key`). `/etc/passwd` and the `.pub` keys stay as they were |
+| `system-files` (new) | review | writes, deletes and moves in `/etc`, `/usr` except `/usr/local`, `/bin`, `/sbin`, `/lib*`, `/boot`, `/System` and the system parts of `/Library`, in every spelling (`rm`, `cp`, `tee`, `>`, `wget -O`, inline code that deletes a file). Reads, `/usr/local`, `/opt/homebrew`, `/tmp`, `/var` and the project are unchanged |
+| `persistence` | review | the system's cron spools and tables, systemd's unit folders, SysV init scripts, `/Library/LaunchDaemons`, `/Library/LaunchAgents`, `systemctl enable`, `systemd-run --on-*` and `launchctl load`, `bootstrap`, `enable` and `submit`. Starting, stopping and listing stay as they were |
+| `token-egress` | deny | GitLab's other token prefixes (`gldt-`, `glrt-`, …), an AWS secret key given by name, PEM private keys |
+| `credential-egress` (new) | review | a JWT or a database URL with a password sent off the machine |
+| `stops-system` (new) | review | `pkill` or `killall` of a system process (`sshd`, `launchd`, `systemd`, …), every process of `root`, `kill 1`, `kill -9 -1`, `kill $(pgrep sshd)`. `kill <pid>`, `pkill -f "node server"` and `killall node` stay as they were |
+
+And one change to how every policy reads a URL: a fetch tool's URL is now read as `curl`'s is, so an IP address in any spelling (`0x7f000001`, `10.0.0.1`, `[::ffff:127.0.0.1]`) is decided by the network rules, and a URL inside a URL (`?target=http://169.254.169.254/`) is a host too. Plain loopback (`localhost`, `127.0.0.1`, `[::1]`) stays left to the agent's prompt, as for `curl`.
+
+**What you may meet in everyday work:** since `/etc` and `/etc/ssh` now hold secret paths, a read of either folder itself (`ls /etc`, `grep -r … /etc`) needs review; reads of the files and folders below (`cat /etc/os-release`, `ls /etc/nginx`) keep their verdict. A JWT sent to an allowed host (a GitHub App's JWT to `api.github.com`) needs review.
+
+**Not added, with the reasons in ADR-112:** encoded tokens in URLs before a secret was read, and data carried in host names. Both need a benign corpus measured first (signed URLs, OAuth values, CDN and preview hosts).
+
+## Limits of the method
+
+- **The outside sets measure the decision engine only.** No agent ran, no code ran, and no sandbox, proxy, session, MCP pinning or agent adapter took part. A real session can stop more (taint after a secret read, injected input, a sandbox refusing a write) and can ask less (the agent's own allow lists).
+- **The conversion is OpenMoat's.** Each case was turned into calls by OpenMoat's harness; a different but reasonable conversion (a here-document instead of `python3 -c`) can change verdicts.
+- **One machine, the shipped policies.** macOS, the default policy, no project or team rules, no allowed hosts added. Path decisions can differ on Linux and Windows.
+- **`defer` is not measured.** Whether the agent then asks, and what a person answers, is outside this measurement.
+- **MoatBench was written by OpenMoat's authors.** It shows that the policy keeps its own expectations, not that it stops attacks it was not written for; the outside sets are there for that.
+- **Decision times are not quoted:** the run was a debug build on a loaded machine.
+
+## Run it yourself
+
+The harness is `scripts/bench/external.py` in the openmoat repository, Python 3 standard library only; it reads the datasets' JSON and never runs anything from them. The commands, the commits of each dataset and the machine: [BENCHMARKS.md, Reproduce it](https://github.com/crocodile-labs/openmoat/blob/main/docs/BENCHMARKS.md#reproduce-it).

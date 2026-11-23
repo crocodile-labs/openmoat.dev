@@ -5,9 +5,6 @@ import { rows, byFeature } from '../data/features';
 interface Props { table: 'agents' | 'features' }
 const { table } = Astro.props;
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-// For features documented before they ship: set NEXT to ' (next release)' and mark them
-// `next: true` in src/data/features.ts; at the release, set NEXT back to '' and drop the marks.
-const NEXT = '';
 const tiles = rows.map((r) => ({
   name: r.name, href: r.docs,
   facts: [
@@ -17,8 +14,8 @@ const tiles = rows.map((r) => ({
     ['Injected input', r.injected ?? '—'],
     ['Review of code it wrote', r.written ?? '—'],
     ['Hook run by the real agent', r.hookProven || 'preview on every OS'],
-    [`Says when it stops running the hook${NEXT}`, r.liveness ?? '—'],
-    [`Sandboxed start${NEXT}`, r.start ?? '—'],
+    ['Says when it stops running the hook', r.liveness ?? '—'],
+    ['Sandboxed start', r.start ?? '—'],
   ] as [string, string][],
 }));
 ---
@@ -27,7 +24,7 @@ const tiles = rows.map((r) => ({
 ) : (
   <ul class="feat not-content">
     {byFeature.map((f) => (
-      <li><a href={f.href}>{f.name}</a>{f.next && NEXT && <span class="next">Next release</span>}<p set:html={f.where} /></li>
+      <li><a href={f.href}>{f.name}</a><p set:html={f.where} /></li>
     ))}
   </ul>
 )}
@@ -38,5 +35,4 @@ const tiles = rows.map((r) => ({
   .feat a { font-weight: 800; letter-spacing: -0.01em; color: var(--sl-color-white); text-decoration: none; }
   .feat a:hover { text-decoration: underline; }
   .feat p { margin: 0; font-size: var(--sl-text-sm); color: var(--sl-color-gray-2); }
-  .next { align-self: flex-start; font-family: var(--sl-font-mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; color: var(--sl-color-accent-high); border: 1px solid var(--om-line); border-radius: 999px; padding: 0.1rem 0.55rem; }
 </style>
