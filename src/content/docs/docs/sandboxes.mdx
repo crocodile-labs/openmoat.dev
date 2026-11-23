@@ -44,13 +44,11 @@ From 0.16.0 every sandbox also denies the agents' login and key files to the com
 
 OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, the Cline CLI and goose have no sandbox OpenMoat can configure: use `openmoat run` for them. Without it, running a script the session wrote needs review first ([Code the agent wrote](/docs/session-written-code/)).
 
-<Aside type="tip" title="New in the next release">
+Since 0.26.0:
 
 - **A protection score.** `openmoat doctor` and `openmoat run --print-boundary` show one 0 to 100 score for how much of the OS boundary is in force, naming each missing part; `sandbox.strict: true` refuses any run below 100. On Linux 7.2 the run also refuses UDP through Landlock ([Protection score and strict mode](/docs/sandboxes/protection-score/)).
 - **Qwen Code and Crush get an `openmoat run` command**, and `openmoat status` names each hook-only agent that has one, with the command as the fix.
 - **Windows.** `openmoat run` starts a preview tier on native Windows that holds writes and the process tree, not reads or the network ([openmoat run on Windows](/docs/sandboxes/windows/)).
-
-</Aside>
 
 ## Example
 
@@ -117,7 +115,7 @@ sandbox:
 - **Cursor runs some commands outside its sandbox**: when its Auto-review approves them, in Run Everything mode, and in the Cursor CLI without `--sandbox enabled`. Inside the workspace its sandbox cannot deny `.env` or `.git`.
 - **On Linux without bubblewrap, `openmoat run` cannot create anything directly at the project's top.** From 0.21.0 it grants the project entry by entry there, so `.env`, `.git` and `.moat` at the top stay covered; a `.env` in a subfolder or a nested `.git` stays open, and `sandbox.project_top: writable` opens the top again, on record ([Project files on Linux](/docs/sandboxes/project-files/)). Without bubblewrap, its network is restricted by port only and a `--write` path outside the project is refused.
 - **Under `openmoat run`, the project's `.git` is read-only** (macOS, and every Linux tier from 0.21.0), and agent configuration folders in the project cannot be written: commit, pull and install outside the run.
-- **`openmoat run` refuses on macOS 12 and earlier and on Windows**, where Claude Code and Cursor get no sandbox from OpenMoat either. Use WSL2 on Windows. The next release starts a Windows preview tier that holds writes only ([openmoat run on Windows](/docs/sandboxes/windows/)).
+- **`openmoat run` refuses on macOS 12 and earlier. On native Windows it is a preview that holds writes and the process tree only** (since 0.26.0), and Claude Code and Cursor get no sandbox from OpenMoat there: use WSL2 for the full boundary ([openmoat run on Windows](/docs/sandboxes/windows/)).
 - **Under `openmoat run`, the agent and its commands share one sandbox**: whatever the agent needs, `npm test` gets too.
 
 The details per agent: [SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md). More in [Limits](/docs/limits/).

@@ -8,11 +8,7 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../../components/FeatureTop.astro';
 
-<Aside type="tip" title="New in the next release">
-
-In 0.25.0 `openmoat run` refuses on native Windows. The next release starts this preview tier there. It holds writes and the process tree, and nothing else: its [protection score](/docs/sandboxes/protection-score/) is 55 of 100.
-
-</Aside>
+Since 0.26.0; earlier releases refuse `openmoat run` on native Windows. This preview tier holds writes and the process tree, and nothing else: its [protection score](/docs/sandboxes/protection-score/) is 55 of 100.
 
 <FeatureTop
   does={"On native Windows `openmoat run` starts the program under a write-restricted token, in a job object, with the proxy variables pointing at the run's proxy. Writes outside the project, the run's temp directory and your `--write` paths are refused by Windows, and every process the agent starts ends with the run."}

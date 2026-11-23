@@ -8,11 +8,7 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../../components/FeatureTop.astro';
 
-<Aside type="tip" title="New in the next release">
-
-`when:` comes with the next OpenMoat release. 0.25.0, and any older binary, refuses a policy that uses it, so update every machine before you share such a rule.
-
-</Aside>
+Since 0.26.0. 0.25.0, and any older binary, refuses a policy that uses `when:`, so update every machine before you share such a rule.
 
 <FeatureTop
   does={"A `deny` or `review` group with `when:` matches a call only when one of its patterns matches and every condition holds. So a rule can deny sending mail to anyone outside the team instead of all mail. A condition can only narrow the group it is on."}

@@ -32,11 +32,7 @@ A call can be decided more strictly because of what the same agent session did b
 
 From 0.16.0 the instruction and skills files the next agent session obeys count too: `.agents/skills/**`, `.windsurfrules`, `.windsurf/rules/**` and `.github/instructions/**`, beside `CLAUDE.md` and `AGENTS.md`.
 
-<Aside type="tip" title="New in the next release">
-
-Once a session has read private data (a key, an agent's login, the whole environment) **and** untrusted content (a page, an MCP result, `gh issue view`), every call that can send data out needs review, rule `lethal-trifecta`, to an allowed host and `git push` too. A send after the session packed files from outside the project, or copied private data into a file, needs review too (`staging-egress`). [Private data, untrusted content and a way out](/docs/lethal-trifecta/).
-
-</Aside>
+Since 0.26.0, once a session has read private data (a key, an agent's login, the whole environment) **and** untrusted content (a page, an MCP result, `gh issue view`), every call that can send data out needs review, rule `lethal-trifecta`, to an allowed host and `git push` too. A send after the session packed files from outside the project, or copied private data into a file, needs review too (`staging-egress`). [Private data, untrusted content and a way out](/docs/lethal-trifecta/).
 
 Taint knows that untrusted content came in; [injected input](/docs/injected-input/) (from 0.16.0) also knows what it said: a later command or write that uses a host, path or command the page or tool result named needs review, with the source named.
 

@@ -8,11 +8,7 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../../components/FeatureTop.astro';
 
-<Aside type="tip" title="New in the next release">
-
-MCP 2026-07-28 in the gateway, sampling refused by default with `mcp.allow_sampling`, the URL elicitation check, argument-to-header mappings, and package release pins come with the next OpenMoat release. In 0.25.0 the gateway speaks the older revision and passes sampling requests that do not ask for the session's context.
-
-</Aside>
+Since 0.26.0. In 0.25.0 the gateway speaks the older revision and passes sampling requests that do not ask for the session's context.
 
 <FeatureTop
   does={"An agent that speaks MCP 2026-07-28 has no `initialize` handshake, so the gateway pins the server's `server/discover` answer instead. What a server asks of you is checked in either revision: sampling is refused unless you allow it, and a URL elicitation must name an `https` page off this machine. When you accept a server started with `npx`, `uvx` or `docker run`, the release it runs is recorded, and a new release is held like a changed definition."}

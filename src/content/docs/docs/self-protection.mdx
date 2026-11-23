@@ -109,14 +109,12 @@ Self-protection has no switch. `executables:` adds pins of your own ([Shell comm
 
 - **The lock is a list of digests, with no key.** A program that runs as you outside any sandbox can change the policy and write new digests. Only an OS sandbox stops that, so hook-only agents (OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, the Cline CLI, goose, and Claude Code and Cursor on native Windows) do not have this protection.
 - **Agent settings can turn hooks off** (`disableAllHooks`, `[features] hooks = false`, pi's `--no-extensions`), and a repository's `.claude/settings.json` is loaded at session start, before any hook runs ([Keep Claude Code's hooks on for everyone](/docs/team-rules/#keep-claude-codes-hooks-on-for-everyone)).
-- **Some agents run a call when the hook fails**: Codex, and Claude Code before 2.1.295, if `openmoat` is missing or crashes.
+- **Some agents run a call when the hook fails**: Claude Code before 2.1.295, if `openmoat` is missing or crashes. Since 0.26.0 Codex, Gemini CLI, Qwen Code and Crush block it then, and run it only when the hook times out.
 
-<Aside type="tip" title="New in the next release">
+Since 0.26.0:
 
 - **Fail-safe hook commands.** For Codex, Gemini CLI, Qwen Code and Crush, the hook entry `openmoat init` writes turns a missing or killed `openmoat` into the agent's block answer; run `openmoat init` once after the upgrade.
 - **Other hooks the agents run** (plugin hooks, helper commands, a project's hook files, `.git/config` programs) are recorded in the lock; a new or changed one is named until you run `openmoat hooks accept`, and one whose command your policy denies denies the agent's calls ([Other hooks the agents run](/docs/other-hooks/)).
-
-</Aside>
 - **A root user or a replaced `openmoat` binary** is out of scope.
 
 [What the lock is not](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#what-the-lock-is-not). More in [Limits](/docs/limits/).

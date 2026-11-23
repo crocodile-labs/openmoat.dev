@@ -8,11 +8,7 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../components/FeatureTop.astro';
 
-<Aside type="tip" title="New in the next release">
-
-The `lethal-trifecta` review and the `staging-egress` rule come with the next OpenMoat release. In 0.25.0 a send after collecting files is recorded only. The trifecta needs no upgrade step; `staging-egress` arrives with `openmoat policy upgrade`.
-
-</Aside>
+Since 0.26.0. Earlier releases record a send after collecting files, and decide nothing. The trifecta needs no upgrade step; `staging-egress` arrives with `openmoat policy upgrade`.
 
 <FeatureTop
   does={"A prompt injection carries data away when one session has read private data, read content someone else may have written, and then sends something out. Each is ordinary alone, so OpenMoat watches for the three together: once both reads happened, every call that can send data out needs review, even to a host your policy allows."}

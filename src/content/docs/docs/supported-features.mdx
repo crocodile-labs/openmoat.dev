@@ -14,7 +14,7 @@ Every agent gets the same policy through its own hook. What differs is what the 
 
 <SupportedFeatures table="agents" />
 
-- **Protection**: *hook + OS sandbox*: OpenMoat also writes the agent's own sandbox from your policy, so the code an allowed call runs is confined. *Hook only*: an allowed call runs with your permissions; `openmoat run -- <agent>` puts any agent in an OS sandbox ([OS sandboxes](/docs/sandboxes/)). On native Windows the next release's `openmoat run` is a preview that holds writes only ([openmoat run on Windows](/docs/sandboxes/windows/)).
+- **Protection**: *hook + OS sandbox*: OpenMoat also writes the agent's own sandbox from your policy, so the code an allowed call runs is confined. *Hook only*: an allowed call runs with your permissions; `openmoat run -- <agent>` puts any agent in an OS sandbox ([OS sandboxes](/docs/sandboxes/)). On native Windows `openmoat run` is a preview that holds writes only ([openmoat run on Windows](/docs/sandboxes/windows/)).
 - **Hook entries**: the events `openmoat init` registers, from the table generated from each agent's host spec ([INSTALL.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/INSTALL.md#non-default-config-directories)). What each event covers, tool by tool: [Supported agents](/docs/agents/).
 - **Injected input** needs the agent to report what a call returned. "Not yet": the agent reports nothing after a call; results of its MCP servers that you wrap are still read by the gateway.
 - **Hook run by the real agent**: where a real copy of the agent ran OpenMoat's hook and the decision held ([Protection by agent and OS](/docs/agents/protection/)); every other system is preview.
@@ -23,8 +23,6 @@ Every agent gets the same policy through its own hook. What differs is what the 
 - **—**: no source states it yet, so the page does not guess.
 
 ## By feature
-
-Features marked **Next release** are documented before they ship; 0.25.0 does not have them.
 
 <SupportedFeatures table="features" />
 

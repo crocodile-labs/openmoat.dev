@@ -1,7 +1,7 @@
 // Every rule id an OpenMoat block message links to (openmoat.dev/r/<id>):
 // the default policy's deny and review rules (rules.json, written by
 // tools/rules_from_policy.py) and OpenMoat's own checks (builtin-rules.json,
-// the table in crates/openmoat-cli/src/notice/builtin.rs).
+// the worded rules of crates/openmoat-core/src/rule_id.rs, words in rule_id/words.rs).
 import policy from './rules.json';
 import builtin from './builtin-rules.json';
 

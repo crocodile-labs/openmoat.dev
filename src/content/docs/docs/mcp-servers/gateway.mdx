@@ -34,11 +34,7 @@ Through the gateway:
 - **One server's result carried into another server's action needs review** (from 0.16.0). The gateway keeps hashed pieces of each result; a later call of another server's tool that writes or sends and carries one is held for review (`mcp-cross-server`), naming both servers ([MCP data between servers](/docs/mcp-servers/cross-server/)). From 0.17.0 what a wrapped server returned also feeds [injected input](/docs/injected-input/), for every agent.
 - **Only what it read goes through.** Every message the gateway sends, to the server or to the agent, is the one it parsed, written again by itself, so a key given twice, a `\r` inside a line or a line separator inside a string cannot carry an unchecked message past it. A line from the server it cannot read is dropped. A response from the server reaches the agent only when it answers a request the agent sent.
 
-<Aside type="tip" title="New in the next release">
-
-The gateway speaks MCP 2026-07-28 as well as the older revision, refuses a server's sampling requests unless `mcp: { allow_sampling: true }` is set, passes a URL elicitation only for an `https` page off this machine and its networks, names each argument a tool sends as an HTTP header, and holds a server started with `npx`, `uvx` or `docker run` whose package release changed until you accept it again ([MCP 2026-07-28, sampling and package releases](/docs/mcp-servers/protocol-2026-07-28/)).
-
-</Aside>
+Since 0.26.0, the gateway speaks MCP 2026-07-28 as well as the older revision, refuses a server's sampling requests unless `mcp: { allow_sampling: true }` is set, passes a URL elicitation only for an `https` page off this machine and its networks, names each argument a tool sends as an HTTP header, and holds a server started with `npx`, `uvx` or `docker run` whose package release changed until you accept it again ([MCP 2026-07-28, sampling and package releases](/docs/mcp-servers/protocol-2026-07-28/)).
 
 ## Example
 

@@ -8,11 +8,7 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../../components/FeatureTop.astro';
 
-<Aside type="tip" title="New in the next release">
-
-`openmoat policy diff --widen`, `openmoat policy upgrade --accept-widening` and the merge check's `diff-widens` come with the next OpenMoat release. In 0.25.0 `policy diff` lists the changed rules only.
-
-</Aside>
+Since 0.26.0. In 0.25.0 `policy diff` lists the changed rules only.
 
 <FeatureTop
   does={"A policy change widens when the new policy decides some call less strictly than the old one, on the order deny > review > defer > allow. `openmoat policy diff OLD NEW --widen` decides both policies over many calls and lists every one that moves toward allow, with the rules before and after."}

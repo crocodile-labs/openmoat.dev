@@ -31,15 +31,13 @@ The two `--write` paths are Claude Code's own state, which it must write to run.
 - **No hard links to protected files** (macOS, from 0.15.0): the Seatbelt profile also denies hard links to every path it denies reading or writing, so a sandboxed command cannot link `~/.moat/proxy.key` or `audit.db` into the project.
 - **Turn the agent's own sandbox off:** sandboxes do not nest. Claude Code's `sandbox.enabled` fails inside, and Codex needs `--sandbox danger-full-access`. Credentials must not come from the keychain: use an API key or `apiKeyHelper`.
 
-Before the agent starts, `openmoat run` prints how many places the sandbox is stricter or wider than the policy; `--verbose` lists each one. It needs macOS 13 or later, or Linux; it refuses on Windows.
+Before the agent starts, `openmoat run` prints how many places the sandbox is stricter or wider than the policy; `--verbose` lists each one. It needs macOS 13 or later, or Linux; on native Windows it starts a preview tier that holds writes only.
 
-<Aside type="tip" title="New in the next release">
+Since 0.26.0:
 
 - **Protection score:** the run's boundary record carries a 0 to 100 score, and `sandbox.strict: true` refuses a run below 100 ([Protection score and strict mode](/docs/sandboxes/protection-score/)).
 - **Qwen Code and Crush:** `openmoat run --write ~/.qwen -- qwen` and `openmoat run --write ~/.local/share/crush --write ~/.cache/crush -- crush` (Linux adds `--isolate`).
 - **Windows:** a preview tier that refuses writes outside the project and ends every process with the run; reads and the network are not held ([openmoat run on Windows](/docs/sandboxes/windows/)).
-
-</Aside>
 
 <Aside type="caution" title="Linux: the Isolated tier is the default">
 

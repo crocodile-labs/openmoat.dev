@@ -73,15 +73,11 @@ sandbox:
 | 7 | 6.15 | not used (kernel audit logging): OpenMoat's audit log records its own decisions |
 | 8 | 7.0 | not used (one ruleset for all threads): OpenMoat's proxy thread must stay outside |
 | 9 | 7.1 | used: a pathname Unix socket made outside the sandbox cannot be connected or sent to |
-| 10 | 7.2 | not used yet (UDP): seccomp refuses UDP |
+| 10 | 7.2 | used (since 0.26.0): every UDP bind, connect and send is refused, beside seccomp's refusal of UDP sockets |
 | 11 | 7.3 | nothing to add (`no_new_privs` is set already) |
 | 12 | 7.4 | not used yet (capabilities, namespaces): seccomp refuses new namespaces |
 
-<Aside type="tip" title="New in the next release">
-
-ABI 10 (Linux 7.2) is used: every UDP bind, connect and send is refused by Landlock too, beside seccomp's refusal of UDP sockets, and the boundary record gains `landlock_udp`. `openmoat doctor` also shows one 0 to 100 protection score per tier, naming each missing step and the Linux release that brings it ([Protection score and strict mode](/docs/sandboxes/protection-score/)).
-
-</Aside>
+Since 0.26.0, ABI 10 (Linux 7.2) is used: every UDP bind, connect and send is refused by Landlock too, beside seccomp's refusal of UDP sockets, and the boundary record gains `landlock_udp`. `openmoat doctor` also shows one 0 to 100 protection score per tier, naming each missing step and the Linux release that brings it ([Protection score and strict mode](/docs/sandboxes/protection-score/)).
 
 See what applies on your kernel:
 
@@ -99,9 +95,7 @@ Every run also writes it to the audit log, as Landlock's `restrict_self` reporte
 
 `openmoat init` turns on the agents' own sandboxes (Claude Code, Codex, Cursor). On Linux each needs what its documentation lists: Claude Code needs `bwrap` and `socat` on `PATH`, and all three need to create user namespaces as you, which Ubuntu 23.10 and later restrict through AppArmor by default (`kernel.apparmor_restrict_unprivileged_userns=1`). Since 0.25.0, `openmoat doctor` says when an agent's own sandbox cannot start commands on this machine, and why. Nothing needs root, and nothing on the machine changes; the fixes are yours to run.
 
-<Aside type="tip" title="New in the next release">
-
-`openmoat doctor` gives each agent the AppArmor fix its own documentation gives, and catches Ubuntu's `bwrap-userns-restrict` profile for Claude Code, whose sandbox fails under it although a plain `bwrap` works. So follow the fix `doctor` names for each agent:
+Since 0.26.0, `openmoat doctor` gives each agent the AppArmor fix its own documentation gives, and catches Ubuntu's `bwrap-userns-restrict` profile for Claude Code, whose sandbox fails under it although a plain `bwrap` works. So follow the fix `doctor` names for each agent:
 
 ```console
 $ openmoat doctor
@@ -111,8 +105,6 @@ $ openmoat status
 ```
 
 `openmoat status --format json` lists the same under `own_sandbox_linux`, with `bwrap_userns_restrict` when Ubuntu's profile applies.
-
-</Aside>
 
 OpenMoat never runs `sysctl` or `sudo`, and no policy setting leaves one agent's sandbox off: its hook still decides each call. The details: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#can-the-agents-own-sandbox-start-commands-here-linux).
 

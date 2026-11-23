@@ -109,15 +109,13 @@ Until you do, the old hooks keep working through `moat`. `openmoat doctor` says 
 
 ## What each release needs
 
-<Aside type="tip" title="New in the next release: from 0.25.0">
+**To [0.26.0](/docs/releases/v0-26-0/), from 0.25.0:**
 
 - **`openmoat init` once.** Codex, Gemini CLI, Qwen Code and Crush show their hook as out of date until you do: the new entry blocks the call when `openmoat` is missing or killed. Codex then asks you to trust the changed hook in `/hooks`, once. The same `init` records the other hooks the agents load, so nothing already there is named or blocked ([Other hooks the agents run](/docs/other-hooks/)).
 - **`openmoat policy upgrade`** offers `system-files`, `stops-system`, `credential-egress`, `staging-egress` and more paths in `secrets-paths`, `persistence` and `token-egress`. After it, `ls /etc` needs review. An upgrade that would move any call toward allow is applied only with `--accept-widening`; the upgrade from the 0.25.0 default only narrows ([Benchmarks](/docs/benchmarks/#what-the-measurement-changed)).
 - **New reviews with no step:** a session that read private data and untrusted content needs review for any send ([Private data and a way out](/docs/lethal-trifecta/)).
 - **`when:` in rules** is refused by older binaries: update every machine before you share such a rule ([Argument conditions](/docs/policy-file/argument-conditions/)).
 - **`openmoat doctor`** shows the protection score of each `openmoat run` tier and the audit log's checkpoint public key; `openmoat status` lists hook-only agents `openmoat run` can confine here.
-
-</Aside>
 
 | Upgrading to | Run |
 |---|---|

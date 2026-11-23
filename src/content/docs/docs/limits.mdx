@@ -45,25 +45,20 @@ OpenMoat checks the tool calls an agent's hook reports. It does not confine ever
 ## Limits of single checks
 
 - **Injected input is linked only with Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, the Cline CLI and wrapped MCP servers, and only for the same request.** Other agents report no call output (their wrapped MCP servers' results are read by the gateway). A PowerShell command (every Gemini CLI shell command on Windows, the PowerShell tools of Claude Code and the Cline CLI) is not parsed, so it is linked by the hosts and paths its text names, not by its commands; a UNC path, another variable, and a host or path built at run time are not seen. Another spelling of a planted address, a subdomain of a planted URL host and a planted command run through a wrapper are linked; a host by another name, a reworded command or a relative path is not. Only the output of the shell, fetches, searches, MCP resource reads and MCP tools is read (every tool's on GitHub Copilot CLI), each kept up to fixed bounds, so a page full of decoys can push a planted host out. Fetches, searches and MCP calls themselves are not checked against it, and an install without the after-call entry (`openmoat init` adds it; Codex runs it once trusted in `/hooks`) links nothing ([Injected input](/docs/injected-input/)).
-- **Sending what a session collected is recorded, not stopped.** A send after the session read many files outside the project, or packed them into an archive or an encoding, carries `@staging-egress` in the audit log and in `openmoat report`, but no default rule decides it yet. Only reads that went through OpenMoat's hook are counted (ADR-061, proposed).
+- **Sending what a session collected is held only in part.** Since 0.26.0 a send of a file the session packed from outside the project, or after it copied private data into a file, needs review (`staging-egress`, after `openmoat policy upgrade`); a send after many outside reads with nothing packed carries `@staging-egress` in the audit log and in `openmoat report`, but is not decided. Only reads that went through OpenMoat's hook are counted ([Private data and a way out](/docs/lethal-trifecta/#limits)).
 - **The container check reads the flags as written.** `container-host` matches the options a `docker`, `podman` or `nerdctl` command line shows; another spelling, or the same options in a compose file or a script, is not caught by it ([Code that runs later](/docs/runs-later/)).
 - **The MCP flow check sees wrapped servers and exact text only.** Results of a server not run through `openmoat mcp wrap` (remote HTTP, plugin or managed servers) are not recorded, and text the agent rewrites, encodes, splits or shortens below eight words is not found; a tool's own annotations or its name decide whether it writes or sends ([MCP data between servers](/docs/mcp-servers/cross-server/)).
 - **The card check is narrow and can misfire.** `card-egress` reads only the text a call shows: a number in a file (`curl -d @cards.csv`), encoded or split is not seen. `openmoat allow` cannot lift a deny: narrow or remove the rule with `openmoat edit` ([Card numbers sent out](/docs/env-files/card-numbers/)).
 - **The pull request check reads added lines, not programs.** It matches the text a change adds (and the lockfile lines it removes), offline: a payload built from pieces at run time, a script the change does not touch and a package's age or owner are not checked, and a benign line can match (set its level in `check_diff.levels`). A finding is a report: it holds a merge only where the job is a required status check ([Check a pull request](/docs/check-a-pull-request/#limits)).
 - **Provenance notes are local evidence of what the hook saw.** A script, an editor or an agent without OpenMoat leaves no record. Notes are not signed and can be stripped or left unpushed: a missing note proves nothing, and only the machine that wrote a note can verify it; in CI it is a claim ([Provenance](/docs/see-what-happened/provenance/#limits)).
 
-<Aside type="tip" title="New in the next release">
-
-What changes in the gaps above, and the new limits:
+Since 0.26.0, what changed in the gaps above, and the new limits:
 
 - **Hook failures.** For Codex, Gemini CLI, Qwen Code and Crush a missing or killed `openmoat` blocks the call; a timeout still runs it ([Other hooks the agents run](/docs/other-hooks/#fail-safe-hook-commands)).
 - **Git configuration and other hooks** are recorded and named until you accept them; a program that runs at session start may still have run before ([Other hooks the agents run](/docs/other-hooks/#limits)).
-- **Sending what a session collected**: a send of a file it packed, or after it copied private data into a file, needs review (`staging-egress`); a send after many reads alone stays recorded only ([Private data and a way out](/docs/lethal-trifecta/#limits)).
 - **Native Windows** gets an `openmoat run` preview that holds writes and the process tree only; reads and the network stay the hook's ([openmoat run on Windows](/docs/sandboxes/windows/#limits)).
 - **The never-widen check proves file, host, fetch, environment and MCP rules, and samples the rest**: a widening for a shell command none of its cases spells is not found ([Does a change widen?](/docs/policy-file/never-widen/#limits)).
 - **MCP package releases are read offline**, from what `npx`, `uv tool` and an image digest left ([MCP 2026-07-28 and releases](/docs/mcp-servers/protocol-2026-07-28/#limits)).
-
-</Aside>
 
 ## Per agent
 

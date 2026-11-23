@@ -8,11 +8,7 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../../components/FeatureTop.astro';
 
-<Aside type="tip" title="New in the next release">
-
-`openmoat audit checkpoint`, `openmoat audit verify --checkpoint --pubkey`, the checkpoint row in `openmoat doctor`, and the record of what a review showed and what ran come with the next OpenMoat release. 0.25.0 has anchors (below), not checkpoints.
-
-</Aside>
+Since 0.26.0. Earlier releases have anchors (below), not checkpoints.
 
 <FeatureTop
   does={"A checkpoint states how many events the audit log held and a Merkle root over them, signed with a key of its own, `~/.moat/audit.key.ed25519`. Anyone you give the public key can check an export against it, without the audit key and without your machine."}

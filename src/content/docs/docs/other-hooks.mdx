@@ -8,11 +8,7 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../components/FeatureTop.astro';
 
-<Aside type="tip" title="New in the next release">
-
-The record of other hooks, `openmoat hooks list` and `openmoat hooks accept`, `hooks.foreign`, the fail-safe hook commands for Codex, Gemini CLI, Qwen Code and Crush, and the faster check for Claude Code come with the next OpenMoat release. 0.25.0 has none of them.
-
-</Aside>
+Since 0.26.0. Earlier releases record no other hooks, and their hook commands for Codex, Gemini CLI, Qwen Code and Crush are not fail-safe.
 
 <FeatureTop
   does={"An agent runs every hook in its settings, its plugins and a project's files, not only OpenMoat's, and git runs what a repository's `.git/config` names before any hook. OpenMoat records each one in the policy lock. While one is new or changed, `openmoat status`, `doctor` and `watch` name it with the verdict its command gets under your policy, until you accept it."}

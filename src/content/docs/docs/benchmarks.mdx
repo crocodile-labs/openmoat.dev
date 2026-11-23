@@ -40,11 +40,11 @@ openmoat bench --report   # the proof report: which promise each layer keeps
 
 Every category and the proof report: [MOATBENCH.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/MOATBENCH.md#scorecard-openmoat-0250-fourteen-agents).
 
-## Outside sets: 0.25.0 and the next release
+## Outside sets: 0.25.0 and 0.26.0
 
-The decision engine alone (`openmoat policy check`), run on 2026-11-22 twice: with the default policy of 0.25.0, and with the rules this measurement led to, which come in the next release ([below](#what-the-measurement-changed)).
+The decision engine alone (`openmoat policy check`), run on 2026-11-22 twice: with the default policy of 0.25.0, and with the rules this measurement led to, which came in 0.26.0 ([below](#what-the-measurement-changed)).
 
-| Set | Cases | Denied: 0.25.0 → next | Denied or held: 0.25.0 → next | Allowed | False positives |
+| Set | Cases | Denied: 0.25.0 → 0.26.0 | Denied or held: 0.25.0 → 0.26.0 | Allowed | False positives |
 |---|--:|--:|--:|--:|--:|
 | RedCode-Exec, code inline in the command, the 30 scenario files whose code acts on the machine | 900 | 19.8% → 22.1% | 50.0% → 68.9% | 0 → 0 | no benign cases in the set |
 | agent-egress-bench, the call an agent makes (`curl`, or the agent's own tool for MCP cases) | 122 of 192 | 47.5% → 50.0% | 47.5% → 54.1% | 1 → 1 | 12 of 37, unchanged |
@@ -60,11 +60,7 @@ All forms, the per-scenario tables and every attack not stopped: [BENCHMARKS.md]
 
 ## What the measurement changed
 
-<Aside type="tip" title="New in the next release">
-
-These default rules come with the next OpenMoat release. `openmoat policy upgrade` offers them; the upgrade from the 0.25.0 default only narrows, so it needs no `--accept-widening` ([Change the rules](/docs/change-the-rules/#new-default-rules-after-an-upgrade)).
-
-</Aside>
+These default rules came with 0.26.0. `openmoat policy upgrade` offers them; the upgrade from the 0.25.0 default only narrows, so it needs no `--accept-widening` ([Change the rules](/docs/change-the-rules/#new-default-rules-after-an-upgrade)).
 
 Every change adds a `deny` or a `review`; none loosens a verdict. Each carries the benchmark's cases as attack tests and the everyday forms beside them as benign tests.
 
