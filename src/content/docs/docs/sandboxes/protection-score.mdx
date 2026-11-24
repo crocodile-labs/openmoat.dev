@@ -85,7 +85,7 @@ Qwen Code and Crush now get a command too:
 | Qwen Code | `openmoat run --write ~/.qwen -- qwen` |
 | Crush | `openmoat run --write ~/.local/share/crush --write ~/.cache/crush -- crush` |
 
-Their directories come from each agent's documentation and source, not a real run: a directory either writes that is not named shows up as a refused write; add it with another `--write`. OpenClaw still gets no command: its Gateway serves a local port, which the sandbox does not allow.
+Their directories come from each agent's documentation and source, not a real run: a directory either writes that is not named shows up as a refused write; add it with another `--write`. OpenClaw still gets no command: its Gateway serves a local port, which the sandbox does not allow. Since 0.27.0 it does on Linux with a network namespace, through `openmoat run --listen`, and `openmoat status` and `doctor` show each hook-only agent's score in its `Agents` row ([Confine agents by default](/docs/sandboxes/confine/)).
 
 ## Limits
 

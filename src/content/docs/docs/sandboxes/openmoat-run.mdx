@@ -39,6 +39,12 @@ Since 0.26.0:
 - **Qwen Code and Crush:** `openmoat run --write ~/.qwen -- qwen` and `openmoat run --write ~/.local/share/crush --write ~/.cache/crush -- crush` (Linux adds `--isolate`).
 - **Windows:** a preview tier that refuses writes outside the project and ends every process with the run; reads and the network are not held ([openmoat run on Windows](/docs/sandboxes/windows/)).
 
+Since 0.27.0:
+
+- **`openmoat confine`:** typing a hook-only agent's name can start it in `openmoat run`, at your yes in `openmoat init` or later with `openmoat confine <agent>` ([Confine agents by default](/docs/sandboxes/confine/)).
+- **`--listen PORT`:** the sandbox may bind and accept on that one port, on loopback alone, for OpenClaw's Gateway: `openmoat run --listen 18789 --write ~/.openclaw -- openclaw gateway`. Linux with a network namespace only; refused on Linux without one, on macOS and on Windows ([OpenClaw under --listen](/docs/sandboxes/confine/#openclaw-under-openmoat-run---listen)).
+- **Minted credentials (preview):** the run's proxy can mint short-lived GitHub, AWS and Google Cloud credentials and hand them to git and the AWS tools through their credential helpers ([Minted credentials](/docs/keep-tokens-safe/minted-credentials/)).
+
 <Aside type="caution" title="Linux: the Isolated tier is the default">
 
 From 0.20.0 `openmoat run` on Linux starts the Isolated tier (bubblewrap) where bubblewrap works, so commands the agent starts can no longer read `.env` or write `.git/hooks` and `.moat` in the project.

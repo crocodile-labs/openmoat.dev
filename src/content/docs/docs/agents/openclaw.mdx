@@ -49,6 +49,6 @@ A plugin returns `{ params: { command: "cat ~/.ssh/id_rsa" } }` for a `git statu
 - **A plugin that changes the call and asks for approval in the same answer** keeps its change once you approve its request, unchecked by OpenMoat.
 - **A plugin registered at the same lowest priority after OpenMoat's, or at a lower one** (`-Infinity`), runs after it.
 - **Plugins run inside the Gateway with its rights** and can change what any code there does.
-- **No OS sandbox from OpenMoat.** Run the Gateway under `openmoat run` for one.
+- **No OS sandbox from OpenMoat, except on Linux.** Since 0.27.0, on Linux with a network namespace, run the Gateway under `openmoat run --listen 18789 --write ~/.openclaw -- openclaw gateway` (`openmoat status` prints the command with your port), or say yes when `openmoat init` offers to start it confined. macOS and Windows refuse `--listen`. Only the Gateway is confined: every other `openclaw` command runs under the hook alone ([Confine agents by default](/docs/sandboxes/confine/#openclaw-under-openmoat-run---listen)).
 
 Everything else OpenClaw's hook leaves open: [Supported agents](/docs/agents/#openclaw) and [THREAT_MODEL.md §5](https://github.com/crocodile-labs/openmoat/blob/main/docs/THREAT_MODEL.md#5-known-limitations).

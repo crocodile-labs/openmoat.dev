@@ -30,7 +30,7 @@ You want to know, for your agent and your operating system, what checks its call
 | Claude Code | hook: protected · own sandbox: yes · run: Isolated | hook: protected · own sandbox: yes · run: Lightweight | hook: preview · own sandbox: none · run: none |
 | Codex | hook: protected · own sandbox: yes · run: Isolated | hook: protected · own sandbox: yes · run: Lightweight | hook: preview · own sandbox: preview · run: none |
 | Cursor | hook: preview · own sandbox: preview · run: Isolated | hook: preview · own sandbox: preview · run: Lightweight | hook: preview · own sandbox: none · run: none |
-| OpenClaw | hook: protected · own sandbox: none · run: none | hook: protected · own sandbox: none · run: none | hook: preview · own sandbox: none · run: none |
+| OpenClaw | hook: protected · own sandbox: none · run: Isolated (the Gateway, since 0.27.0) | hook: protected · own sandbox: none · run: none | hook: preview · own sandbox: none · run: none |
 | GitHub Copilot CLI | hook: protected · own sandbox: none · run: Isolated | hook: protected · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
 | pi | hook: protected · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
 | Gemini CLI | hook: protected · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
@@ -41,7 +41,7 @@ You want to know, for your agent and your operating system, what checks its call
 | Antigravity CLI | hook: protected · own sandbox: none · run: Isolated | hook: protected · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
 | Continue CLI | hook: none · own sandbox: none · run: none | hook: none · own sandbox: none · run: none | hook: none · own sandbox: none · run: none |
 
-OpenClaw has no `openmoat run` tier because its Gateway serves a local port, which the run's sandbox does not allow. The Continue CLI runs no hook, so OpenMoat installs none.
+OpenClaw's Gateway serves a local port. Since 0.27.0 it runs under `openmoat run --listen` on Linux, in the Isolated tier (Lightweight where bubblewrap cannot run), with the port kept to loopback inside its own network namespace; macOS and Windows refuse `--listen`, so OpenClaw has no `openmoat run` tier there ([Confine agents by default](/docs/sandboxes/confine/#openclaw-under-openmoat-run---listen)). The Continue CLI runs no hook, so OpenMoat installs none.
 
 ## If the hook fails
 

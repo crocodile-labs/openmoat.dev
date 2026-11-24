@@ -20,7 +20,7 @@ const more = supported.length - row.length;
 const mark = { allow: '✓', defer: '→', review: '?', deny: '✕' } as const;
 const three = [
   { cls: 'deny', icon: '✕', title: 'Stops what must never happen', text: 'Reading your keys and .env files, piping a download into a shell, sending to hosts your policy does not list.', cmd: '✕ deny · secrets-paths · pipe-to-shell' },
-  { cls: 'review', icon: '?', title: 'Asks you when it smells a trick', text: 'A host, path or command that came from a page or an issue waits for your answer. So does code that runs later, like a git hook or a CI workflow.', cmd: '? review · injected-input · runs-later' },
+  { cls: 'review', icon: '?', title: 'Asks you when it smells a trick', text: 'A host, path or command that came from a page or an issue waits for your answer. So does code that runs later, like a git hook or a CI workflow, and a command written to hide what it runs.', cmd: '? review · injected-input · runs-later · obfuscated' },
   { cls: 'allow', icon: '✓', title: 'Lets your work run', text: 'Project files and dev commands go straight through. What it has no rule for is your agent’s call, as before.', cmd: '✓ allow · project-fs · dev-shell' },
 ];
 const os = [
@@ -35,7 +35,7 @@ const os = [
 
   <section class="hero wrap">
     <div class="hero-text">
-      <a class="release" href="/docs/releases/v0-26-0/"><span class="new">NEW</span> 0.26.0: OpenMoat now shows how strong each sandbox is, and holds sends after private data meets untrusted content →</a>
+      <a class="release" href="/docs/releases/v0-27-0/"><span class="new">NEW</span> 0.27.0: OpenMoat now holds commands written to hide what they run, and gives teams one signed policy without a server →</a>
       <h1 class="display">Your AI agents,<br><span class="under">checked first.<svg viewBox="0 0 300 18" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12 Q75 2 150 10 T298 8" stroke="#f0a93b" stroke-width="6" fill="none" stroke-linecap="round"></path></svg></span></h1>
       <p class="lead">OpenMoat sits between your coding agent and your machine. It checks each call before it runs: your work goes through, reading your keys does not.</p>
       <div class="ctas">

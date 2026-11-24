@@ -1,0 +1,28 @@
+---
+title: "OpenMoat 0.27.0"
+description: "OpenMoat holds shell and PowerShell lines written to hide what they run, denies a call it cannot decide in time, can ask for a code before anything is loosened, mints short-lived credentials (preview), adds team mode without a server, and asks per agent whether to start it confined."
+sidebar:
+  label: "0.27.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-24. [GitHub release v0.27.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.27.0).
+
+<Aside type="caution" title="Upgrading">
+
+Run `openmoat policy upgrade` in your own terminal for the new default rules (`obfuscated`, PowerShell's `Set-ExecutionPolicy` in `persistence`, and more in `kernel-self`); from the 0.26.0 default it only narrows. Then run `openmoat init` once: it asks, per hook-only agent, whether typing its name should start it confined (default no). A call OpenMoat cannot decide within its deadline is now denied rather than run after the hook times out. All the steps: [Upgrade](/docs/upgrade/#what-each-release-needs).
+
+</Aside>
+
+- **Lines written to hide what they run are held.** Quotes splitting words, escapes of plain letters, `${!ref}`, `${s:2:3}` cuts, `IFS` changes, `tr` rotations and their PowerShell forms are held for review by the new rule `obfuscated`. Cuts and substitutions OpenMoat can follow are followed, so `s=QZcatZQ; ${s:2:3} ~/.ssh/id_rsa` is denied like `cat ~/.ssh/id_rsa`. [Hidden commands and PowerShell](/docs/shell-commands/obfuscation-and-powershell/)
+- **PowerShell is read, in preview.** Each simple statement is decided as the POSIX command that does the same, so `Remove-Item -Recurse -Force ~` and `Get-Content $env:USERPROFILE\.ssh\id_rsa` are denied. A PowerShell line is still never allowed on that reading alone. [Hidden commands and PowerShell](/docs/shell-commands/obfuscation-and-powershell/#powershell-preview)
+- **A slow check is denied, not run.** When OpenMoat cannot decide a call within its deadline (30 s; 25 s for Hermes Agent), it denies it in the agent's own format and records `hook-deadline`. Codex, GitHub Copilot CLI, Gemini CLI, Qwen Code, Crush, the Cline CLI and the Antigravity CLI used to run such a call after their hook timed out. [A slow check is denied](/docs/hook-deadline/)
+- **A code before anything is loosened (optional).** `openmoat gate setup` makes every command that loosens the protection also ask for a code from your authenticator app. Gate on or off, every loosening is recorded: `openmoat show --session policy-changes`. [A code before anything is loosened](/docs/self-protection/loosening-gate/)
+- **Minted, short-lived credentials (preview).** Under `openmoat run`, the proxy can make a GitHub App token for named repositories, AWS credentials with a session policy, or a Google Cloud token for named scopes, and hand them to git and the AWS tools through their own credential helpers. [Minted credentials](/docs/keep-tokens-safe/minted-credentials/)
+- **Team mode without a server.** `openmoat team join|update|leave` installs a team's signed bundle as a layer over your policy that only narrows; `openmoat inventory` reports one machine's agents, hooks and pins as JSON or OCSF, and `--check` exits 1 on drift. [Team mode](/docs/team-rules/team-mode/)
+- **Confine by default, at your yes.** `openmoat init` asks per hook-only agent whether typing its name should start it in `openmoat run`'s sandbox, showing the score it has and would have; `openmoat confine` changes it later, and `openmoat status` shows each agent's score. OpenClaw's Gateway runs confined with `openmoat run --listen` on Linux with a network namespace only. [Confine agents by default](/docs/sandboxes/confine/)
+- **A long session keeps working through a policy change.** After `openmoat policy upgrade`, a policy edit or an upgrade, calls read on from the session's earlier taint (never looser than it) instead of reading the whole session again. [Session taint](/docs/session-taint/#across-a-policy-change)
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0270---2026-11-24).

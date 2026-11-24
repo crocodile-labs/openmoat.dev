@@ -57,8 +57,10 @@ Offered where `openmoat run` works (macOS 13 and later, Linux), for each agent s
 |---|---|
 | Gemini CLI, OpenCode, Hermes Agent, pi, goose, Antigravity CLI, GitHub Copilot CLI, the Cline CLI | offered |
 | Claude Code, Codex, Cursor | not offered: OpenMoat sets up their own OS sandbox ([OS sandboxes](/docs/sandboxes/)) |
-| OpenClaw | not offered: its Gateway serves a local port, which `openmoat run`'s sandbox does not allow |
-| Qwen Code, Crush | not offered: which folders it writes outside the project was not checked |
+| OpenClaw | since 0.27.0, on Linux with a network namespace only: the shim confines `openclaw gateway` alone, with `openmoat run --listen` ([Confine agents by default](/docs/sandboxes/confine/#openclaw-under-openmoat-run---listen)); not offered on macOS and Windows, which refuse `--listen` |
+| Qwen Code, Crush | offered since 0.26.0 |
+
+Since 0.27.0 `openmoat init` shows each agent's protection score with the question (`hook only 0/100 → openmoat run 100/100`), and `openmoat confine` sets up or takes back a shim without `init` ([Confine agents by default](/docs/sandboxes/confine/)).
 
 On Linux without a network namespace for the run, an agent that needs a `--write` path outside the project is not offered either.
 

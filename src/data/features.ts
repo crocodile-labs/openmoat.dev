@@ -15,8 +15,12 @@
 //     offers one to agents whose spec has `RunFacts::Known`; the others' `RunFacts::Unknown`
 //     reasons are from their host specs. Qwen Code and Crush: `RunFacts::Known` since
 //     0.26.0 (ADR-108 §5, docs/SANDBOX.md "Agents OpenMoat writes no sandbox for")
+//     OpenClaw: since 0.27.0 its Gateway alone, on Linux with a network namespace
+//     (docs/SANDBOX.md "OpenClaw under `openmoat run`", ADR-108 §7)
 // The rows of byFeature from Protection score on came with 0.26.0, from its ADRs (108 to 115)
-// and docs/USAGE.md, POLICY.md, SANDBOX.md and INSTALL.md "From 0.25.0 to 0.26.0".
+// and docs/USAGE.md, POLICY.md, SANDBOX.md and INSTALL.md "From 0.25.0 to 0.26.0". The rows
+// from Hidden commands on came with 0.27.0, from ADR-116 to ADR-121, docs/USAGE.md,
+// POLICY.md §2.2.1, TEAM.md, SANDBOX.md, LIMITS.md and INSTALL.md "From 0.26.0 to 0.27.0".
 import { agents } from './agents';
 
 type Extra = { hooks: string; injected: string | null; written: string | null; liveness: string | null; start: string | null };
@@ -30,7 +34,7 @@ const extra: Record<string, Extra> = {
   'claude-code': { hooks: 'PreToolUse, ConfigChange, SessionStart, PostToolUse', injected: 'yes, since 0.16.0 (PostToolUse)', written: 'only on native Windows or with its sandbox not in place', liveness: sessions, start: ownSandbox },
   codex: { hooks: 'PreToolUse, PostToolUse', injected: 'yes, since 0.21.0 (PostToolUse)', written: 'no: OpenMoat sets up its sandbox', liveness: `${sessions}; <code>config.toml</code> changing counts`, start: ownSandbox },
   cursor: { hooks: 'beforeShellExecution, beforeMCPExecution, beforeReadFile, preToolUse, beforeTabFileRead', injected: 'not yet', written: 'only on native Windows or with its sandbox not in place', liveness: `${sessions} (the Cursor CLI; the editor's chats are not seen)`, start: ownSandbox },
-  openclaw: { hooks: 'before_tool_call', injected: 'not yet', written: 'yes', liveness: 'the plugin reports loading; a note only, its sessions are in a database', start: 'no: its Gateway serves a local port, which <code>openmoat run</code> does not allow' },
+  openclaw: { hooks: 'before_tool_call', injected: 'not yet', written: 'yes', liveness: 'the plugin reports loading; a note only, its sessions are in a database', start: 'Linux with a network namespace only, since 0.27.0: the shim confines <code>openclaw gateway</code> with <code>openmoat run --listen</code>; refused on macOS and Windows' },
   'copilot-cli': { hooks: 'preToolUse, postToolUse', injected: 'yes, since 0.21.0 (postToolUse)', written: 'yes', liveness: sessions, start: shim },
   pi: { hooks: 'tool_call', injected: 'not yet', written: 'yes', liveness: 'the plugin reports loading; warns when it ran without', start: shim },
   'gemini-cli': { hooks: 'BeforeTool, AfterTool', injected: 'yes, since 0.21.0 (AfterTool)', written: 'yes', liveness: sessions, start: shim },
@@ -73,4 +77,11 @@ export const byFeature: { name: string; href: string; where: string }[] = [
   { name: 'Argument conditions (when:)', href: '/docs/policy-file/argument-conditions/', where: 'Deny and review rules of a policy; the hook and the MCP gateway read the arguments, OS sandboxes do not.' },
   { name: 'MCP 2026-07-28, sampling and package releases', href: '/docs/mcp-servers/protocol-2026-07-28/', where: 'Stdio servers through <code>openmoat mcp proxy</code>; package release pins for wrapped and unwrapped servers started with <code>npx</code>, <code>uvx</code> or <code>docker run</code>.' },
   { name: 'Default rules from outside benchmarks', href: '/docs/benchmarks/#what-the-measurement-changed', where: 'Every agent, after <code>openmoat policy upgrade</code>: <code>system-files</code>, <code>stops-system</code>, <code>credential-egress</code> and more in <code>secrets-paths</code>, <code>persistence</code> and <code>token-egress</code>.' },
+  { name: 'Hidden commands and PowerShell (PowerShell in preview)', href: '/docs/shell-commands/obfuscation-and-powershell/', where: 'Every agent’s shell calls: <code>obfuscated</code> after <code>openmoat policy upgrade</code>. PowerShell lines from Claude Code’s <code>PowerShell</code> tool and the agents’ shell tools on Windows, and <code>pwsh</code> or <code>powershell</code> inside a POSIX line; never allowed on the reading alone (since 0.27.0).' },
+  { name: 'A slow check is denied', href: '/docs/hook-deadline/', where: 'Every agent, at 30 s (25 s for Hermes Agent); it matters most for Codex, GitHub Copilot CLI, Gemini CLI, Qwen Code, Crush, the Cline CLI and the Antigravity CLI, which run a call whose hook timed out (since 0.27.0).' },
+  { name: 'A code before anything is loosened', href: '/docs/self-protection/loosening-gate/', where: 'Optional, after <code>openmoat gate setup</code>: every command that loosens the protection, for every agent. The <code>policy-changes</code> record is on for everyone (since 0.27.0).' },
+  { name: 'Minted credentials (preview)', href: '/docs/keep-tokens-safe/minted-credentials/', where: 'Inside <code>openmoat run</code> (and <code>openmoat proxy</code>): GitHub App tokens, AWS STS credentials, Google Cloud tokens; <code>helper:</code> for git and the AWS tools inside <code>openmoat run</code> only. Not from a <code>gh</code> login (since 0.27.0).' },
+  { name: 'Team mode', href: '/docs/team-rules/team-mode/', where: 'Every machine that runs <code>openmoat team join</code>; <code>openmoat inventory</code> as JSON or OCSF 1.3.0, <code>--check</code> for a scheduled job, <code>--deliver</code> to sinks with <code>inventory: true</code> (since 0.27.0).' },
+  { name: 'Confine agents by default', href: '/docs/sandboxes/confine/', where: 'Each hook-only agent <code>openmoat run</code> can confine on this machine, at your yes in <code>openmoat init</code> or with <code>openmoat confine</code>; OpenClaw’s Gateway with <code>--listen</code> on Linux with a network namespace only (since 0.27.0).' },
+  { name: 'Session taint across a policy change', href: '/docs/session-taint/#across-a-policy-change', where: 'Every agent’s sessions; Claude Code catches up to the new policy in the background, other agents keep the carried taint for the session (since 0.27.0).' },
 ];

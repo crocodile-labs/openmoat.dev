@@ -1,0 +1,69 @@
+---
+title: "Hidden commands and PowerShell"
+description: "A shell or PowerShell line written to hide what it runs is held for review (obfuscated), cuts and substitutions OpenMoat can follow are followed, and PowerShell statements are read as the POSIX commands that do the same (preview)."
+sidebar:
+  label: "Hidden commands and PowerShell"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+Since 0.27.0. Earlier releases left such a line to the agent's own prompt, as a line OpenMoat could not read, and read no PowerShell at all.
+
+<FeatureTop
+  does={"A line built so that nobody can read what it runs (quotes splitting words, escapes of plain letters, `${!ref}`, `${s:2:3}` cuts, `IFS` changes, `tr` rotations, backticks inside PowerShell words, `[char]` codes) is held for review by the rule `obfuscated`, whatever it turns out to run. What OpenMoat can follow, it follows, so a hidden `cat ~/.ssh/id_rsa` is denied like the plain one. PowerShell statements are read as the POSIX commands that do the same (preview)."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat policy check 'x=$(printf \"\\x63\\x61\\x74\"); $x notes.txt'"}
+  outNote={"Held for review, rule `obfuscated`, after `openmoat policy upgrade`: the line is written so nobody can read what it runs."}
+  change={"`obfuscated` is a review rule of the default policy: `openmoat policy upgrade` adds it. Approve one held line with `openmoat allow --last`."}
+  limits={"The score is a signal, not a boundary: a line can be written to stay under it. The PowerShell reader reads simple statements only, and a PowerShell line is never allowed on its reading alone."}
+  related={[["Policy engine: shell commands", "/docs/shell-commands/"], ["Code the agent wrote", "/docs/session-written-code/"], ["OS sandboxes", "/docs/sandboxes/"], ["Benchmarks", "/docs/benchmarks/"]]}
+/>
+
+**Protects against** a blocked command slipped past the check by spelling it so the classifier cannot tell what it is, and PowerShell commands that do what a default rule denies.
+
+## What it does
+
+OpenMoat scores each command line on the signals of MITRE ATT&CK's detection strategy DET0505 (obfuscated command lines): escapes of printable letters, quotes splitting a word around one or two letters, a command name built by an expansion, `eval`, `${!x}`, numeric `${x:…}` cuts, an `IFS` change that is not `IFS= read`, short assignments joined into one word, decoders, `rev`, rotated `tr` alphabets, `printf` character codes, very long lines. PowerShell has its own signals: backticks inside bare words, `[char]` codes, joined string literals, `-join` and `-f` building, `FromBase64String`, `-EncodedCommand`, `Invoke-Expression`, alternating case.
+
+A line that reaches the threshold is held for review, rule `obfuscated`. It only adds: the line is classified as before, so a deny still wins. The threshold is checked against every allowed test command and every allowed or deferred MoatBench step: no everyday command among them reaches it.
+
+What can be followed is followed. For a variable whose value the line shows, a `${s:offset:length}` cut is made as bash makes it and `${!r}` is the variable `r` names; a command substitution that prints known text (`echo` or `printf %s` of plain words) is read again as that text.
+
+## Example
+
+| The agent runs | Verdict | Rule |
+|---|---|---|
+| `x=$(printf '\x63\x61\x74'); $x notes.txt` | review | `obfuscated` |
+| `s=QZcatZQ; ${s:2:3} ~/.ssh/id_rsa` | deny | as `cat ~/.ssh/id_rsa` is |
+| `pwsh -NoProfile -Command 'Get-Content ~/.aws/credentials'` | deny | `secrets-paths` |
+| `Set-ExecutionPolicy Unrestricted -Scope CurrentUser` | review | `persistence` |
+
+Verdicts as the release notes and README give them, with the default policy after `openmoat policy upgrade`.
+
+## PowerShell (preview)
+
+Each simple PowerShell statement is decided as the POSIX command that does the same, by the same rules: `Remove-Item -Recurse -Force` is `rm -rf`, `Get-Content` is `cat`, `iwr URL | iex` is `curl URL | sh`, and `$env:USERPROFILE` is `$HOME`. Parameters match as PowerShell matches them (any case, unique prefixes, `-Name:value`).
+
+- `Remove-Item -Recurse -Force ~`, `Get-Content $env:USERPROFILE\.ssh\id_rsa` and `iwr URL | iex` are denied.
+- Code built at run time (`iex` of anything but piped input, `Invoke-Command`, `[scriptblock]`, `Add-Type`, `FromBase64String`, `-EncodedCommand`) is held as `opaque-code`. The text an encoded command decodes to is read as PowerShell too.
+- `Set-ExecutionPolicy` for the user or the machine is held by `persistence`; `-Scope Process` is not.
+- `pwsh -c '…'` and `powershell -EncodedCommand …` inside a POSIX line are read the same way.
+
+**A PowerShell line is still never allowed on this reading alone.** The reader only adds what rules can deny or hold; anything else goes to the agent's own prompt, as before. A statement it does not read (script blocks, parentheses, arrays) adds only its literal paths and `$env:` reads.
+
+## Commands
+
+```bash
+openmoat policy upgrade                              # adds obfuscated, and Set-ExecutionPolicy to persistence
+openmoat policy check 's=QZcatZQ; ${s:2:3} ~/.ssh/id_rsa'
+openmoat allow --last                                # approve the one line that was held
+```
+
+## Limits
+
+- **The score is a heuristic.** A line can be written to stay under it. It is a signal for review, not a boundary; the OS sandbox is what confines the code an allowed call runs.
+- **The PowerShell reader is a preview.** It reads simple statements only, and its table covers file, web, process and evaluation cmdlets. Here-strings, splatting, `-f` formats and script blocks are left unread. A `cmd` line is unchanged.
+- **Injected-input linking still reads a PowerShell line by its text**, the hosts and paths it names, not by its commands ([Limits](/docs/limits/#limits-of-single-checks)).
+
+The design: [ADR-116](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-116-shell-obfuscation-signal-and-powershell-reader.md). More in [Limits](/docs/limits/).

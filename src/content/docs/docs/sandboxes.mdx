@@ -16,7 +16,7 @@ import FeatureTop from '../../../components/FeatureTop.astro';
   outNote={"What the operating system answered, from the table below that CI checks on every pull request (EVIDENCE.md in the openmoat repository). ENOENT: the path does not exist inside the sandbox."}
   change={"`openmoat sandbox show` prints what your policy compiles to; run `openmoat sandbox sync` after `openmoat edit`. `sandbox.read_roots` lists what sandboxed commands may read beyond the rules."}
   limits={"Claude Code's sandbox covers `Bash`, `PowerShell` and `Monitor`: file tools, `WebFetch` and MCP servers are checked by the hook only. `openmoat run` refuses on macOS 12 and earlier and on Windows."}
-  related={[["openmoat run", "/docs/sandboxes/openmoat-run/"], ["Egress proxy", "/docs/egress-proxy/"], ["Scrubbed environment", "/docs/sandboxes/scrubbed-environment/"], ["Start agents sandboxed", "/docs/sandboxes/sandboxed-start/"], ["Protection score", "/docs/sandboxes/protection-score/"], ["Snapshots", "/docs/snapshots/"], ["Supported features", "/docs/supported-features/"]]}
+  related={[["openmoat run", "/docs/sandboxes/openmoat-run/"], ["Egress proxy", "/docs/egress-proxy/"], ["Scrubbed environment", "/docs/sandboxes/scrubbed-environment/"], ["Start agents sandboxed", "/docs/sandboxes/sandboxed-start/"], ["Protection score", "/docs/sandboxes/protection-score/"], ["Confine agents by default", "/docs/sandboxes/confine/"], ["Snapshots", "/docs/snapshots/"], ["Supported features", "/docs/supported-features/"]]}
 />
 
 
@@ -49,6 +49,11 @@ Since 0.26.0:
 - **A protection score.** `openmoat doctor` and `openmoat run --print-boundary` show one 0 to 100 score for how much of the OS boundary is in force, naming each missing part; `sandbox.strict: true` refuses any run below 100. On Linux 7.2 the run also refuses UDP through Landlock ([Protection score and strict mode](/docs/sandboxes/protection-score/)).
 - **Qwen Code and Crush get an `openmoat run` command**, and `openmoat status` names each hook-only agent that has one, with the command as the fix.
 - **Windows.** `openmoat run` starts a preview tier on native Windows that holds writes and the process tree, not reads or the network ([openmoat run on Windows](/docs/sandboxes/windows/)).
+
+Since 0.27.0:
+
+- **Confine by default, at your yes.** `openmoat init` asks per hook-only agent whether typing its name should start it in `openmoat run`'s sandbox, with the score it has and would have (`hook only 0/100 → openmoat run 100/100`); the default is no. `openmoat confine` and `openmoat confine --off` change it later, and `openmoat status` shows each agent's score ([Confine agents by default](/docs/sandboxes/confine/)).
+- **OpenClaw's Gateway under `openmoat run --listen`**, on Linux with a network namespace only; macOS and Windows refuse `--listen` ([Confine agents by default](/docs/sandboxes/confine/#openclaw-under-openmoat-run---listen)).
 
 ## Example
 
@@ -93,6 +98,8 @@ Everything it does, and the Cursor CLI setup: [Run a whole agent with openmoat r
 | `openmoat run [--write <path>]… -- <agent>` | Run an agent in a sandbox made from the policy | `openmoat run -- claude --dangerously-skip-permissions` |
 | `openmoat run --isolate` · `--no-isolate` | Linux: the Isolated tier or refuse; the Lightweight tier on purpose (recorded) | `openmoat run --isolate --write ~/.claude -- claude` |
 | `openmoat run --print-boundary [--format json]` | Print the boundary a run would start with and start nothing (from 0.21.0) | `openmoat run --print-boundary -- claude` |
+| `openmoat confine <agent>… \| --all` · `--off` | Make typing a hook-only agent's name start it in `openmoat run`'s sandbox, or start it as before again (from 0.27.0). Terminal only | `openmoat confine gemini-cli` |
+| `openmoat run --listen PORT` | Let the agent serve one TCP port on loopback alone, such as OpenClaw's Gateway; Linux with a network namespace only (from 0.27.0) | `openmoat run --listen 18789 --write ~/.openclaw -- openclaw gateway` |
 | `openmoat run --netns=require` | Refuse to start on Linux where the agent cannot get a network namespace, instead of restricting its network by port only | `openmoat run --netns=require -- claude` |
 
 `openmoat allow` and `openmoat secret add` update the agents' sandboxes for you. After `openmoat edit` or `openmoat policy upgrade`, run `openmoat sandbox sync`, then start a new agent session.

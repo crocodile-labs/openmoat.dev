@@ -16,7 +16,7 @@ import FeatureTop from '../../../components/FeatureTop.astro';
   outNote={"What an agent below the level a policy's `require:` sets is told, for each call."}
   change={"`openmoat trust` lets a repository's allow rules in (`--revoke` takes them back); `openmoat policy trust-key` and `openmoat policy install` add a signed pack; `require:` sets a minimum protection level."}
   limits={"Repository rules apply in the hook only, not in the agents' OS sandboxes; a pack's rules reach the sandboxes at the next `openmoat sandbox sync`."}
-  related={[["Repository policy", "/docs/team-rules/repository-policy/"], ["Policy packs", "/docs/team-rules/policy-packs/"], ["Required protection", "/docs/team-rules/required-protection/"]]}
+  related={[["Repository policy", "/docs/team-rules/repository-policy/"], ["Policy packs", "/docs/team-rules/policy-packs/"], ["Required protection", "/docs/team-rules/required-protection/"], ["Team mode", "/docs/team-rules/team-mode/"]]}
 />
 
 
@@ -36,12 +36,17 @@ A repository's committed `.moat/policy.yaml` adds `deny` and `review` rules for 
   <LinkCard title="A repository policy" href="/docs/team-rules/repository-policy/" description="Write it, trust its allow rules, review a change, check it in CI." />
   <LinkCard title="Signed policy packs" href="/docs/team-rules/policy-packs/" description="Sign, trust the key, install; require signed repository policies." />
   <LinkCard title="Required protection level" href="/docs/team-rules/required-protection/" description="Deny every call of an agent below the level you set with require:." />
+  <LinkCard title="Team mode" href="/docs/team-rules/team-mode/" description="Since 0.27.0: a signed team bundle that only narrows, and an inventory with a drift check." />
   <LinkCard title="Use it in your projects" href="/docs/your-projects/" description="What a person sees in a repository that has one, and how to stop using it." />
 </CardGrid>
 
 ## Signed policy packs
 
 A pack is signed with `ssh-keygen -Y sign -n openmoat-pack`, the signer's key is trusted once with `openmoat policy trust-key`, and `openmoat policy install` adds it only when the signature verifies. Its rules show up as `pack:<name>:<id>`. Every step: [Signed policy packs](/docs/team-rules/policy-packs/).
+
+## Team mode
+
+Since 0.27.0, a team can also publish a signed bundle of rules and required settings that every person joins once with `openmoat team join`; it can deny and hold, never allow. `openmoat inventory` reports one machine's agents, hooks and pins as JSON or OCSF, and `--check` exits 1 when the machine differs from the bundle. No server: [Team mode](/docs/team-rules/team-mode/).
 
 ## Keep Claude Code's hooks on for everyone
 
@@ -58,6 +63,8 @@ Claude Code's [managed settings](https://code.claude.com/docs/en/managed-setting
 | `openmoat policy trust-key <key.pub> --name <who>` | Trust an SSH key to sign packs and repository policies. Terminal only | `openmoat policy trust-key alice.pub --name alice@example.com` |
 | `openmoat policy install <pack.yaml> [--sig <file>] [--name <name>]` | Install a pack once its signature verifies. Terminal only | `openmoat policy install team.yaml` |
 | `openmoat policy remove <name>` | Take a pack out. Terminal only | `openmoat policy remove team` |
+| `openmoat team join <folder> --signer "<line>"` · `team update` · `team leave` | Install, update or remove a team's signed bundle (from 0.27.0). Terminal only | `openmoat team update` |
+| `openmoat inventory [--format json\|ocsf] [--check <folder>] [--deliver]` | This machine's agents, hooks and pins; exit 1 on drift from the bundle (from 0.27.0) | `openmoat inventory --format ocsf` |
 | `ssh-keygen -Y sign -f <key> -n openmoat-pack <file>` | Sign a pack (`-n openmoat-repo-policy` for a repository policy) | `ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n openmoat-pack team.yaml` |
 
 ## Limits

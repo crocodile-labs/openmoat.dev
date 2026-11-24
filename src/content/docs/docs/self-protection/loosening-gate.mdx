@@ -1,0 +1,66 @@
+---
+title: "A code before anything is loosened"
+description: "Optional: openmoat gate setup makes every command that loosens the protection also ask for a code from your authenticator app; gate on or off, every loosening is recorded under the session policy-changes."
+sidebar:
+  label: "A code before loosening"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+Since 0.27.0. The gate is optional: without it, loosening commands work as before, and are still recorded.
+
+<FeatureTop
+  does={"The commands that loosen your protection already run only for a person at a terminal. A program that gets a line typed into your terminal passes that check. With the gate on, each of them also asks for a code from the authenticator app on your phone (any app that takes TOTP codes). Gate on or off, every loosening is recorded in the audit log."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat gate setup"}
+  outNote={"Shows a link and a key once; type the code your app then shows. `openmoat gate status` says whether it is on."}
+  change={"`openmoat gate remove` asks for a code, then turns it off. Without the gate, nothing asks for a code."}
+  limits={"The code proves a phone, not a person, and only while its secret stays hidden: a program running as you outside every hook and sandbox can read the secret or delete it."}
+  related={[["Self-protection and lock", "/docs/self-protection/"], ["Does a change widen?", "/docs/policy-file/never-widen/"], ["Audit log", "/docs/see-what-happened/"], ["Change the rules", "/docs/change-the-rules/"]]}
+/>
+
+**Protects against** a program that can type into your terminal, or a stolen session at it, loosening the policy, accepting a changed hook or turning OpenMoat off.
+
+## What it does
+
+```bash
+openmoat gate setup    # shows a link and a key once; type the code your app then shows
+openmoat gate status   # on or off, and wrong codes counted in the last 15 minutes
+openmoat gate remove   # asks for a code, then turns it off
+```
+
+With the gate on:
+
+```text
+$ openmoat allow --site api.example.com
+Code from your authenticator app to confirm `openmoat allow`: 492039
+✔ added to ~/.moat/policy.d/approved.yaml:
+```
+
+- **Asked every time, `--yes` included:** `allow` (not `--remove` or `--prune`), `trust` (not `--revoke`), `doctor --accept` and `init` over drift, `hooks accept` and `mcp accept` of something new or changed, `mcp unwrap`, `policy trust-key`, `policy upgrade --undo`, `audit checkpoint --new-key`, `uninstall`, `proxy uninstall`, `approvals connect`, `approvals allow` and `gate remove`.
+- **Asked when the change widens the policy** ([the never-widen check](/docs/policy-file/never-widen/)): `edit`, `secret add`, `policy upgrade --accept-widening`, `policy install` and `policy remove`.
+- **Asked nothing:** commands that only tighten, the hooks themselves, and answering one held call.
+- **A wrong, missing or already-used code** refuses the command (exit 64) and changes nothing. After five wrong codes in 15 minutes the gate waits for the rest of the window.
+
+The secret is kept in `~/.moat/audit.key.gate`, readable by your account only and denied to agents by `kernel-self`.
+
+## Every loosening is recorded
+
+Gate on or off, each loosening goes into the audit log under the session `policy-changes`: the command, what it changed (each case it moves toward allow), the account, and whether a code was given. A refusal at the gate is recorded too.
+
+```bash
+openmoat show --session policy-changes
+```
+
+## If you lose your phone
+
+Remove `~/.moat/audit.key.gate` and `~/.moat/gate.json` in your own terminal, then run `openmoat gate setup` again.
+
+## Limits
+
+- **The code proves a phone, not a person**, and only where its secret stays hidden. The secret is a file in `~/.moat`, denied to agents' own calls; a program running as you outside every hook and sandbox can read it, or delete it and turn the gate off.
+- **Approving one held call is not a policy change** and asks for no code.
+- **The gate is optional.** Until you run `openmoat gate setup`, the loosening commands work as before; they are still recorded.
+
+The design: [ADR-117](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-117-loosening-possession-gate.md). More in [Limits](/docs/limits/).

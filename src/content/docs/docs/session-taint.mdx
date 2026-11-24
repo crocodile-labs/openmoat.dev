@@ -86,6 +86,17 @@ taint:
 
 `protected_writes` only extends the built-in list; `openmoat policy lint` rejects a `!` exclusion. The built-in list is in [POLICY.md §4.1](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#41-session-taint).
 
+## Across a policy change
+
+New in 0.27.0. After `openmoat policy upgrade`, an edited policy, a new pack or an OpenMoat upgrade, a long session keeps working. Before, the next call read the whole session again under the new policy, and in a long session that could run out of time on every call, so each one was denied (`kernel-error`) until the session was abandoned.
+
+- **The earlier taint is carried forward.** The next call reads on from what the session was already found exposed to, and classifies only the calls recorded since, under the new policy.
+- **Never looser than before.** A change that loosens the policy keeps the earlier taint until the new policy's own reading catches up: more reviews for a while, never fewer.
+- **Claude Code catches up in the background**, from its after-call hook, within a call or a few. Agents without an after-call hook stay on the carried taint for the rest of the session; a new session starts under the new policy.
+- **Until then, a call recorded before the change is judged as the earlier policy classified it.** If the new policy would taint an earlier call the old one did not, later calls get that taint once the catch-up reaches it.
+
+The design: [ADR-121](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-121-carry-session-taint-across-policy-changes.md).
+
 ## Limits
 
 - **Taint is per session.** A new session starts clean, except for the files a tainted session wrote.

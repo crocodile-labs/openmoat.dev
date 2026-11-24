@@ -16,7 +16,7 @@ import FeatureTop from '../../../components/FeatureTop.astro';
   outNote={"A real run with the default policy: the same call from an agent is denied. You run `openmoat allow` in your own terminal."}
   change={"Self-protection has no switch. After a change of your own, `openmoat doctor` shows what changed and `openmoat doctor --accept` pins it again."}
   limits={"The lock is a list of digests, with no key: a program that runs as you outside any sandbox can change the policy and write new digests."}
-  related={[["Is my agent still protected?", "/docs/hook-liveness/"], ["Other hooks the agents run", "/docs/other-hooks/"], ["OS sandboxes", "/docs/sandboxes/"], ["Audit log", "/docs/see-what-happened/"], ["Turn it off for a project", "/docs/turn-off/"]]}
+  related={[["A code before loosening", "/docs/self-protection/loosening-gate/"], ["Is my agent still protected?", "/docs/hook-liveness/"], ["Other hooks the agents run", "/docs/other-hooks/"], ["OS sandboxes", "/docs/sandboxes/"], ["Audit log", "/docs/see-what-happened/"], ["Turn it off for a project", "/docs/turn-off/"]]}
 />
 
 
@@ -109,12 +109,19 @@ Self-protection has no switch. `executables:` adds pins of your own ([Shell comm
 
 - **The lock is a list of digests, with no key.** A program that runs as you outside any sandbox can change the policy and write new digests. Only an OS sandbox stops that, so hook-only agents (OpenClaw, GitHub Copilot CLI, pi, Gemini CLI, OpenCode, Hermes Agent, the Cline CLI, goose, and Claude Code and Cursor on native Windows) do not have this protection.
 - **Agent settings can turn hooks off** (`disableAllHooks`, `[features] hooks = false`, pi's `--no-extensions`), and a repository's `.claude/settings.json` is loaded at session start, before any hook runs ([Keep Claude Code's hooks on for everyone](/docs/team-rules/#keep-claude-codes-hooks-on-for-everyone)).
-- **Some agents run a call when the hook fails**: Claude Code before 2.1.295, if `openmoat` is missing or crashes. Since 0.26.0 Codex, Gemini CLI, Qwen Code and Crush block it then, and run it only when the hook times out.
+- **Some agents run a call when the hook fails**: Claude Code before 2.1.295, if `openmoat` is missing or crashes. Since 0.26.0 Codex, Gemini CLI, Qwen Code and Crush block it then. Since 0.27.0 a slow check is denied at OpenMoat's deadline before the hook times out; only a guard that cannot answer at all (stopped, or killed with the hook command) still leaves the call to the agent.
 
 Since 0.26.0:
 
 - **Fail-safe hook commands.** For Codex, Gemini CLI, Qwen Code and Crush, the hook entry `openmoat init` writes turns a missing or killed `openmoat` into the agent's block answer; run `openmoat init` once after the upgrade.
 - **Other hooks the agents run** (plugin hooks, helper commands, a project's hook files, `.git/config` programs) are recorded in the lock; a new or changed one is named until you run `openmoat hooks accept`, and one whose command your policy denies denies the agent's calls ([Other hooks the agents run](/docs/other-hooks/)).
 - **A root user or a replaced `openmoat` binary** is out of scope.
+
+Since 0.27.0:
+
+- **A code before anything is loosened (optional).** `openmoat gate setup` makes every command that loosens the protection (`allow`, `trust`, `doctor --accept`, `hooks accept`, `mcp accept`, `uninstall`, and the others that widen) also ask for a code from your authenticator app; `--yes` never skips it. Without the gate they work as before ([A code before anything is loosened](/docs/self-protection/loosening-gate/)).
+- **Every loosening is recorded**, gate on or off, under the session `policy-changes`: `openmoat show --session policy-changes`.
+- **`kernel-self` covers more:** the gate's secret and state files (`~/.moat/audit.key.gate`, `~/.moat/gate.json`) and `openmoat team`, after `openmoat policy upgrade`.
+- **A slow check is denied** in the agent's own format at OpenMoat's deadline, before any agent's hook time limit runs out ([A slow check is denied](/docs/hook-deadline/)).
 
 [What the lock is not](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#what-the-lock-is-not). More in [Limits](/docs/limits/).

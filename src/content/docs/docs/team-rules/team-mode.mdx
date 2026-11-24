@@ -1,0 +1,134 @@
+---
+title: "Team mode: a signed bundle and an inventory"
+description: "openmoat team join installs a team's signed bundle as a layer over each person's policy that only narrows; openmoat inventory reports one machine's agents, hooks and pins as JSON or OCSF, and --check exits 1 on drift. No server."
+sidebar:
+  label: "Team mode"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+Since 0.27.0.
+
+<FeatureTop
+  does={"A team publishes a signed bundle of rules and required settings, in a repository or a folder an MDM tool manages. Each person runs `openmoat team join` once; the bundle becomes a layer over their own policy that can deny and hold, never allow. `openmoat inventory` reports what one machine has, and `--check` exits 1 when it differs from the bundle. Nothing leaves the machine unless you configure a sink for it."}
+  when={[["Team policy", "/docs/solutions/team-policy/"], ["Audit evidence", "/docs/solutions/audit-evidence/"]]}
+  cmd={"openmoat inventory --check ~/src/acme-openmoat"}
+  outNote={"Exit 0: the machine has what the bundle requires; 1: it differs, one line per difference; 64: usage error or a bundle that does not verify."}
+  change={"`openmoat team update` installs a newer bundle; `openmoat team leave` removes the layer after showing what that widens. All three are for a person at a terminal."}
+  limits={"Updates wait for a person: an MDM tool can only report that one waits. A machine that turns OpenMoat off sends nothing; a missing report is the signal."}
+  related={[["Team rules and packs", "/docs/team-rules/"], ["Policy packs", "/docs/team-rules/policy-packs/"], ["Required protection", "/docs/team-rules/required-protection/"], ["Sending the audit log on", "/docs/see-what-happened/siem-delivery/"]]}
+/>
+
+**Protects against** machines of one team drifting apart: a person who never installed the team's rules, an older rule set, a setting turned off, an agent whose hook stopped running.
+
+## The layer only narrows
+
+| The bundle says | Your policy says | What happens |
+|---|---|---|
+| deny `npm publish` | allow `npm publish` | denied: a deny wins over every allow |
+| review `terraform apply` | allow `terraform apply` | held for review: the team's review rules come before your allow rules |
+| `sandbox.strict: true` | nothing, or `strict: false` | strict: the stricter of the two |
+| `hooks.foreign: hold` | `warn` | hold |
+| nothing about `curl` | allow `curl https://example.com` | your rule decides |
+
+A rule file with an allow rule, or a setting given its weaker value, does not parse. A team that wants to allow something ships a [policy pack](/docs/team-rules/policy-packs/), which each person installs. Team rules show up in decisions and the audit log as `team:<team>:<file>:<id>` (`team:acme:policy:no-publish`).
+
+## A bundle
+
+```text
+acme-openmoat/                  # a repository the team owns, cloned on each machine
+├── openmoat-team.yaml          # the manifest
+├── openmoat-team.yaml.sig      # its signature
+├── policy.yaml                 # the team's main rule file
+└── packs/
+    └── cloud.yaml              # more rule files of the same shape
+```
+
+The manifest names every file with its SHA-256, so one signature covers them all:
+
+```yaml
+format: openmoat-team-bundle-v1
+name: acme
+serial: 3                      # raise it with every bundle you publish
+policy:
+  path: policy.yaml
+  sha256: 9f2c…
+settings:                      # each only its stricter value
+  sandbox.strict: true
+  hooks.foreign: hold
+  mcp.allow_sampling: false
+require_hooks: [claude-code, codex]   # checked by `openmoat inventory --check`
+```
+
+A rule file has `deny`, `review`, `require` and `requests:` deny lists, and no `allow`:
+
+```yaml
+version: 1
+deny:
+  - id: no-publish
+    title: publishing a package
+    shell: ["npm publish", "cargo publish", "twine upload"]
+review:
+  - id: infra-apply
+    shell: ["terraform apply", "kubectl apply", "kubectl delete"]
+```
+
+Whoever maintains the bundle signs the manifest with the team's SSH key, in the namespace `openmoat-team-bundle`, and publishes the public key as an allowed-signers line:
+
+```bash
+ssh-keygen -Y sign -f ~/.ssh/acme_ed25519 -n openmoat-team-bundle openmoat-team.yaml
+```
+
+## Join, update, leave
+
+```bash
+git clone https://git.acme.example/acme-openmoat ~/src/acme-openmoat
+openmoat team join ~/src/acme-openmoat \
+  --signer "security@acme.example ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA…"
+
+git -C ~/src/acme-openmoat pull
+openmoat team update            # reads the folder `team join` used
+
+openmoat team leave             # shows what leaving widens, asks, removes the layer
+```
+
+- **`team join`** trusts the key for team bundles only, verifies the signature and every file, shows what the bundle changes, installs a copy of the exact bytes that verified under `~/.moat/team/` and re-pins the lock. It refuses a URL: OpenMoat fetches nothing, so you clone first.
+- **`team update`** refuses another team's bundle and a serial that is not above the installed one, so an old bundle cannot be put back. A bundle that only adds rules or raises settings installs at once; one that removes a rule or drops a setting waits for your `y`.
+- All three refuse while the lock shows drift and are denied to agents. A change to the installed files is drift: every call is denied until you look (`openmoat doctor`).
+
+## Inventory
+
+```bash
+openmoat inventory                     # JSON, format openmoat-inventory-v1
+openmoat inventory --format ocsf       # OCSF 1.3.0 events
+openmoat inventory --check ~/src/acme-openmoat --format json   # {"drift": [...]}
+openmoat inventory --deliver           # send the OCSF events to sinks with `inventory: true`
+```
+
+It reads files only. It holds the machine's agents with their versions, hooks, hook liveness, protection levels and scores; the `openmoat run` tiers and their scores; the other hooks the agents load; MCP servers with their pins and package releases; the policy's digest, team, serial and signer; the lock; and the audit log's latest checkpoint. It never holds a file's contents, a command line, an MCP server's arguments or a secret, and every text passes the audit log's redaction.
+
+`--check` exits 1, one line each, when: no team is joined (`team`); a newer or another bundle is in the folder (`bundle`); a pinned file changed (`lock`); the policy does not load (`policy`); a required setting or rule is not in force (`setting`, `rule`); an agent of `require_hooks` has no current hook or ran without it (`hook`); an agent is below the required level (`required-level`).
+
+`--format ocsf` prints OCSF 1.3.0 Discovery events: one Software Inventory Info (5020) per agent, and one Device Config State (5002) for the machine. `--deliver` sends them only to [delivery sinks](/docs/see-what-happened/siem-delivery/) that say `inventory: true`, off by default.
+
+## With an MDM tool
+
+An MDM tool can keep the bundle's folder up to date and run the check on a schedule as the person:
+
+```bash
+openmoat inventory --check "/Library/Application Support/Acme/openmoat-team" --format json
+echo $?      # 0: as required; 1: it differs; 64: usage error
+```
+
+It cannot accept a bundle for the person: a newer bundle in the folder is reported as drift ("serial 4 is published, 3 is installed") until they run `openmoat team update`.
+
+## Limits
+
+- **Updates wait for a person.** A rule the team adds today reaches a machine when its person updates.
+- **The signer is trusted as given.** A wrong key, taken from a place the team does not control, trusts someone else's bundle; joining prints the signer and the rules it brings.
+- **A bundle narrows only**, and cannot set a setting it does not list. One team per machine; a second team's rules go in a pack.
+- **The inventory is the machine's own report.** A machine whose person removes OpenMoat or stops the scheduled job reports nothing. It holds no host name, so a fleet tool matches machines by the delivery configuration's `machine:` or by where it collected the file.
+- **Versions are what the agents' programs report** on the search path; an agent installed elsewhere reports `unknown`.
+
+The full reference: [TEAM.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/TEAM.md) and [ADR-119](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-119-team-mode-without-a-service.md). More in [Limits](/docs/limits/).
