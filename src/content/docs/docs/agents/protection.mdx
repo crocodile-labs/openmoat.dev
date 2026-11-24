@@ -21,27 +21,29 @@ You want to know, for your agent and your operating system, what checks its call
 - **hook: protected**: a real copy of the agent ran OpenMoat's hook for a tool call on that OS and OpenMoat's decision held, in a CI test or in the weekly run of the agents' latest releases.
 - **hook: preview**: `openmoat init` sets the hook up and its payloads are tested, but no real copy of the agent has been run with it on that OS yet.
 - **own sandbox: yes**: `openmoat init` writes the agent's own OS sandbox and a test runs commands under it; **preview**: it writes it, with no such test yet.
-- **`openmoat run`**: the tier it starts the agent in. Isolated on Linux where bubblewrap works, Lightweight on macOS ([Linux tiers](/docs/sandboxes/linux-tiers/)); none on Windows, where `openmoat run` refuses.
+- **`openmoat run`**: the tier it starts the agent in. Isolated on Linux where bubblewrap works, Lightweight on macOS ([Linux tiers](/docs/sandboxes/linux-tiers/)); on native Windows the Write-restricted tier, a preview: a write-restricted token in a job object, which holds writes outside the project and the agent's processes, not reads or the network ([openmoat run on Windows](/docs/sandboxes/windows/)).
 
 ## Summary
 
 | Agent | Linux | macOS | Windows |
 |---|---|---|---|
-| Claude Code | hook: protected · own sandbox: yes · run: Isolated | hook: protected · own sandbox: yes · run: Lightweight | hook: preview · own sandbox: none · run: none |
-| Codex | hook: protected · own sandbox: yes · run: Isolated | hook: protected · own sandbox: yes · run: Lightweight | hook: preview · own sandbox: preview · run: none |
-| Cursor | hook: preview · own sandbox: preview · run: Isolated | hook: preview · own sandbox: preview · run: Lightweight | hook: preview · own sandbox: none · run: none |
-| OpenClaw | hook: protected · own sandbox: none · run: none | hook: protected · own sandbox: none · run: none | hook: preview · own sandbox: none · run: none |
-| GitHub Copilot CLI | hook: protected · own sandbox: none · run: Isolated | hook: protected · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
-| pi | hook: protected · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
-| Gemini CLI | hook: protected · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
-| OpenCode | hook: preview · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
-| Hermes Agent | hook: preview · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
-| Cline CLI | hook: protected · own sandbox: none · run: Isolated | hook: protected · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
-| goose | hook: protected · own sandbox: none · run: Isolated | hook: protected · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
-| Antigravity CLI | hook: protected · own sandbox: none · run: Isolated | hook: protected · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: none |
+| Claude Code | hook: protected · own sandbox: yes · run: Isolated | hook: protected · own sandbox: yes · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| Codex | hook: protected · own sandbox: yes · run: Isolated | hook: protected · own sandbox: yes · run: Lightweight | hook: preview · own sandbox: preview · run: Write-restricted (preview) |
+| Cursor | hook: preview · own sandbox: preview · run: Isolated | hook: preview · own sandbox: preview · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| OpenClaw | hook: protected · own sandbox: none · run: Isolated (the Gateway, since 0.27.0) | hook: protected · own sandbox: none · run: none | hook: preview · own sandbox: none · run: none |
+| GitHub Copilot CLI | hook: protected · own sandbox: none · run: Isolated | hook: protected · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| pi | hook: protected · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| Gemini CLI | hook: protected · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| OpenCode | hook: preview · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| Hermes Agent | hook: preview · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| Cline CLI | hook: protected · own sandbox: none · run: Isolated | hook: protected · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| goose | hook: protected · own sandbox: none · run: Isolated | hook: protected · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| Antigravity CLI | hook: protected · own sandbox: none · run: Isolated | hook: protected · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| Qwen Code | hook: preview · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
+| Crush | hook: preview · own sandbox: none · run: Isolated | hook: preview · own sandbox: none · run: Lightweight | hook: preview · own sandbox: none · run: Write-restricted (preview) |
 | Continue CLI | hook: none · own sandbox: none · run: none | hook: none · own sandbox: none · run: none | hook: none · own sandbox: none · run: none |
 
-OpenClaw has no `openmoat run` tier because its Gateway serves a local port, which the run's sandbox does not allow. The Continue CLI runs no hook, so OpenMoat installs none.
+OpenClaw's Gateway serves a local port. Since 0.27.0 it runs under `openmoat run --listen` on Linux, in the Isolated tier (Lightweight where bubblewrap cannot run), with the port kept to loopback inside its own network namespace; macOS and Windows refuse `--listen`, so OpenClaw has no `openmoat run` tier there ([Confine agents by default](/docs/sandboxes/confine/#openclaw-under-openmoat-run---listen)). The Continue CLI runs no hook, so OpenMoat installs none.
 
 ## If the hook fails
 
@@ -50,18 +52,22 @@ What each agent does with a tool call when OpenMoat's hook fails in a way the ho
 | Agent | Hook cannot start, crashes or exits non-zero | Hook times out | Time limit | Fails open |
 |---|---|---|---|---|
 | Claude Code | blocks the call from 2.1.295 (`openmoat init` asks for it); runs it before | the same | 600 s | before 2.1.295 |
-| Codex | runs the call | runs the call | 600 s | yes |
+| Codex | blocks the call | blocks the call: OpenMoat's deadline* | 600 s | no |
 | Cursor | blocks the call | blocks the call | 600 s | no |
 | OpenClaw | blocks the call | blocks the call | 45 s | no |
-| GitHub Copilot CLI | blocks the call | runs the call | 600 s | yes: times out |
+| GitHub Copilot CLI | blocks the call | blocks the call: OpenMoat's deadline* | 600 s | no |
 | pi | blocks the call | blocks the call | 45 s | no |
-| Gemini CLI | runs the call (a missing `openmoat` blocks it) | runs the call | 600 s | yes |
+| Gemini CLI | blocks the call | blocks the call: OpenMoat's deadline* | 600 s | no |
 | OpenCode | blocks the call | blocks the call | 45 s | no |
 | Hermes Agent | blocks the call | blocks the call | 30 s | no |
-| Cline CLI | runs the call | runs the call | 120 s | yes |
+| Cline CLI | runs the call | blocks the call: OpenMoat's deadline* | 120 s | yes: cannot start, crashes or exits non-zero |
 | goose | blocks the call | blocks the call | 60 s | no |
-| Antigravity CLI | blocks the call | not documented; assumed to run the call | 600 s | yes: times out |
+| Antigravity CLI | blocks the call | blocks the call: OpenMoat's deadline* (the agent documents nothing for a timeout) | 600 s | no |
+| Qwen Code | blocks the call | blocks the call: OpenMoat's deadline* | 600 s | no |
+| Crush | blocks the call | blocks the call: OpenMoat's deadline* | 600 s | no |
 | Continue CLI | runs the call | runs the call | 600 s | yes: it fires no hook |
+
+\* OpenMoat's guard answers deny at 30 s, before the agent's limit (since 0.27.0, [A slow check is denied](/docs/hook-deadline/)). The agent runs the call only when the guard cannot answer at all: stopped, or killed together with the hook command. Codex, Gemini CLI, Qwen Code and Crush block a missing or killed `openmoat` since 0.26.0, through the hook command `openmoat init` writes.
 
 The weekly run of the agents' latest releases makes OpenMoat's hook fail (exit 1, binary gone) under each real agent it starts, and fails when an agent runs a call these facts say it blocks. The sources for each row are in [LIMITS.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/LIMITS.md#if-the-hook-fails). OpenMoat's script for the Cline CLI blocks the call when `openmoat` is missing or crashes, but Cline runs it when the script itself cannot start (no `sh`, as on native Windows), so it counts as failing open.
 

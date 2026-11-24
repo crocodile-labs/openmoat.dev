@@ -217,6 +217,13 @@
     "why": "it may open any file or variable"
   },
   {
+    "id": "obfuscated",
+    "verdict": "review",
+    "reason": "the command is written to hide what it runs",
+    "title": "running a command written to hide what it does",
+    "why": "quoting tricks, escapes and computed names are how a blocked command is slipped past a check"
+  },
+  {
     "id": "package-near-miss",
     "verdict": "review",
     "reason": "looks like a typo of a popular package's name, as typo-squats and made-up names do; check which one you meant",

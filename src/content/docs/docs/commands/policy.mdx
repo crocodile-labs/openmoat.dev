@@ -1,6 +1,6 @@
 ---
 title: "Policy commands"
-description: "openmoat edit and openmoat policy: check, check-diff, lint, compile, upgrade, and signed packs."
+description: "openmoat edit and openmoat policy: check, check-diff, lint, compile, upgrade, and signed packs; openmoat team and openmoat inventory."
 sidebar:
   label: "Policy"
   order: 3
@@ -19,5 +19,18 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 | `openmoat policy trust-key <key.pub> --name <who>` | Trust an SSH public key to sign policy packs, and repository policies where the policy asks for signed ones. **Terminal** | `openmoat policy trust-key alice.pub --name alice@example.com` |
 | `openmoat policy install <pack.yaml> [--sig <file>] [--name <name>]` | Install a signed policy pack once its signature verifies; its rules apply as `pack:<name>:<id>`. **Terminal** | `openmoat policy install team.yaml` |
 | `openmoat policy remove <name>` | Take a pack out. **Terminal** | `openmoat policy remove team` |
+
+## Team mode
+
+From 0.27.0 ([Team mode](/docs/team-rules/team-mode/)). Nothing is sent anywhere unless you use `--deliver`.
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat team join <folder> --signer "<name> <type> <base64>"` | Install a team's signed bundle as a layer over your policy: its deny and review rules (`team:<team>:<file>:<id>`) and the settings it requires, which your own policy can only make stricter. The folder is a local clone or the path an MDM tool keeps it at; a URL is refused. The signer is trusted for team bundles only. **Terminal** | `openmoat team join ~/src/acme-openmoat --signer "security@acme.example ssh-ed25519 AAAA…"` |
+| `openmoat team update [<folder>]` | Install the newer bundle from the folder `team join` used, or another: its signature must verify against the team's key and its `serial` must be higher; a change that widens your policy waits for your answer. **Terminal** | `openmoat team update` |
+| `openmoat team leave` | Remove the team's layer; shows what that widens and asks first. **Terminal** | `openmoat team leave` |
+| `openmoat inventory [--format json\|ocsf]` | This machine's agents and versions, hooks and their liveness, protection levels and scores, MCP servers with pins and package releases, policy and team, lock and latest checkpoint; redacted, reads files only. `json` is `openmoat-inventory-v1`; `ocsf` prints OCSF 1.3.0 events (Software Inventory Info 5020 per agent, Device Config State 5002 for the machine) | `openmoat inventory --format ocsf` |
+| `openmoat inventory --check <folder> [--format json]` | Compare this machine with what the bundle in that folder requires: exit 0 as required, 1 when it differs (one line per difference, or `{"drift": [...]}`), 64 when the bundle does not verify | `openmoat inventory --check ~/src/acme-openmoat` |
+| `openmoat inventory --deliver` | Send the OCSF events to every sink of `~/.moat/delivery.yaml` that says `inventory: true`, masked as audit delivery is; exit 64 when a sink does not take it | `openmoat inventory --deliver` |
 
 How to write a rule: [The policy file](/docs/policy-file/). How to change one safely: [Change the rules](/docs/change-the-rules/).

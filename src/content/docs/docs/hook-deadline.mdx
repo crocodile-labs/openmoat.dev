@@ -1,0 +1,54 @@
+---
+title: "A slow check is denied"
+description: "When OpenMoat cannot decide a call within its deadline (30 s, 25 s for Hermes Agent), it denies the call in the agent's own format before the agent's hook time limit, and records hook-deadline."
+sidebar:
+  label: "A slow check is denied"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../components/FeatureTop.astro';
+
+Since 0.27.0. Before, Codex, GitHub Copilot CLI, Gemini CLI, Qwen Code, Crush, the Cline CLI and the Antigravity CLI ran a call whose hook outlived its time limit.
+
+<FeatureTop
+  does={"Several agents run a call when its hook takes longer than their time limit. OpenMoat answers first: `openmoat guard` denies the call on its own at a deadline below every limit the agent was given, whatever the decision is stuck on (a locked audit database, a slow file system, a long session to read), in the form of the call's event."}
+  when={[["Unattended agents", "/docs/solutions/unattended-agents/"], ["On a laptop", "/docs/solutions/on-a-laptop/"]]}
+  cmd={"openmoat doctor"}
+  outNote={"Reports the calls denied at the deadline in the last week and the step most of them were in; `~/.moat/guard-hangs.log` lists each one."}
+  change={"No setting: the deadline is 30 s, or the agent's shortest hook time limit less 5 s where that is earlier (25 s for Hermes Agent). `openmoat init` writes the agents' own limits well above it."}
+  limits={"A guard that cannot answer at all before the agent's limit, because its process was stopped or killed together with the hook command, still leaves the call to the agent."}
+  related={[["Is my agent still protected?", "/docs/hook-liveness/"], ["Self-protection and lock", "/docs/self-protection/"], ["Plugin loading", "/docs/agents/plugin-loading/"], ["Limits", "/docs/limits/"]]}
+/>
+
+**Protects against** a call running unchecked because OpenMoat's check was slow: Codex, GitHub Copilot CLI, Gemini CLI, Qwen Code, Crush and the Cline CLI run a call whose hook timed out, and the Antigravity CLI does not document what it does.
+
+## What it does
+
+- **A watchdog starts first.** `openmoat guard` starts it before it reads any file. A guard that cannot start it denies the call (`kernel-error`).
+- **At the deadline it writes the deny and exits**, whatever the check is doing. Only the first answer is written, so the decision's and the deadline's never mix.
+- **In the agent's own format:** the deny has the form of the call's event (GitHub Copilot CLI's, a settings-change veto), and the exit code the agent expects.
+- **It is recorded.** The answer names `hook-deadline` and the step the guard was in. The audit log gets a row with rule `hook-deadline` where it can still be written: what is stuck may be the log itself.
+
+| Agent | Deadline |
+|---|---|
+| Hermes Agent (its plugin limit is 30 s) | 25 s |
+| Every other agent | 30 s |
+
+## Example
+
+The agent shows a deny with rule `kernel-error` and `hook-deadline`. Then, in your own terminal:
+
+```bash
+openmoat doctor                    # the hangs of the last week, and the step most of them were in
+cat ~/.moat/guard-hangs.log        # one line per call denied at the deadline: time, agent, step, elapsed ms
+```
+
+The steps are `stdin`, `relay` (a hook inside `openmoat run` waiting for the run to decide), `lock`, `context`, `compile`, `taint`, `cache`, `record` and `answer`.
+
+## Limits
+
+- **A guard that cannot answer at all** before the agent's limit still leaves the call to the agent: its process was stopped (a debugger, `kill -STOP`, a machine starved for minutes), or killed together with the hook command so nothing reports it.
+- **A guard the operating system kills alone** (out of memory, `SIGKILL`) is a hook that crashed: what each agent does then is on [Plugin loading](/docs/agents/plugin-loading/) and in [Limits](/docs/limits/).
+- **A person who lowers the agent's hook limit below the deadline** reopens the case; `openmoat init` writes the limit back, and the lock pins the file.
+
+The design: [ADR-120](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-120-guard-deadline-before-the-hook-timeout.md).

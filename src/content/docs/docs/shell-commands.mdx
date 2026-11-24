@@ -16,7 +16,7 @@ import FeatureTop from '../../../components/FeatureTop.astro';
   outNote={"A real run with the default policy (your home shown as /Users/you, the project as ~/code/shop). `policy check` runs nothing: it only decides."}
   change={"Add an `allow` or `deny` rule with `openmoat edit` ([The policy file](/docs/policy-file/)), or approve the last review with `openmoat allow --last`. An allow rule never overrides a deny."}
   limits={"Outside an OS sandbox the hook decides alone: on a hook-only agent an allowed call runs with your permissions."}
-  related={[["Check a command", "/docs/check-a-command/"], ["Secrets and .env files", "/docs/env-files/"], ["Network allowlist", "/docs/allow-a-site/"], ["OS sandboxes", "/docs/sandboxes/"]]}
+  related={[["Hidden commands and PowerShell", "/docs/shell-commands/obfuscation-and-powershell/"], ["Check a command", "/docs/check-a-command/"], ["Secrets and .env files", "/docs/env-files/"], ["Network allowlist", "/docs/allow-a-site/"], ["OS sandboxes", "/docs/sandboxes/"]]}
 />
 
 
@@ -145,6 +145,8 @@ A consumer that reads the download as data (`| python3 -I -c CODE`, `| node -e C
 
 A part of a command it cannot model (an unknown option, a path after `cd "$X"`) gets rule `unparseable` and is never allowed: the default policy defers it to your agent's prompt, and a deny elsewhere on the line still wins. A line too long or too deeply nested to read in full (over 64 KB, more than 4 levels of nesting) needs review.
 
+Since 0.27.0, a line written to hide what it runs (quotes splitting words, escapes of plain letters, `${!ref}`, `${s:2:3}` cuts, `IFS` changes, `tr` rotations) is held for review by the rule `obfuscated` instead of going to your agent's prompt, and known cuts and substitutions are followed: `s=QZcatZQ; ${s:2:3} ~/.ssh/id_rsa` is denied like `cat ~/.ssh/id_rsa`. PowerShell is read too, in preview. [Hidden commands and PowerShell](/docs/shell-commands/obfuscation-and-powershell/).
+
 ## Commands
 
 | Command | Example |
@@ -182,7 +184,7 @@ The syntax in full: [Policy file](/docs/policy-file/).
 - **Flags are compared as written in your own rules.** A pattern `rm -rf ~` does not match `rm -fr ~`; guard the path with an `fs.write` rule instead, which sees every spelling.
 - **An allowed command runs what its scripts contain.** `npm test` is allowed; OpenMoat does not read the script. The [OS sandbox](/docs/sandboxes/) bounds what it can reach.
 - **Outside an OS sandbox, a mistake in how OpenMoat reads a command is a way past it**, since an allowed command runs with your permissions.
-- **PowerShell commands are not parsed** on native Windows, so OpenMoat never allows one.
+- **PowerShell commands are never allowed.** Since 0.27.0 they are read in preview, so a rule can deny or hold what a simple statement does; anything else goes to your agent's prompt ([Hidden commands and PowerShell](/docs/shell-commands/obfuscation-and-powershell/#powershell-preview)).
 - **Handing work to WSL is denied on Windows** (`wsl-crossing`, from 0.21.0), since no Windows path rule reaches inside it; a `cmd` or PowerShell line beyond simple commands, or one naming `wsl` or `bash` anywhere, needs review ([Windows](/docs/agents/#macos-linux-and-windows)).
 
 More in [Limits](/docs/limits/).

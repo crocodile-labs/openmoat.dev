@@ -50,6 +50,14 @@ require:
     gemini-cli: hook-only           # this agent: OpenMoat writes no OS sandbox for it
 ```
 
+**Rules and settings every machine must have (since 0.27.0).** Publish a signed team bundle; each person joins once, and `openmoat inventory --check` exits 1 on a machine that differs from it, for a scheduled job ([Team mode](/docs/team-rules/team-mode/)):
+
+```bash
+openmoat team join ~/src/acme-openmoat --signer "security@acme.example ssh-ed25519 AAAA…"
+openmoat team update                                   # after the team publishes a newer one
+openmoat inventory --check ~/src/acme-openmoat         # 0 as required, 1 drift
+```
+
 What an agent below the level is told, on every call:
 
 ```text
@@ -71,12 +79,13 @@ Gemini CLI with `openmoat run`
 
 - **Repository rules apply in the hook.** The agents' own sandboxes and the standalone `openmoat proxy` are generated from each person's policy, so a repository deny is not enforced there. `openmoat run` adds the repository's deny rules to the hosts its proxy decides.
 - **A required level is checked where the hook runs.** A hook that does not run (turned off in the agent's settings, a plugin the agent did not load, an agent that runs a call when the hook fails) gets no call to deny. `openmoat status` and `openmoat doctor` show those agents as below the level, but an agent started on its own keeps running.
-- **Antigravity CLI** documents nothing for a hook that times out, so OpenMoat assumes the call runs then, and a required level cannot see that. A real `agy` blocks the call when the hook is missing or exits with an error (weekly run, Linux and macOS).
+- **Antigravity CLI** documents nothing for a hook that times out. Since 0.27.0 OpenMoat answers deny at its own deadline, before any agent's limit ([A slow check is denied](/docs/hook-deadline/)); a guard that cannot answer at all before the limit is still not seen by a required level. A real `agy` blocks the call when the hook is missing or exits with an error (weekly run, Linux and macOS).
 - **`hook-and-os-sandbox` means OpenMoat's sandbox settings are in force, not that every call is confined.** Claude Code's file tools, `WebFetch` and MCP servers run outside its sandbox.
 - **A program that runs as you outside any sandbox** can change the policy and recompute the lock.
 - **Agent settings can turn hooks off.** `openmoat status` and `openmoat doctor` report the settings they can see.
 - **A pack reaches only the machines that installed it.** Each person installs it once.
+- **A team bundle waits for a person.** Only `openmoat team update` from the person's terminal installs a newer one; an MDM tool can only report that one waits. A machine that turns OpenMoat off sends no inventory: a missing report is the signal.
 
 ## Read more
 
-[Team rules and policy packs](/docs/team-rules/) · [Repository policy](/docs/team-rules/repository-policy/) · [Required protection level](/docs/team-rules/required-protection/) · [Limits](/docs/limits/)
+[Team rules and policy packs](/docs/team-rules/) · [Team mode](/docs/team-rules/team-mode/) · [Repository policy](/docs/team-rules/repository-policy/) · [Required protection level](/docs/team-rules/required-protection/) · [Limits](/docs/limits/)

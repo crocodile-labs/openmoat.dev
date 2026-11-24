@@ -1,0 +1,64 @@
+---
+title: "Confine agents by default"
+description: "openmoat init asks per hook-only agent whether typing its name should start it in openmoat run's sandbox, showing the score it has and would have; openmoat confine changes it later; status shows each agent's score; OpenClaw's Gateway runs confined with --listen on Linux only."
+sidebar:
+  label: "Confine agents by default"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+Since 0.27.0.
+
+<FeatureTop
+  does={"For each hook-only agent `openmoat run` can confine on this machine, `openmoat init` asks whether typing the agent's name should start it confined, with the protection score it has and would have. The answer is no unless you type `y`. `openmoat confine` turns it on later, `openmoat confine --off` takes it back, and `openmoat status` shows each agent's score."}
+  when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
+  cmd={"openmoat confine gemini-cli"}
+  out={"  Gemini CLI       hook only 0/100 → openmoat run 100/100: typing `gemini` starts it confined?  [y/N/d]"}
+  outNote={"The question `openmoat init` asks per agent, as USAGE.md shows it. `openmoat confine` does the same without `init`."}
+  change={"`openmoat confine <agent>…` or `--all`; `openmoat confine --off <agent>…` or `--all`. Both are for a person at a terminal."}
+  limits={"Confining stays your choice: until you say yes, each such agent's row says `protection 0/100`. OpenClaw's Gateway runs confined only on Linux with a network namespace."}
+  related={[["Start agents sandboxed", "/docs/sandboxes/sandboxed-start/"], ["openmoat run", "/docs/sandboxes/openmoat-run/"], ["Protection score and strict mode", "/docs/sandboxes/protection-score/"], ["OpenClaw", "/docs/agents/openclaw/"]]}
+/>
+
+**Protects against** a hook-only agent running every allowed call with your permissions because confining it took a command you had to remember each time.
+
+## What it does
+
+`openmoat confine` writes the same [sandboxed-start](/docs/sandboxes/sandboxed-start/) shim `openmoat init` offers in `~/.moat/bin` and, once, the two lines that put that folder first on `PATH` in your shell's start-up file (after a backup). It prints each file and re-pins the lock. `--off` deletes the shims still as written, and the lines with the last. An agent that cannot be confined is named with why.
+
+```bash
+openmoat confine gemini-cli        # or several ids, or --all
+openmoat confine --off gemini-cli  # or --all
+```
+
+`openmoat init --yes` and `--format json` ask nothing, so nothing is confined without your answer.
+
+## The score in status
+
+`openmoat status` and `openmoat doctor` show each hook-only agent's protection score in its `Agents` row, as it starts when you type its name: `hook only · protection 0/100`, or `protection 100/100 with sandboxed start` once this shell finds its shim first (`score` in `--format json`). When several agents share one reason `openmoat run` has no sandbox here (such as a macOS before 13), they say it once, in one short line.
+
+## OpenClaw under `openmoat run --listen`
+
+OpenClaw's tools run in its Gateway, a server on one local port. `openmoat run --listen PORT` lets the confined processes bind and accept on that one port, on loopback only. `openmoat status` finds the port as OpenClaw does and prints the command:
+
+```bash
+openmoat run --listen 18789 --write ~/.openclaw -- openclaw gateway
+```
+
+| Where | `--listen` |
+|---|---|
+| Linux, Isolated tier or Lightweight with bubblewrap | runs: Landlock grants a bind to that port alone, inside the agent's own network namespace whose only interface is loopback; `openmoat run` forwards this machine's `127.0.0.1:PORT` in |
+| Linux without a network namespace | refused: Landlock restricts a bind by port only, on every address, so the port would be open to the network |
+| macOS | refused: Seatbelt's `localhost:PORT` filter lets a bind to `0.0.0.0` on the port through too, so the port could be reachable from the network |
+| Windows | refused |
+
+The sandboxed-start shim confines `openclaw gateway` alone. Every other `openclaw` command, the Gateway's clients included, starts as before, under the hook: nothing inside a sandbox can connect to the Gateway.
+
+## Limits
+
+- **Confining stays your choice.** `init` asks per agent with the default no; until you confine an agent, its row says `protection 0/100`.
+- **The `openmoat run` commands are proved with a stand-in program, not the real agent.** A directory an agent writes that its documentation does not name shows up as a refused write; add it with another `--write`.
+- **OpenClaw: the Gateway only, preview.** Its browser tool's own control port is not granted, so the browser tool does not start in the sandbox, and a Gateway installed as a launchd or systemd service does not go through the shim. Linux without a network namespace, macOS and Windows refuse `--listen`.
+
+The full reference: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#how-each-agent-is-protected) and [SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md#openclaw-under-openmoat-run). More in [Limits](/docs/limits/).

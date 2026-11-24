@@ -109,6 +109,14 @@ Until you do, the old hooks keep working through `moat`. `openmoat doctor` says 
 
 ## What each release needs
 
+**To [0.27.0](/docs/releases/v0-27-0/), from 0.26.0:**
+
+- **`openmoat policy upgrade`** offers `obfuscated` (a line written to hide what it runs is held for review), `Set-ExecutionPolicy` in `persistence`, and more in `kernel-self` (agents kept away from `openmoat team` and the gate's files). From the 0.26.0 default it only narrows ([Hidden commands and PowerShell](/docs/shell-commands/obfuscation-and-powershell/)).
+- **`openmoat init` once.** It asks, per hook-only agent, whether typing its name should start it confined; the default is no. `openmoat confine` and `openmoat confine --off` change it later ([Confine agents by default](/docs/sandboxes/confine/)).
+- **New denies with no step:** PowerShell lines are read, so a PowerShell listing of `~/.ssh` is denied where it used to be left to the agent; a call OpenMoat cannot decide within its deadline is denied rather than run after the hook times out ([A slow check is denied](/docs/hook-deadline/)).
+- **A long session keeps working** through the upgrade and later policy changes ([Session taint](/docs/session-taint/#across-a-policy-change)).
+- **New, all optional:** `openmoat gate setup` ([A code before anything is loosened](/docs/self-protection/loosening-gate/)), `mint:` secrets under `openmoat run` ([Minted credentials](/docs/keep-tokens-safe/minted-credentials/), preview), `openmoat team join` and `openmoat inventory` ([Team mode](/docs/team-rules/team-mode/)).
+
 **To [0.26.0](/docs/releases/v0-26-0/), from 0.25.0:**
 
 - **`openmoat init` once.** Codex, Gemini CLI, Qwen Code and Crush show their hook as out of date until you do: the new entry blocks the call when `openmoat` is missing or killed. Codex then asks you to trust the changed hook in `/hooks`, once. The same `init` records the other hooks the agents load, so nothing already there is named or blocked ([Other hooks the agents run](/docs/other-hooks/)).

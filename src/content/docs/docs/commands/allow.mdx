@@ -1,6 +1,6 @@
 ---
 title: "Allow and approve commands"
-description: "openmoat allow, allowed and trust: let the agent do more, and take it back."
+description: "openmoat allow, allowed and trust: let the agent do more, and take it back; openmoat gate: a code before anything is loosened."
 sidebar:
   label: "Allow and approve"
   order: 2
@@ -21,5 +21,16 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 | `openmoat allow --remove <id>` | Take back a rule `openmoat allow` added. **Terminal** | `openmoat allow --remove approved-2` |
 | `openmoat allowed [--format json]` | Permanent rules, session grants still in force and trusted repositories, each with the command that takes it back | `openmoat allowed` |
 | `openmoat trust [<repo>] [--revoke]` | Let a repository's `.moat/policy.yaml` allow, until the file changes; shows the file, its digest and every rule it adds, then asks. **Terminal** | `openmoat trust` |
+
+## A code before anything is loosened
+
+From 0.27.0, optional ([A code before anything is loosened](/docs/self-protection/loosening-gate/)):
+
+| Command | What it does | Example |
+|---|---|---|
+| `openmoat gate setup` | Make a new secret, show it once (a link and a key) for your authenticator app, and turn the gate on once you type a code the app gives. From then on `allow`, `trust`, `doctor --accept` and the other commands that loosen the protection or re-pin also ask for a code; `--yes` never skips it, and a wrong, missing or reused code refuses (exit 64). **Terminal** | `openmoat gate setup` |
+| `openmoat gate status` | Whether the gate is on, and the wrong codes counted in the last 15 minutes (five lock it for the rest of the window) | `openmoat gate status` |
+| `openmoat gate remove` | Turn the gate off; asks for a code first. **Terminal** | `openmoat gate remove` |
+| `openmoat show --session policy-changes` | Every loosening, gate on or off: the command, what it changed, the account and whether a code was given; refusals at the gate too | `openmoat show --session policy-changes` |
 
 The rules `--always`, `--dir` and `--site` add apply in every project and to every agent; a session grant and a trusted repository's allow rules are tied to one project. What each allow opens: [Every allow and what it opens](/docs/allow-reference/).
