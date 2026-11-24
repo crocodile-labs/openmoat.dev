@@ -15,7 +15,7 @@ Commands marked **terminal** must be run by a person in a terminal of their own 
 | `openmoat init [--hosts <ids>] [--yes] [--dry-run] [--verbose] [--mcp-proxy]` | Install the policy, lock and log, pin the agents' MCP servers, and hook each agent found, asking for each, but not about an agent whose files already have everything. It also finds the Claude Code the VS Code extension bundles. `--hosts` and `--yes` skip the questions; `--dry-run` shows what would change; `--verbose` prints each file written with its hook entries, the backups and the files the lock pins; `--mcp-proxy` wraps every stdio MCP server. Without a terminal and without `--hosts` or `--yes`, it changes no agent's files. Over an existing lock: **terminal** | `openmoat init --hosts claude-code,codex` |
 | `openmoat uninstall [--hosts <ids>] [--purge]` | Remove OpenMoat's hooks and sandbox settings and restore every backup; `--purge` also deletes `~/.moat` (not with `--hosts`). **Terminal** | `openmoat uninstall --hosts cursor` |
 
-Host ids for `--hosts` and `--host`: `claude-code`, `codex`, `cursor`, `openclaw`, `copilot-cli`, `pi`, `gemini-cli`, `opencode`, `hermes`, `cline`, `goose`.
+Host ids for `--hosts` and `--host`: `claude-code`, `codex`, `cursor`, `openclaw`, `copilot-cli`, `pi`, `gemini-cli`, `opencode`, `hermes`, `cline`, `goose`, `antigravity-cli`, `qwen-code`, `crush`.
 
 ## Everyday
 
