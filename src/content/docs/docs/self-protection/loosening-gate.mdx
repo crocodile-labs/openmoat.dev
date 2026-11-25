@@ -22,6 +22,18 @@ Since 0.27.0. The gate is optional: without it, loosening commands work as befor
 
 **Protects against** a program that can type into your terminal, or a stolen session at it, loosening the policy, accepting a changed hook or turning OpenMoat off.
 
+## Try it
+
+In your own terminal (agents are denied these commands), with any authenticator app on your phone:
+
+```bash
+openmoat gate setup                         # scan the link or type the key into the app, then type its code
+openmoat allow --site example.com           # now asks for a code first
+openmoat show --session policy-changes      # the change, with "authenticator code"
+openmoat allow --remove approved-1          # the undo line `allow` printed; tightening asks nothing
+openmoat gate remove                        # asks for a code once more; the gate is off
+```
+
 ## What it does
 
 ```bash

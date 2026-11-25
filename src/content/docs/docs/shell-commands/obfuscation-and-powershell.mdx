@@ -52,12 +52,16 @@ Each simple PowerShell statement is decided as the POSIX command that does the s
 
 **A PowerShell line is still never allowed on this reading alone.** The reader only adds what rules can deny or hold; anything else goes to the agent's own prompt, as before. A statement it does not read (script blocks, parentheses, arrays) adds only its literal paths and `$env:` reads.
 
-## Commands
+## Try it
+
+Nothing to turn on beyond the upgrade. In your own terminal, `openmoat policy check` shows what each line gets, without running it:
 
 ```bash
 openmoat policy upgrade                              # adds obfuscated, and Set-ExecutionPolicy to persistence
-openmoat policy check 's=QZcatZQ; ${s:2:3} ~/.ssh/id_rsa'
-openmoat allow --last                                # approve the one line that was held
+openmoat policy check 's=QZcatZQ; ${s:2:3} ~/.ssh/id_rsa'                       # deny
+openmoat policy check "x=\$(printf '\\x63\\x61\\x74'); \$x notes.txt"           # review, obfuscated
+openmoat policy check "pwsh -NoProfile -Command 'Get-Content ~/.aws/credentials'"  # deny
+openmoat allow --last                                # when an agent's line was held and you want it: approve that one line
 ```
 
 ## Limits
