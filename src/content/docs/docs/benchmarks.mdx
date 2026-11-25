@@ -20,9 +20,9 @@ Two kinds of measurement, both of the default policy with nothing added:
 
 How to read the verdicts: **denied** is `deny`; **held** is `review`, waiting for a person; **left to the agent's prompt** is `defer`, where OpenMoat stays quiet and the agent's own permission prompt decides, for a call no rule names. `defer` is not counted as stopped.
 
-## MoatBench on 0.27.0
+## MoatBench on 0.28.0
 
-OpenMoat 0.27.0, the released build, run on 2026-11-24 on macOS 12.7.6, every scenario run as the hook payloads of all fourteen agents; 0.25.0 and 0.26.0 gave the same totals. The run for 0.28.0 comes after its release, from a terminal outside a sandbox.
+OpenMoat 0.28.0, the released build, run on 2026-11-25 on macOS 12.7.6, every scenario run as the hook payloads of all fourteen agents; 0.25.0, 0.26.0 and 0.27.0 gave the same totals.
 
 | | Runs or steps | Denied | Held for review | OS sandbox | Left to the agent's prompt | Allowed |
 |---|--:|--:|--:|--:|--:|--:|
@@ -38,7 +38,11 @@ openmoat bench            # every scenario, as each agent's hook payloads
 openmoat bench --report   # the proof report: which promise each layer keeps
 ```
 
-Every category and the proof report: [MOATBENCH.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/MOATBENCH.md#scorecard-openmoat-0270-fourteen-agents).
+Every category and the proof report: [MOATBENCH.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/MOATBENCH.md#scorecard-fourteen-agents).
+
+The same scenarios, run by anyone from the [MoatBench repository](https://github.com/crocodile-labs/moatbench) on GitHub's Ubuntu 24.04 and macOS 15 runners, with Claude Code's hook payloads: on 0.28.0, 43 of 45 attacks stopped and 0 of 84 ordinary steps blocked, the same as on 0.19.0 ([the run](https://github.com/crocodile-labs/moatbench/tree/main/runs/2026-11-25-openmoat-0.28.0)).
+
+**Time per call.** On those runners the median time of one hook call, process start included, was 32 ms on 0.19.0 and 64 ms (Ubuntu) and 73 ms (macOS) on 0.28.0. Where the time went is being measured.
 
 ## Outside sets: 0.25.0 to 0.28.0
 
