@@ -34,6 +34,10 @@ Since 0.27.0. Before, Codex, GitHub Copilot CLI, Gemini CLI, Qwen Code, Crush, t
 | Hermes Agent (its plugin limit is 30 s) | 25 s |
 | Every other agent | 30 s |
 
+## How to use it
+
+Nothing to turn on: since 0.27.0 every `openmoat guard` has the deadline. When a slow check happens, the agent shows a deny instead of running the call unchecked; you see what was slow, as below, and retry the call.
+
 ## Example
 
 The agent shows a deny with rule `kernel-error` and `hook-deadline`. Then, in your own terminal:

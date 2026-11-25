@@ -23,6 +23,19 @@ Since 0.27.0.
 
 **Protects against** a hook-only agent running every allowed call with your permissions because confining it took a command you had to remember each time.
 
+## Try it
+
+In your own terminal:
+
+```bash
+openmoat status                    # each hook-only agent's row: hook only · protection 0/100
+openmoat confine gemini-cli        # the agent's id as status names it; prints the files it writes
+exec $SHELL                        # a new shell, so ~/.moat/bin comes first on PATH
+openmoat status                    # the row now says: protection 100/100 with sandboxed start
+gemini                             # starts confined, as `openmoat run -- gemini` would
+openmoat confine --off gemini-cli  # back to how it was
+```
+
 ## What it does
 
 `openmoat confine` writes the same [sandboxed-start](/docs/sandboxes/sandboxed-start/) shim `openmoat init` offers in `~/.moat/bin` and, once, the two lines that put that folder first on `PATH` in your shell's start-up file (after a backup). It prints each file and re-pins the lock. `--off` deletes the shims still as written, and the lines with the last. An agent that cannot be confined is named with why.

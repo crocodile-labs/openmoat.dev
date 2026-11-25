@@ -23,6 +23,20 @@ const three = [
   { cls: 'review', icon: '?', title: 'Asks you when it smells a trick', text: 'A host, path or command that came from a page or an issue waits for your answer. So does code that runs later, like a git hook or a CI workflow, and a command written to hide what it runs.', cmd: '? review · injected-input · runs-later · obfuscated' },
   { cls: 'allow', icon: '✓', title: 'Lets your work run', text: 'Project files and dev commands go straight through. What it has no rule for is your agent’s call, as before.', cmd: '✓ allow · project-fs · dev-shell' },
 ];
+// Release checklist: the newest release's features, each with the command that starts it and
+// its page's how-to; as the openmoat README's "New in X, and how to start each" table.
+const newest = {
+  version: '0.27.0',
+  href: '/docs/releases/v0-27-0/',
+  items: [
+    { name: 'Team rules from a signed bundle', does: 'One rule set for a whole team, without a server. It can only make each person’s policy stricter.', cmd: 'openmoat team join <folder> --signer "<key line>"', href: '/docs/team-rules/team-mode/#try-it-in-two-minutes' },
+    { name: 'A code before anything is loosened', does: 'Loosening a rule or turning OpenMoat off asks for a code from your authenticator app.', cmd: 'openmoat gate setup', href: '/docs/self-protection/loosening-gate/#try-it' },
+    { name: 'Confine agents by default', does: 'Typing an agent’s name starts it in OpenMoat’s sandbox.', cmd: 'openmoat confine <agent>', href: '/docs/sandboxes/confine/#try-it' },
+    { name: 'Short-lived credentials (preview)', does: 'Git and AWS credentials that reach one repository or bucket and end within the hour.', cmd: 'openmoat run -- <agent>', href: '/docs/keep-tokens-safe/minted-credentials/#how-to-use-it-git-for-an-agent-as-a-github-app-one-repository' },
+    { name: 'Hidden commands and PowerShell', does: 'A command written to hide what it runs is held for you; PowerShell is read too.', cmd: 'openmoat policy upgrade', href: '/docs/shell-commands/obfuscation-and-powershell/#try-it' },
+    { name: 'A slow check is denied', does: 'A check that runs out of time is denied, never let through unchecked.', cmd: 'nothing to run: on by default', href: '/docs/hook-deadline/#how-to-use-it' },
+  ],
+};
 const os = [
   { name: 'macOS', href: '/get-started/#macos' },
   { name: 'Linux', href: '/get-started/#linux' },
@@ -146,6 +160,24 @@ const os = [
         <code>{c.cmd}</code>
       </div>
     ))}
+  </section>
+
+  <section id="newest" class="newest wrap" aria-labelledby="newest-title">
+    <div class="center">
+      <p class="kicker">New in {newest.version}</p>
+      <h2 id="newest-title" class="display h2">What’s new, and how to start each</h2>
+    </div>
+    <ul class="new-grid">
+      {newest.items.map((f) => (
+        <li class="new-card card">
+          <h3><a href={f.href}>{f.name}</a></h3>
+          <p>{f.does}</p>
+          <code>{f.cmd}</code>
+          <a class="how" href={f.href}>How to use it →</a>
+        </li>
+      ))}
+    </ul>
+    <p class="small center-text">All of it: <a href={newest.href}>the {newest.version} release notes</a> · every feature and where it works: <a href="/docs/supported-features/">Supported features</a></p>
   </section>
 
   <section id="break" class="wrap">
@@ -437,6 +469,15 @@ const os = [
   .note code { font-size: 12px; }
 
   /* three cards */
+  .newest { padding-bottom: 96px; display: flex; flex-direction: column; gap: 28px; }
+  .new-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .new-card { padding: 22px; display: flex; flex-direction: column; gap: 10px; }
+  .new-card h3 { margin: 0; font-weight: 800; font-size: 20px; line-height: 1.15; letter-spacing: -0.01em; }
+  .new-card h3 a { color: inherit; text-decoration: none; }
+  .new-card p { margin: 0; font-size: 15px; line-height: 1.5; }
+  .new-card code { margin-top: auto; font-size: 12px; overflow-wrap: anywhere; }
+  .new-card .how { font-size: 14px; font-weight: 600; }
+  .center-text { text-align: center; }
   .three { padding-bottom: 96px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
   .card3 { border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px; min-height: 300px; }
   .card3 .icon { font-size: 40px; line-height: 1; font-weight: 800; }
@@ -480,6 +521,7 @@ const os = [
 
   @media (max-width: 860px) {
     .three { grid-template-columns: 1fr; }
+    .new-grid { grid-template-columns: 1fr; }
     .card3 { min-height: 0; }
     .hero-art { height: 420px; }
     .stage { padding: 16px; border-radius: 22px; }
