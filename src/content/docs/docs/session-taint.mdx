@@ -15,7 +15,7 @@ import FeatureTop from '../../../components/FeatureTop.astro';
   outNote={"The reason a later session's call is held when the taint came from a file: run.sh was written by a session that had fetched a page from crates.io."}
   change={"`taint.protected_writes` adds paths whose writes need review in a tainted session; `taint.provenance: false` stops following written files. Approve one file for the session with `openmoat allow --last`."}
   limits={"Taint is per session: a new session starts clean, except for the files a tainted session wrote."}
-  related={[["Injected input", "/docs/injected-input/"], ["Code that runs later", "/docs/runs-later/"], ["Audit log", "/docs/see-what-happened/"]]}
+  related={[["Data labels by source", "/docs/session-taint/data-labels/"], ["Injected input", "/docs/injected-input/"], ["Code that runs later", "/docs/runs-later/"], ["Audit log", "/docs/see-what-happened/"]]}
 />
 
 
@@ -96,6 +96,10 @@ New in 0.27.0. After `openmoat policy upgrade`, an edited policy, a new pack or 
 - **Until then, a call recorded before the change is judged as the earlier policy classified it.** If the new policy would taint an earlier call the old one did not, later calls get that taint once the catch-up reaches it.
 
 The design: [ADR-121](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-121-carry-session-taint-across-policy-changes.md).
+
+## Data labels by source
+
+New in 0.28.0, preview. The taint also keeps where the data came from (`web`, `mcp:<server>`, `secret`, `private`, `external`, …), and every later call that can send data out carries an `@data-flow <label> <sink> <target>` atom that deny and review rules name, so a result the model reworded still counts. After `openmoat policy upgrade`, the default `data-flow` review holds an MCP tool that acts after another MCP server's result. How to try it and write your own flows: [Data labels by source](/docs/session-taint/data-labels/).
 
 ## Limits
 

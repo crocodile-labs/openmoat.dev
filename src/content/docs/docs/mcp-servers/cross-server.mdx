@@ -67,8 +67,8 @@ mcp:
 
 ## Limits
 
-- **Only wrapped servers are seen as sources.** A remote HTTP, plugin or managed server's results are not recorded.
-- **Exact pieces only.** Text the agent rewrites, encodes, splits or shortens below eight words is not found.
+- **Only servers that go through the gateway are seen as sources:** wrapped ones, and remote ones added with `openmoat mcp login`. A plugin or managed server's results, and those of a remote server the agent reaches directly, are not recorded.
+- **Exact pieces only.** Text the agent rewrites, encodes, splits or shortens below eight words is not found. Since 0.28.0, data labels (preview) follow the source instead of the text: the default `data-flow` review holds a tool that acts after another server's result, however it was reworded ([Data labels by source](/docs/session-taint/data-labels/)).
 - **What acts is the tool's own word.** Its annotations, or else its name and arguments, decide whether it writes or sends.
 - A result the proxy cannot record reaches the agent as an error.
 

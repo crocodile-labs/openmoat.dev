@@ -107,7 +107,7 @@ Every call through the gateway is an audit row with host `mcp-proxy`: `mcp-proxy
 
 ## Limits
 
-- **Stdio servers only.** A remote (HTTP) server is checked by the hook alone. Claude Code plugin servers and managed MCP settings are not covered.
+- **Stdio servers, and remote servers you name.** Since 0.28.0 a remote (Streamable HTTP) server goes through the gateway once you run `openmoat mcp login` and point the agent at `openmoat mcp remote` (preview, [Remote MCP servers](/docs/mcp-servers/remote-servers/)); a remote server the agent reaches directly is checked by the hook alone. Claude Code plugin servers and managed MCP settings are not covered.
 - **Tool results pass as the server sent them.** They mark the session as having read untrusted content ([Session taint](/docs/session-taint/)); the gateway does not change them, and keeps only hashed pieces and fingerprints of them for the cross-server and injected-input checks. A result it cannot record reaches the agent as an error.
 - **The server still starts** when the agent's session begins. Only `--sandbox` or `openmoat run` confines what it does at start.
 - **A call from a program with no OpenMoat hook is refused**, by design: a tool that used a wrapped server directly gets `mcp-unattributed`. Unwrap the server if that is what you need.

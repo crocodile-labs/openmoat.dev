@@ -64,7 +64,9 @@ openmoat run --listen 18789 --write ~/.openclaw -- openclaw gateway
 | Linux, Isolated tier or Lightweight with bubblewrap | runs: Landlock grants a bind to that port alone, inside the agent's own network namespace whose only interface is loopback; `openmoat run` forwards this machine's `127.0.0.1:PORT` in |
 | Linux without a network namespace | refused: Landlock restricts a bind by port only, on every address, so the port would be open to the network |
 | macOS | refused: Seatbelt's `localhost:PORT` filter lets a bind to `0.0.0.0` on the port through too, so the port could be reachable from the network |
-| Windows | refused |
+| Windows | refused, the agent account included |
+
+**Why macOS stays refused** (ADR-122, since 0.28.0). Seatbelt, the macOS sandbox, has no rule that names the address `0.0.0.0` (every address of the machine), so it cannot allow loopback and refuse that. The other way examined, `openmoat run` holding `0.0.0.0:PORT` itself before the agent starts, lasts only as long as the run: a process the agent left behind keeps its sandbox after the run ends, and could then bind the port to every address. A boundary that ends early is not offered. The refusal names how to start OpenClaw instead: the same command without `openmoat run`, under its hook.
 
 The sandboxed-start shim confines `openclaw gateway` alone. Every other `openclaw` command, the Gateway's clients included, starts as before, under the hook: nothing inside a sandbox can connect to the Gateway.
 

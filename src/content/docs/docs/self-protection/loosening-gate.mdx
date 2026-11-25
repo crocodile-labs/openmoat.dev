@@ -11,12 +11,12 @@ import FeatureTop from '../../../../components/FeatureTop.astro';
 Since 0.27.0. The gate is optional: without it, loosening commands work as before, and are still recorded.
 
 <FeatureTop
-  does={"The commands that loosen your protection already run only for a person at a terminal. A program that gets a line typed into your terminal passes that check. With the gate on, each of them also asks for a code from the authenticator app on your phone (any app that takes TOTP codes). Gate on or off, every loosening is recorded in the audit log."}
+  does={"The commands that loosen your protection already run only for a person at a terminal. A program that gets a line typed into your terminal passes that check. With the gate on, each of them also asks for a six-digit code from an authenticator app: any app that shows time-based (TOTP) codes, such as Google Authenticator, Microsoft Authenticator, 1Password or Bitwarden, on your phone or on another device. Gate on or off, every loosening is recorded in the audit log."}
   when={[["On a laptop", "/docs/solutions/on-a-laptop/"], ["Unattended agents", "/docs/solutions/unattended-agents/"]]}
   cmd={"openmoat gate setup"}
   outNote={"Shows a link and a key once; type the code your app then shows. `openmoat gate status` says whether it is on."}
   change={"`openmoat gate remove` asks for a code, then turns it off. Without the gate, nothing asks for a code."}
-  limits={"The code proves a phone, not a person, and only while its secret stays hidden: a program running as you outside every hook and sandbox can read the secret or delete it."}
+  limits={"The code proves that whoever runs the command holds your authenticator, not who they are, and only while the gate's secret file stays hidden: a program running as you outside every hook and sandbox can read that file, or delete it and turn the gate off."}
   related={[["Self-protection and lock", "/docs/self-protection/"], ["Does a change widen?", "/docs/policy-file/never-widen/"], ["Audit log", "/docs/see-what-happened/"], ["Change the rules", "/docs/change-the-rules/"]]}
 />
 
@@ -24,7 +24,7 @@ Since 0.27.0. The gate is optional: without it, loosening commands work as befor
 
 ## Try it
 
-In your own terminal (agents are denied these commands), with any authenticator app on your phone:
+In your own terminal (agents are denied these commands), with an authenticator app at hand:
 
 ```bash
 openmoat gate setup                         # scan the link or type the key into the app, then type its code
@@ -65,13 +65,23 @@ Gate on or off, each loosening goes into the audit log under the session `policy
 openmoat show --session policy-changes
 ```
 
-## If you lose your phone
+## If you can no longer get a code
 
-Remove `~/.moat/audit.key.gate` and `~/.moat/gate.json` in your own terminal, then run `openmoat gate setup` again.
+The codes come from the OpenMoat entry that `openmoat gate setup` added to your authenticator app. If that entry is gone (you lost or reset the device the app was on, or deleted the entry), no command that asks for a code can run, `openmoat gate remove` included, because it asks for one too.
+
+The way back is to delete the gate's two files yourself, in your own terminal:
+
+```bash
+rm ~/.moat/audit.key.gate ~/.moat/gate.json   # the secret the codes are made from, and the gate's state
+openmoat gate status                          # the gate is off
+openmoat gate setup                           # optional: a new secret, added to your app as a new entry
+```
+
+On Windows the files are in `%USERPROFILE%\.moat\`. Agents cannot do this for you: `kernel-self` denies their calls on both files. Until you run `openmoat gate setup` again, loosening commands ask for no code, as before the gate, and they are still recorded. If your old device still shows an OpenMoat entry, remove it from the app: its codes no longer work.
 
 ## Limits
 
-- **The code proves a phone, not a person**, and only where its secret stays hidden. The secret is a file in `~/.moat`, denied to agents' own calls; a program running as you outside every hook and sandbox can read it, or delete it and turn the gate off.
+- **The code proves that whoever runs the command holds your authenticator**, not who they are, and only while the gate's secret file stays hidden. The secret is a file in `~/.moat`, denied to agents' own calls; a program running as you outside every hook and sandbox can read it, or delete it and turn the gate off.
 - **Approving one held call is not a policy change** and asks for no code.
 - **The gate is optional.** Until you run `openmoat gate setup`, the loosening commands work as before; they are still recorded.
 

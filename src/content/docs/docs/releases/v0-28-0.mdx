@@ -1,0 +1,28 @@
+---
+title: "OpenMoat 0.28.0"
+description: "OpenMoat holds a secret hidden by an encoding and data packed into a host name, can start a Windows agent as its own account so Windows refuses its reads and its network (preview), labels data by where it came from (preview), takes remote MCP servers through its gateway (preview), and checks lockfiles in a pull request."
+sidebar:
+  label: "0.28.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-25. [GitHub release v0.28.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.28.0).
+
+<Aside type="caution" title="Upgrading">
+
+Run `openmoat policy upgrade` in your own terminal for the new default rules (`encoded-secret-egress`, `hostname-data`, the `data-flow` review, and the remote MCP token folder in `kernel-self`); from the 0.27.0 default it only narrows. On Windows, `openmoat agent-account setup`, run once from an administrator terminal, makes `openmoat run` hold reads and the network as well as writes; without it, Windows runs are as in 0.27.0. All the steps: [Upgrade](/docs/upgrade/#what-each-release-needs).
+
+</Aside>
+
+- **Windows: the agent runs as its own account (preview).** `openmoat agent-account setup`, once from an administrator terminal, makes a local account for agents and installs Windows Filtering Platform filters for it (the network filter built into Windows). After that `openmoat run` starts the agent as that account, so Windows itself refuses its reads of `~/.ssh`, other agents' logins and the other places your policy denies, and every connection but the one to the run's proxy. Name lookups still leave through Windows' own DNS service, and the run says so (a `dns` downgrade). `openmoat agent-account remove` undoes all of it. [openmoat run on Windows](/docs/sandboxes/windows/#run-the-agent-as-its-own-account-preview)
+- **A secret hidden by an encoding, and data in a host name, are held for review.** `encoded-secret-egress` decodes what is sent (URL encoding, base64, hex, zero-width characters, up to four layers) and holds a known token or credential it finds going to a host that is not its own. `hostname-data` holds a host no allow rule lists whose name carries what looks like encoded data, since the name lookup alone hands it to the domain's name server. On agent-egress-bench the decided cases stopped or held go from 54.9% to 68.9%, with no new false positive. [Secrets hidden by an encoding](/docs/keep-tokens-safe/encoded-secrets/)
+- **Data labels by source (preview).** Session taint now keeps where data came from (`web`, `mcp:<server>`, `secret`, `private`, `external`, …), and a later call that can send data out carries an `@data-flow` atom a deny or review rule can name, so a result the model reworded still counts. The default `data-flow` review holds an MCP tool that acts after another MCP server's result. [Data labels by source](/docs/session-taint/data-labels/)
+- **Remote MCP servers through the gateway (preview).** `openmoat mcp login <server> --url <url>` pins a remote (Streamable HTTP) server's address and keeps its token where agents cannot read it; `openmoat mcp remote` runs the same gateway as for stdio servers and adds the token itself, so the agent never holds it. Every address the server's name resolves to is checked, and no redirect is followed. Signing in through OAuth is not built yet: you type a token. [Remote MCP servers](/docs/mcp-servers/remote-servers/)
+- **Lockfiles in the merge check.** `openmoat policy check-diff` reads `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `Cargo.lock`, `poetry.lock`, `uv.lock` and `go.sum` as it reads direct dependencies: a look-alike package name, an install script the lockfile records, and a `go.sum` hash changed for the same version, packages a dependency pulls in included. [Lockfiles](/docs/check-a-pull-request/lockfiles/)
+- **The microVM tier is designed, not built.** `openmoat run --vm -- <agent>` refuses on every system (exit 64) and starts nothing; it names the VM monitor this system would use and what is missing. [OS sandboxes and run](/docs/sandboxes/#the-microvm-tier-designed-not-built)
+- **`openmoat run --listen` stays refused on macOS**, now with the reason recorded (ADR-122) and the refusal naming how to start the agent instead. [Confine agents by default](/docs/sandboxes/confine/#openclaw-under-openmoat-run---listen)
+- **Fixed:** `openmoat status`, `doctor` and `init` say "none besides OpenMoat's own hook" instead of "0 recorded"; `openmoat inventory --check` and `openmoat team` also work where `~/.moat` is not writable; `openmoat policy upgrade` shows a pattern that only grew as one broadening, and names what to run next.
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0280---2026-11-25).

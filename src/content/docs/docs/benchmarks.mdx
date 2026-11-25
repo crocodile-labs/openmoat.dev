@@ -20,9 +20,9 @@ Two kinds of measurement, both of the default policy with nothing added:
 
 How to read the verdicts: **denied** is `deny`; **held** is `review`, waiting for a person; **left to the agent's prompt** is `defer`, where OpenMoat stays quiet and the agent's own permission prompt decides, for a call no rule names. `defer` is not counted as stopped.
 
-## MoatBench on 0.25.0
+## MoatBench on 0.27.0
 
-OpenMoat 0.25.0, run on 2026-11-22 on macOS 12.7.6, a debug build, every scenario run as the hook payloads of all fourteen agents.
+OpenMoat 0.27.0, the released build, run on 2026-11-24 on macOS 12.7.6, every scenario run as the hook payloads of all fourteen agents; 0.25.0 and 0.26.0 gave the same totals. The run for 0.28.0 comes after its release, from a terminal outside a sandbox.
 
 | | Runs or steps | Denied | Held for review | OS sandbox | Left to the agent's prompt | Allowed |
 |---|--:|--:|--:|--:|--:|--:|
@@ -38,16 +38,16 @@ openmoat bench            # every scenario, as each agent's hook payloads
 openmoat bench --report   # the proof report: which promise each layer keeps
 ```
 
-Every category and the proof report: [MOATBENCH.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/MOATBENCH.md#scorecard-openmoat-0250-fourteen-agents).
+Every category and the proof report: [MOATBENCH.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/MOATBENCH.md#scorecard-openmoat-0270-fourteen-agents).
 
-## Outside sets: 0.25.0 and 0.26.0
+## Outside sets: 0.25.0 to 0.28.0
 
-The decision engine alone (`openmoat policy check`), run on 2026-11-22 twice: with the default policy of 0.25.0, and with the rules this measurement led to, which came in 0.26.0 ([below](#what-the-measurement-changed)).
+The decision engine alone (`openmoat policy check`), with each release's default policy: 0.25.0 and the rules this measurement led to, which came in 0.26.0 ([below](#what-the-measurement-changed)), run on 2026-11-22; 0.27.0 on 2026-11-24; and 0.28.0 on 2026-11-25. 0.28.0 adds `encoded-secret-egress` and `hostname-data`, which hold a secret hidden by an encoding and data in a host name for review ([Secrets hidden by an encoding](/docs/keep-tokens-safe/encoded-secrets/)).
 
-| Set | Cases | Denied: 0.25.0 → 0.26.0 | Denied or held: 0.25.0 → 0.26.0 | Allowed | False positives |
+| Set | Cases | Denied: 0.25.0 → 0.26.0 → 0.27.0 → 0.28.0 | Denied or held: 0.25.0 → 0.26.0 → 0.27.0 → 0.28.0 | Allowed | False positives |
 |---|--:|--:|--:|--:|--:|
-| RedCode-Exec, code inline in the command, the 30 scenario files whose code acts on the machine | 900 | 19.8% → 22.1% | 50.0% → 68.9% | 0 → 0 | no benign cases in the set |
-| agent-egress-bench, the call an agent makes (`curl`, or the agent's own tool for MCP cases) | 122 of 192 | 47.5% → 50.0% | 47.5% → 54.1% | 1 → 1 | 12 of 37, unchanged |
+| RedCode-Exec, code inline in the command, the 30 scenario files whose code acts on the machine | 900 | 19.8% → 22.1% → 22.1% → 22.1% | 50.0% → 68.9% → 69.1% → 69.1% | 0 in each | no benign cases in the set |
+| agent-egress-bench, the call an agent makes (`curl`, or the agent's own tool for MCP cases) | 122 of 192 | 47.5% → 50.0% → 50.0% → 50.0% | 47.5% → 54.1% → 54.9% → 68.9% | 1 in each | 12 of 37 in each |
 
 Read with these facts beside it:
 
