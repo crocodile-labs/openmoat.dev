@@ -1,0 +1,80 @@
+---
+title: "Remote MCP servers through the gateway (preview)"
+description: "openmoat mcp login pins a remote (Streamable HTTP) MCP server's URL and keeps its token where agents cannot read it; openmoat mcp remote runs the same gateway as for stdio servers and adds the token itself, so the agent never holds it."
+sidebar:
+  label: "Remote servers (preview)"
+  order: 5
+---
+
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+New in 0.28.0, preview (ADR-127). Before, a remote server was checked by the hook alone: nothing pinned what it listed, and the agent held its token.
+
+<FeatureTop
+  does={"A remote MCP server is one the agent reaches over HTTP (Streamable HTTP, `https://…/mcp`) instead of starting it as a program. You name it once in your own terminal with `openmoat mcp login`: OpenMoat pins its URL and keeps its token in its own state directory, readable by you alone. The agent's configuration then starts `openmoat mcp remote`, the same gateway as for stdio servers (tools and identity pinned, every call held for the hook's decision, every result checked), which adds the token to each request itself. The agent never holds the token."}
+  when={[["MCP servers", "/docs/solutions/mcp-servers/"]]}
+  cmd={"openmoat mcp login linear --url https://mcp.linear.app/mcp"}
+  outNote={"In your own terminal: it names where the server's tokens come from, asks for the token (hidden; empty for a server without sign-in), asks `Pin it? [y/N]`, then prints the entry to put in the agent's MCP configuration."}
+  change={"`openmoat mcp login <server> --url <url> --forget` removes the pin and the token. `--no-token` pins a server without sign-in."}
+  limits={"It does not sign you in: you bring a token (an API key, or an access token the server's sign-in service issued). Streamable HTTP only, not the older HTTP+SSE transport. `openmoat mcp wrap` does not rewrite remote entries yet."}
+  related={[["MCP pinning and proxy", "/docs/mcp-servers/"], ["The MCP gateway", "/docs/mcp-servers/gateway/"], ["Tool pinning", "/docs/mcp-servers/tool-pinning/"], ["Data between servers", "/docs/mcp-servers/cross-server/"], ["Token broker", "/docs/keep-tokens-safe/"]]}
+/>
+
+**Protects against** a remote MCP server's token being read or sent elsewhere by the agent or code it runs, a server that changes its tools after you accepted them, and a configuration edited to send the agent's requests to another address, a local service or a cloud metadata service.
+
+## What it does
+
+```bash
+openmoat mcp login linear --url https://mcp.linear.app/mcp
+```
+
+```text
+https://mcp.linear.app:443 issues tokens through: https://mcp.linear.app
+Token for `linear` (hidden; empty for a server without sign-in):
+OpenMoat will reach `linear` only at https://mcp.linear.app:443, adding the token to each request; the agent never holds the token.
+Pin it? [y/N] y
+Pinned. Point the agent's configuration for `linear` at the gateway:
+  {"command": "openmoat", "args": ["mcp", "remote", "--server", "linear", "--url", "https://mcp.linear.app/mcp"]}
+```
+
+Then:
+
+1. Replace the server's `url` entry in the agent's MCP configuration with that entry (`openmoat mcp wrap` does not rewrite remote entries yet).
+2. Run `openmoat mcp accept`.
+3. Start the agent, and accept the server's tools the first time it lists them.
+
+`openmoat mcp login` reads the server's sign-in metadata (RFC 9728, the standard way a server says which service issues its tokens), over `https` only and through the same checks below, to name where its tokens come from. It does not sign in for you: get a token there (a personal API key or an OAuth access token) and type it at the prompt. The token is kept in OpenMoat's state directory (`~/.moat/`, on Windows `%USERPROFILE%\.moat\`), readable by you alone; `kernel-self` denies agents both the command and reading its token folder.
+
+**What the gateway checks before anything is sent:**
+
+- the URL is the one you pinned: an agent that edits its configuration to another URL gets every request refused, naming `openmoat mcp login`;
+- `https`, or plain `http` only to `127.0.0.1` or `[::1]`; no user name or password in the URL; no address in an unusual notation (`2852039166`);
+- every address the name resolves to: loopback, private and shared (`100.64.0.0/10`) addresses only when an allow rule names the address (`net: ["127.0.0.1:8931"]` for a server on this machine), link-local and the cloud metadata services never; the connection goes to one of exactly the addresses checked;
+- no deny rule of your policy names the host, and no redirect is followed.
+
+A request that cannot be sent is answered with JSON-RPC error -32603 naming why, so the agent does not wait.
+
+## Try it
+
+Without a server: name a local one, see the gateway refuse a moved URL and an address no rule names, then undo. Run it in your own terminal, not from an agent (both commands refuse an agent):
+
+```bash
+openmoat mcp login demo --url http://127.0.0.1:9/mcp --no-token     # answer y
+# the agent's side: a moved URL is refused, naming the pinned one
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | \
+  openmoat mcp remote --server demo --url http://127.0.0.1:10/mcp
+# the pinned URL, but no allow rule names 127.0.0.1:9: answered with error -32603, no connection
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | \
+  openmoat mcp remote --server demo --url http://127.0.0.1:9/mcp
+openmoat mcp login demo --url http://127.0.0.1:9/mcp --forget         # undo
+```
+
+## Limits
+
+- **A preview.**
+- **No sign-in flow.** You bring the token; the OAuth sign-in in a browser is not built. A token that expires is replaced by running `openmoat mcp login` again.
+- **Streamable HTTP only**, not the older HTTP+SSE transport, and no stream for messages the server starts on its own.
+- **No `Mcp-Param-*` headers**, and one connection per request.
+- **Only servers you name go through it.** A remote server the agent reaches directly, Claude Code plugin servers and managed MCP settings are checked by the hook alone: their calls are decided, but nothing pins what they list or holds their tokens.
+
+The details: [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#remote-mcp-servers) and [ADR-127](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-127-remote-mcp-gateway.md). More in [Limits](/docs/limits/).

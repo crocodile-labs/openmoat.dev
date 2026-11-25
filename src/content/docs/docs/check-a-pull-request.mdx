@@ -16,7 +16,7 @@ import FeatureTop from '../../../components/FeatureTop.astro';
   outNote={"For a pull request that changes a workflow trigger, sets hooks in `.claude/settings.json`, adds a `postinstall` script and edits one source file (MERGE_CHECK.md in the openmoat repository)."}
   change={"In the Action, `fail-on: review` (the default), `deny` or `never`; `policy:` checks against a policy file in the repository, read as the pull request's base has it."}
   limits={"It reads the text a change adds, offline: a payload built from pieces at run time, a script the change does not touch, and a package's age or owner are not checked."}
-  related={[["Code that runs later", "/docs/runs-later/"], ["Team rules", "/docs/team-rules/"], ["Provenance", "/docs/see-what-happened/provenance/"]]}
+  related={[["Lockfiles", "/docs/check-a-pull-request/lockfiles/"], ["Code that runs later", "/docs/runs-later/"], ["Team rules", "/docs/team-rules/"], ["Provenance", "/docs/see-what-happened/provenance/"]]}
 />
 
 
@@ -92,10 +92,10 @@ deny    .github/workflows/greet.yml:12 [diff-ci-injection]
 
 | Area | Rule id | Level |
 |---|---|---|
-| Supply chain | `diff-package-near-miss`: a dependency one typo away from a popular one | review |
-| | `diff-install-script`: `package.json` sets `preinstall`, `install`, `postinstall` or `prepare` | review |
+| Supply chain | `diff-package-near-miss`: a dependency, or since 0.28.0 a lockfile entry, one typo away from a popular one | review |
+| | `diff-install-script`: `package.json` sets `preinstall`, `install`, `postinstall` or `prepare`, or since 0.28.0 a lockfile records an install script for a package | review |
 | | `diff-package-source`: a dependency or locked package from git, a URL or another host than its registry | review |
-| | `diff-lock-integrity`: a lockfile hash changed or removed while the version stays | deny |
+| | `diff-lock-integrity`: a lockfile hash changed or removed while the version stays (`go.sum` too, since 0.28.0) | deny |
 | CI takeover | `diff-ci-pr-target`: `pull_request_target` with a checkout of the pull request's code | deny |
 | | `diff-ci-permissions`: write permissions | review |
 | | `diff-ci-unpinned`: `uses:` without a full commit SHA | review |
@@ -109,6 +109,8 @@ deny    .github/workflows/greet.yml:12 [diff-ci-injection]
 | Secrets | `diff-private-key`: a PEM or PuTTY private key | deny (review in a test fixture or marked fake) |
 | | `diff-env-secret`: a real-looking value in a `.env` file | review |
 | Network | `diff-new-host`: one finding per new host your network allow list does not name | review |
+
+Since 0.28.0, lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `Cargo.lock`, `poetry.lock`, `uv.lock`, `go.sum`) get the same checks as direct dependencies, so a look-alike or an install script a dependency pulls in is flagged too: [Lockfiles in a pull request](/docs/check-a-pull-request/lockfiles/).
 
 ### Setting the levels
 

@@ -15,7 +15,7 @@ import FeatureTop from '../../../components/FeatureTop.astro';
   out={"# the project's test script, started as npm test inside the run\ncat \"$HOME/.ssh/id_rsa\"\n  macOS, openmoat run (Seatbelt)                 EPERM\n  Linux, openmoat run --no-isolate (Landlock)    EACCES\n  Linux, openmoat run --isolate (bubblewrap)     ENOENT\ncurl -fsS -o /dev/null -m 30 http://evil.example/\n  every tier                                     proxy 403"}
   outNote={"What the operating system answered, from the table below that CI checks on every pull request (EVIDENCE.md in the openmoat repository). ENOENT: the path does not exist inside the sandbox."}
   change={"`openmoat sandbox show` prints what your policy compiles to; run `openmoat sandbox sync` after `openmoat edit`. `sandbox.read_roots` lists what sandboxed commands may read beyond the rules."}
-  limits={"Claude Code's sandbox covers `Bash`, `PowerShell` and `Monitor`: file tools, `WebFetch` and MCP servers are checked by the hook only. `openmoat run` refuses on macOS 12 and earlier and on Windows."}
+  limits={"Claude Code's sandbox covers `Bash`, `PowerShell` and `Monitor`: file tools, `WebFetch` and MCP servers are checked by the hook only. `openmoat run` refuses on macOS 12 and earlier; on native Windows it is a preview."}
   related={[["openmoat run", "/docs/sandboxes/openmoat-run/"], ["Egress proxy", "/docs/egress-proxy/"], ["Scrubbed environment", "/docs/sandboxes/scrubbed-environment/"], ["Start agents sandboxed", "/docs/sandboxes/sandboxed-start/"], ["Protection score", "/docs/sandboxes/protection-score/"], ["Confine agents by default", "/docs/sandboxes/confine/"], ["Snapshots", "/docs/snapshots/"], ["Supported features", "/docs/supported-features/"]]}
 />
 
@@ -31,6 +31,12 @@ The hook decides each call, but an allowed `npm test` can run any code. So OpenM
 | The agent's own sandbox (Standard) | `openmoat init`, kept in step by `openmoat sandbox sync` | The commands the agent runs: Claude Code's `Bash`, `PowerShell` and `Monitor`; every Codex command; Cursor's terminal commands | Claude Code: macOS, Linux, WSL2. Codex: every OS. Cursor: macOS, Linux |
 | `openmoat run` (Lightweight) | `openmoat run -- <agent>` on macOS; on Linux where bubblewrap cannot start, or with `--no-isolate` | The whole agent and everything it starts, in one sandbox, with network only through OpenMoat's proxy | Seatbelt on macOS 13 or later; Landlock and seccomp on Linux 6.7 or later |
 | `openmoat run` (Isolated) | `openmoat run -- <agent>` on Linux where bubblewrap works (the default from 0.20.0); `--isolate` refuses without it | As above; the agent sees only the project, the read roots, its executable, the `--write` paths and an empty temp directory | Linux, with bubblewrap |
+| `openmoat run` on Windows (preview) | `openmoat run -- <agent>` on native Windows; `openmoat agent-account setup` once, from an administrator terminal, to hold reads and the network too (from 0.28.0) | Writes outside the project and the agent's processes; as the agent account also the reads your policy denies in your profile and every connection but the one to the proxy | Native Windows ([openmoat run on Windows](/docs/sandboxes/windows/)) |
+
+### The microVM tier: designed, not built
+
+A fourth tier, the agent on a kernel of its own in a lightweight virtual machine, is a design only (ADR-128). `openmoat run --vm -- <agent>` refuses on every system (exit 64) and starts nothing; it never falls back to another tier. The refusal names the VM monitor this system would use (Apple Virtualization.framework on macOS, KVM on Linux) or why it has none, and the tier's score, 0 of 100. Use `openmoat run -- <agent>` for the tiers above ([SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md#the-microvm-tier-design)).
+
 
 What `openmoat init` writes:
 
@@ -54,6 +60,11 @@ Since 0.27.0:
 
 - **Confine by default, at your yes.** `openmoat init` asks per hook-only agent whether typing its name should start it in `openmoat run`'s sandbox, with the score it has and would have (`hook only 0/100 → openmoat run 100/100`); the default is no. `openmoat confine` and `openmoat confine --off` change it later, and `openmoat status` shows each agent's score ([Confine agents by default](/docs/sandboxes/confine/)).
 - **OpenClaw's Gateway under `openmoat run --listen`**, on Linux with a network namespace only; macOS and Windows refuse `--listen` ([Confine agents by default](/docs/sandboxes/confine/#openclaw-under-openmoat-run---listen)).
+
+Since 0.28.0:
+
+- **Windows: the agent as its own account (preview).** After `openmoat agent-account setup`, once from an administrator terminal, `openmoat run` starts the agent as a local account of its own, so Windows also refuses the reads your policy denies in your profile and every connection but the one to the run's proxy; name lookups still leave the machine (a `dns` downgrade) ([openmoat run on Windows](/docs/sandboxes/windows/#run-the-agent-as-its-own-account-preview)).
+- **The microVM tier is a design**: `openmoat run --vm` refuses everywhere ([above](#the-microvm-tier-designed-not-built)).
 
 ## Example
 
@@ -100,6 +111,8 @@ Everything it does, and the Cursor CLI setup: [Run a whole agent with openmoat r
 | `openmoat run --print-boundary [--format json]` | Print the boundary a run would start with and start nothing (from 0.21.0) | `openmoat run --print-boundary -- claude` |
 | `openmoat confine <agent>… \| --all` · `--off` | Make typing a hook-only agent's name start it in `openmoat run`'s sandbox, or start it as before again (from 0.27.0). Terminal only | `openmoat confine gemini-cli` |
 | `openmoat run --listen PORT` | Let the agent serve one TCP port on loopback alone, such as OpenClaw's Gateway; Linux with a network namespace only (from 0.27.0) | `openmoat run --listen 18789 --write ~/.openclaw -- openclaw gateway` |
+| `openmoat agent-account setup` · `status` · `remove` | Windows: make, check or remove the local account `openmoat run` starts agents as, so Windows holds their reads and network (from 0.28.0, preview). Setup and remove from an administrator terminal | `openmoat agent-account status` |
+| `openmoat run --vm` | The microVM tier: a design, it refuses on every system and starts nothing (from 0.28.0) | `openmoat run --vm -- claude` |
 | `openmoat run --netns=require` | Refuse to start on Linux where the agent cannot get a network namespace, instead of restricting its network by port only | `openmoat run --netns=require -- claude` |
 
 `openmoat allow` and `openmoat secret add` update the agents' sandboxes for you. After `openmoat edit` or `openmoat policy upgrade`, run `openmoat sandbox sync`, then start a new agent session.
@@ -122,7 +135,7 @@ sandbox:
 - **Cursor runs some commands outside its sandbox**: when its Auto-review approves them, in Run Everything mode, and in the Cursor CLI without `--sandbox enabled`. Inside the workspace its sandbox cannot deny `.env` or `.git`.
 - **On Linux without bubblewrap, `openmoat run` cannot create anything directly at the project's top.** From 0.21.0 it grants the project entry by entry there, so `.env`, `.git` and `.moat` at the top stay covered; a `.env` in a subfolder or a nested `.git` stays open, and `sandbox.project_top: writable` opens the top again, on record ([Project files on Linux](/docs/sandboxes/project-files/)). Without bubblewrap, its network is restricted by port only and a `--write` path outside the project is refused.
 - **Under `openmoat run`, the project's `.git` is read-only** (macOS, and every Linux tier from 0.21.0), and agent configuration folders in the project cannot be written: commit, pull and install outside the run.
-- **`openmoat run` refuses on macOS 12 and earlier. On native Windows it is a preview that holds writes and the process tree only** (since 0.26.0), and Claude Code and Cursor get no sandbox from OpenMoat there: use WSL2 for the full boundary ([openmoat run on Windows](/docs/sandboxes/windows/)).
+- **`openmoat run` refuses on macOS 12 and earlier. On native Windows it is a preview** (since 0.26.0) that holds writes and the process tree, and, after `openmoat agent-account setup` (since 0.28.0), the reads your policy denies in your profile and the network but name lookups. Claude Code and Cursor get no sandbox from OpenMoat there: use WSL2 for the full boundary ([openmoat run on Windows](/docs/sandboxes/windows/)).
 - **Under `openmoat run`, the agent and its commands share one sandbox**: whatever the agent needs, `npm test` gets too.
 
 The details per agent: [SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md). More in [Limits](/docs/limits/).

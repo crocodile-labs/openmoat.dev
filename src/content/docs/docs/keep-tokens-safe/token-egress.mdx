@@ -23,7 +23,7 @@ Even without a brokered secret, `token-egress` denies a well-known token sent to
 
 Each with its subdomains. It is checked in a fetch or network tool's URL, an MCP URL argument, a web search, and the arguments of a command that connects to a host and of commands piped into it. Only these prefixed formats count, so commit SHAs, UUIDs and base64 data are never taken for a token. A self-hosted GitLab or GitHub Enterprise server is not the service's host; to send tokens there, narrow the rule with `openmoat edit` ([POLICY.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md)).
 
-It does not see a token in a file a command uploads (`curl -d @file`), a here-document, a variable whose value is not on the command line, or an encoded or split token.
+It does not see a token in a file a command uploads (`curl -d @file`), a here-document, a variable whose value is not on the command line, or a split token. Since 0.28.0, a token hidden by base64, hex, URL encoding or zero-width characters is held for review by `encoded-secret-egress` ([Secrets hidden by an encoding](/docs/keep-tokens-safe/encoded-secrets/)).
 
 <Aside type="note" title="Upgrading from 0.5.6 or earlier">
 

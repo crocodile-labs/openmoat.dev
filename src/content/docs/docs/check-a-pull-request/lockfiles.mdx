@@ -1,0 +1,61 @@
+---
+title: "Lockfiles in a pull request"
+description: "openmoat policy check-diff reads lockfiles as it reads direct dependencies: a look-alike package name, an install script the lockfile records and a go.sum hash changed for the same version, packages a dependency pulls in included."
+sidebar:
+  label: "Lockfiles"
+---
+
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+New in 0.28.0 (ADR-125). Nothing to turn on: `openmoat policy check-diff` and the GitHub Action read lockfiles from this release.
+
+<FeatureTop
+  does={"A manifest such as `package.json` names only your direct dependencies. A lockfile lists every package the install fetches, those a dependency pulls in included, so a look-alike package or a new install script can appear there alone, in a large generated diff a reviewer skims. `openmoat policy check-diff` now gives every new or changed lockfile entry the same checks as a direct dependency, from the lockfile's text, with no network."}
+  when={[["CI and pull requests", "/docs/solutions/ci-and-pull-requests/"]]}
+  cmd={"git diff origin/main | openmoat policy check-diff"}
+  outNote={"Reads any unified diff on stdin. A lockfile entry named `lodahs` with an install script gets `review` for `diff-package-near-miss` and `diff-install-script`, exit 3."}
+  change={"Set a rule to `deny`, `review` or `off` under `check_diff.levels` in the policy the check reads ([Setting the levels](/docs/check-a-pull-request/#setting-the-levels))."}
+  limits={"What a lockfile does not record is not checked: yarn and `Cargo.lock` keep no install-script flag, and pnpm 9 dropped `requiresBuild`. A package's age, and who publishes it, are not looked up."}
+  related={[["Check a pull request", "/docs/check-a-pull-request/"], ["Packages", "/docs/packages/"], ["CI and pull requests", "/docs/solutions/ci-and-pull-requests/"]]}
+/>
+
+**Protects against** a typo-squatted package (a name one typo or trick away from a popular one, such as `lodahs` for `lodash`) or a package that runs a script at install, slipped in through a dependency of a dependency, and a lockfile hash swapped so the next install accepts other code under the same version.
+
+## What it does
+
+The lockfiles read: `package-lock.json`, `npm-shrinkwrap.json`, `pnpm-lock.yaml`, `yarn.lock`, `Cargo.lock`, `poetry.lock`, `uv.lock` and, new in 0.28.0, `go.sum`.
+
+| Rule id | Level | In a lockfile, since 0.28.0 |
+|---|---|---|
+| `diff-package-near-miss` | review | a new or changed entry whose name is one typo or trick away from a popular package: `"node_modules/…/lodahs"`, a pnpm or yarn key (`expresss@4.19.2:`), `name = "serde_jsno"` in `Cargo.lock`, `poetry.lock` or `uv.lock`, a `go.sum` module; once per name per lockfile. The same lists and test as for a manifest |
+| `diff-install-script` | review | the lockfile records an install script for an entry, transitive ones included: `"hasInstallScript": true` in `package-lock.json`, `requiresBuild: true` in `pnpm-lock.yaml`. The reason names the package when its entry is part of the same added lines, and says "a locked package" otherwise |
+| `diff-lock-integrity` | deny | a hash changes while the package's version stays; for `go.sum`, new in 0.28.0, the same module and version with another `h1:` hash |
+| `diff-package-source` | review | as before: an entry resolved from git, plain http or a host that is not the registry |
+
+Everything is read from the lockfile's text in the change. No registry is asked for a package's scripts, its publisher or its age, so the same change gives the same report everywhere.
+
+## Try it
+
+Without `--base`, `check-diff` reads a unified diff on stdin, so no repository is needed and no file is written (nothing to undo):
+
+```bash
+printf '%s\n' '--- a/package-lock.json' '+++ b/package-lock.json' '@@ -0,0 +1,4 @@' \
+  '+    "node_modules/some-lib/node_modules/lodahs": {' \
+  '+      "version": "4.17.21",' \
+  '+      "hasInstallScript": true' \
+  '+    },' | openmoat policy check-diff
+# review  package-lock.json:1 [diff-package-near-miss]  locks the npm package `lodahs`, … `lodash` …
+# review  package-lock.json:3 [diff-install-script]     records an install script for `lodahs` …
+# exit 3
+```
+
+Exit 3 means review: a person should look before merging. On a real branch: `openmoat policy check-diff --base origin/main`. In GitHub, the [OpenMoat merge check](/docs/check-a-pull-request/#on-github) Action runs the same check.
+
+## Limits
+
+- **What a lockfile does not record is not checked.** yarn and `Cargo.lock` keep no install-script flag, and pnpm 9 dropped `requiresBuild`.
+- **Not every look-alike is a near miss.** A package that is the popular name itself in another registry, or a name far from every popular name, is not flagged.
+- **`go.sum` hashes**: Go's own checksum database refuses a changed hash only where it is consulted, not for `GOPRIVATE` or `GONOSUMDB` modules, nor with `GOSUMDB=off`; this check flags the change in the pull request either way.
+- **A finding is a report.** It holds a merge only where the job is a required status check.
+
+The rules in full: [MERGE_CHECK.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/MERGE_CHECK.md#supply-chain) and [ADR-125](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-125-lockfile-and-transitive-dependency-checks.md). More in [Limits](/docs/limits/).

@@ -1,6 +1,6 @@
 ---
 title: "openmoat run on Windows (preview)"
-description: "On native Windows, openmoat run starts the agent under a write-restricted token in a job object: writes outside the project and the agent's processes are held; reads and the network are not."
+description: "On native Windows, openmoat run holds the agent's writes and processes. After a one-time setup it starts the agent as its own local account, so Windows also refuses the reads your policy denies and every connection but the one to the run's proxy (preview)."
 sidebar:
   label: "openmoat run on Windows"
 ---
@@ -8,37 +8,88 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import FeatureTop from '../../../../components/FeatureTop.astro';
 
-Since 0.26.0; earlier releases refuse `openmoat run` on native Windows. This preview tier holds writes and the process tree, and nothing else: its [protection score](/docs/sandboxes/protection-score/) is 55 of 100.
+Since 0.26.0; earlier releases refuse `openmoat run` on native Windows. Both ways it starts are previews: no real agent has run under them yet.
+
+- **Without setup** (since 0.26.0), the agent runs as you, under a token that Windows checks on writes only. Writes outside the project and the agent's processes are held; reads and the network are not. Its [protection score](/docs/sandboxes/protection-score/) is 55 of 100.
+- **After `openmoat agent-account setup`** (since 0.28.0, once, from an administrator terminal), the agent runs as a local account of its own. Windows then also refuses its reads of the places your policy denies in your profile, and every connection but the one to the run's proxy. Name lookups still leave the machine (a `dns` downgrade, named in the run's record). The score is 100 of 100 with that downgrade named.
 
 <FeatureTop
-  does={"On native Windows `openmoat run` starts the program under a write-restricted token, in a job object, with the proxy variables pointing at the run's proxy. Writes outside the project, the run's temp directory and your `--write` paths are refused by Windows, and every process the agent starts ends with the run."}
-  whenText={"You run an agent on native Windows (not WSL2) and want the operating system to refuse its writes outside the project."}
-  cmd={"openmoat run --print-boundary -- claude"}
-  outNote={"Prints the plan without starting anything: score 55/100, and what is missing (`wfp_network`, `windows_read_deny`)."}
-  change={"Nothing to turn on: `openmoat run` on Windows starts this tier. `openmoat mcp wrap --sandbox` asks for it for an MCP server."}
-  limits={"Reads are not restricted, and the network is not held by the operating system: a program that ignores the proxy variables connects directly. Batch files (`.cmd`, `.bat`) are refused; start the agent's `.exe`."}
-  related={[["openmoat run", "/docs/sandboxes/openmoat-run/"], ["Protection score and strict mode", "/docs/sandboxes/protection-score/"], ["OS sandboxes and run", "/docs/sandboxes/"], ["Supported agents", "/docs/agents/"]]}
+  does={"On native Windows `openmoat run` starts the agent in a job object, so every process it starts ends with the run, and Windows refuses its writes outside the project. After `openmoat agent-account setup`, done once from an administrator terminal, it starts the agent as a local account made for agents: Windows then also refuses its reads of `~/.ssh`, other agents' logins and the other places your policy denies, and the Windows Filtering Platform (the network filter built into Windows) refuses every connection but the one to the run's proxy, whether or not a program honours `HTTP_PROXY`."}
+  whenText={"You run an agent on native Windows (not WSL2) and want the operating system, not only the hook, to keep it away from your keys and the network."}
+  cmd={"openmoat agent-account setup"}
+  outNote={"Once, from an administrator terminal (Terminal or PowerShell, \"Run as administrator\"). It creates the account `openmoat-<you>` and its network filters; granting the account read on your profile takes a while. Then `openmoat run -- claude` from any terminal."}
+  change={"`openmoat agent-account status` compares the system with what setup recorded (exit 1 when it differs); `openmoat agent-account remove`, from an administrator terminal, undoes all of it. Without setup, `openmoat run` holds writes only."}
+  limits={"Name lookups leave the machine through Windows' DNS Client service. Reads are refused only for the literal places the policy names in your profile: globs, places made later and places outside your profile stay the hook's. Without setup, reads and the network are not held at all."}
+  related={[["openmoat run", "/docs/sandboxes/openmoat-run/"], ["Protection score and strict mode", "/docs/sandboxes/protection-score/"], ["OS sandboxes and run", "/docs/sandboxes/"], ["Protection by agent and OS", "/docs/agents/protection/"]]}
 />
 
-**Protects against** code inside an allowed command (a test script, a build step, an install script) writing outside the project on native Windows: a planted file in your home, a changed `.git` at the project's top, or a process left running after the session.
+**Protects against** code inside an allowed command (a test script, a build step, an install script) on native Windows writing outside the project (a planted file in your home, a changed `.git` at the project's top) or leaving a process running after the session; and, with the agent account, reading your keys or other agents' logins, or connecting to a host past the proxy.
 
-## What it does
+## Run the agent as its own account (preview)
+
+New in 0.28.0. A token checked on writes only cannot refuse a read without refusing you too, and a network filter cannot pick out one run's processes while they run as you. Both work once the agent runs as a different user. So `openmoat agent-account setup` makes that user once, and every later `openmoat run` starts the agent as it, as long as `openmoat agent-account status` finds the system as setup left it (otherwise the run warns and holds writes only, as without setup).
+
+### Try it
+
+From an administrator terminal (Terminal or PowerShell, "Run as administrator"), once:
+
+```powershell
+openmoat agent-account setup       # creates openmoat-<you> and its network filters; granting it read on your profile takes a while
+```
+
+Then from any terminal, as before:
+
+```powershell
+openmoat run --print-boundary -- claude   # agent_account, job_object, wfp_network, windows_read_deny; 100/100, network wfp_account, downgrade dns
+openmoat run -- claude                    # "Windows preview tier, as the agent account (ADR-129)"
+openmoat run -- cmd /c type $HOME\.ssh\id_ed25519   # refused by Windows: Access is denied
+openmoat run -- curl.exe --noproxy * https://example.com   # refused by Windows: only the proxy is reachable
+openmoat run -- curl.exe https://example.com              # through the proxy, which decides it by your policy
+openmoat agent-account status             # matches its record, 8 filters; exit 1 when the system differs
+```
+
+`--print-boundary` prints the plan and starts nothing. In its output, `wfp_account` is the network held by the filters for this account, and the `dns` downgrade says that name lookups are not held (below).
+
+**Undo**, from an administrator terminal:
+
+```powershell
+openmoat agent-account remove      # deletes the filters, every access-list entry it and the runs added, the account and its profile
+```
+
+Setup and remove are for a person at a terminal: an agent cannot run them. When the [code gate](/docs/self-protection/loosening-gate/) is set up they ask for its code, and both are recorded with the other policy changes (`openmoat show --session policy-changes`). Without an administrator terminal, setup refuses and says to use one. On macOS and Linux both exit 64: `openmoat run` there needs no account.
+
+An account set up by a build from before the network filters keeps working at 70 of 100: `openmoat agent-account status` says it has no filters, and `openmoat agent-account setup` again, from an administrator terminal, adds them.
+
+### What the account may do
+
+| What | As the agent account |
+|---|---|
+| The account | a standard user taken out of every local group, so it holds only what `Authenticated Users`, `Everyone` and entries naming it grant; it may sign in only interactively (network, remote desktop, service and batch sign-in denied) and is hidden from the sign-in screen. Its random password is shown to no one and is kept encrypted for you with DPAPI (Windows' own per-user encryption) in `%USERPROFILE%\.moat\agent-account\` |
+| Your profile | one inherited entry lets the account read and run files in it. `%USERPROFILE%\.moat\` keeps its own access list, readable by you and `SYSTEM` alone, so the account cannot read it |
+| Writes | one write entry on the project, the run's temp directory and `--write` paths, and deny entries on the places held without the account (`.git`, `.moat`, …); everything else in your profile is read-only to it |
+| Reads | each read deny of your policy that names one place in your profile, or a write root, that exists when the run starts (`~/.ssh`, `~/.aws`, other agents' logins) gets a deny entry for the account, so Windows refuses the read. The running agent's own login is left out |
+| Network | Windows Filtering Platform filters refuse every connection and listen of the account's processes, whether or not a program honours `HTTP_PROXY`, but one to `127.0.0.1` or `::1` on a range of eight ports setup records; the run's proxy listens on the first free one. The record says `wfp_account`. `openmoat run --listen` stays refused |
+| Name lookups | **not held**: Windows' DNS Client service resolves names under its own account, so a lookup the agent asks for leaves the machine. The record names it as a `dns` downgrade |
+| Git | the project's files are yours, so the run marks the project as a safe directory for git |
+| Files the agent creates | owned by the account; you keep full access through the project's own entries |
+
+`netsh wfp show filters` lists the filters while they are there.
+
+## Without setup: writes and processes
 
 Windows checks a write twice under a write-restricted token: against your own account, and again against the token's restricting SIDs (`Everyone`, the logon session's, one for the agent's own objects, one per write root). Only the write roots grant their SID, so only they are writable.
 
-| What | On Windows |
+| What | On Windows, without the agent account |
 |---|---|
 | Writes outside the project, the run's temp directory and `--write` paths | refused by the token |
 | `.git`, `.moat`, the editors' and CI folders at the project's top | refused: a deny entry on each one that exists when the run starts, and `DELETE` denied on the folders above it |
 | The same names deeper in the project, globs (`*.code-workspace`), places made later | the hook's alone; `--verbose` names them |
 | Anything whose access list grants `Everyone` write | writable, as in Codex's Windows sandbox |
 | Reads | **not restricted**: secrets, other agents' logins and OpenMoat's state are readable to commands; every read deny rule is the hook's alone |
-| Network | **not held by the operating system**: `HTTP_PROXY`, `HTTPS_PROXY` and `ALL_PROXY` send programs that honour them through the run's proxy; the record says `proxy_variables` |
+| Network | **not held by the operating system**: `HTTP_PROXY`, `HTTPS_PROXY` and `ALL_PROXY` send programs that honour them through the run's proxy; one that ignores them connects directly. The record says `proxy_variables` |
 | Processes | the agent starts suspended with only its three standard handles, in a job no process may leave and that ends every process in it when the run ends |
 | Batch files | refused: `cmd.exe` reads a `.bat` or `.cmd` file's arguments by its own rules |
 | `--isolate` | refused: there is no Isolated tier on Windows |
-
-## Example
 
 ```powershell
 openmoat run --write $HOME\.claude -- claude          # the agent's .exe, not an npm .cmd shim
@@ -54,14 +105,19 @@ The first run in a folder adds one inherited entry for that folder's own SID (`S
 
 ## Hooks inside the run
 
-A hook the agent starts can read the state directory but not write the audit log. So the guard, when its own token is restricted, has the run decide the call; a variable or a setting cannot make a token restricted.
+A hook the agent starts can read the state directory but not write the audit log. So the guard has the run decide the call: without setup when its own token is restricted, and as the agent account when the token's user is the account setup registered (a value only an administrator can write). A variable or a setting cannot make either true.
 
 ## Limits
 
-- **A preview.** It holds writes and the process tree, and nothing else.
-- **Reads are open.** A command can read your keys, other agents' logins and OpenMoat's state; only the hook's read deny rules stand in the way.
-- **The network is advisory.** A program that ignores the proxy variables connects directly. `--netns=require` and `require.run: full-boundary` refuse to start, and `sandbox.strict: true` refuses every Windows run.
+- **A preview.** No real agent has run under either way yet.
+- **Without setup, reads are open and the network is advisory.** A command can read your keys, other agents' logins and OpenMoat's state; only the hook's read deny rules stand in the way. A program that ignores the proxy variables connects directly. `--netns=require` and `require.run: full-boundary` refuse to start, and `sandbox.strict: true` refuses such a run (55 of 100).
+- **With the account, name lookups leave the machine** through Windows' DNS Client service, so a name the agent looks up reaches the domain's name server (the `dns` downgrade).
+- **With the account, reads are refused for literal places in your profile only.** Globs, places made after the run started and places outside your profile (readable to any account through the system's own lists) stay the hook's; the run's report names them.
+- **Secrets in Windows Credential Manager** belong to you, not the account: an agent that keeps its login there signs in again.
+- **Programs of another local user** listening on the eight permitted ports are reachable to the account; the range is outside the ports common servers use.
+- **A command line longer than 1024 characters** is refused as the account.
+- **Setup changes the machine**: an account, two values under `HKLM\SOFTWARE\OpenMoat`, a persistent filtering provider, sublayer and eight filters, and an inherited read entry on your profile. `openmoat agent-account remove` undoes it.
 - **No tool-shell wrapper**: tool commands keep the hook relay token, and the record says so.
 - **MCP servers** started through `npx` (a batch file) are not put under this tier by `openmoat mcp wrap`; `--sandbox` asks for it.
 
-The details: [SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md#openmoat-run-on-windows-preview-writes-only). More in [Limits](/docs/limits/).
+The details: [SANDBOX.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/SANDBOX.md#as-the-agent-account-reads-and-the-network-held-too-preview-adr-129) and [ADR-129](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-129-windows-agent-account.md). More in [Limits](/docs/limits/).

@@ -21,7 +21,7 @@ You want to know, for your agent and your operating system, what checks its call
 - **hook: protected**: a real copy of the agent ran OpenMoat's hook for a tool call on that OS and OpenMoat's decision held, in a CI test or in the weekly run of the agents' latest releases.
 - **hook: preview**: `openmoat init` sets the hook up and its payloads are tested, but no real copy of the agent has been run with it on that OS yet.
 - **own sandbox: yes**: `openmoat init` writes the agent's own OS sandbox and a test runs commands under it; **preview**: it writes it, with no such test yet.
-- **`openmoat run`**: the tier it starts the agent in. Isolated on Linux where bubblewrap works, Lightweight on macOS ([Linux tiers](/docs/sandboxes/linux-tiers/)); on native Windows the Write-restricted tier, a preview: a write-restricted token in a job object, which holds writes outside the project and the agent's processes, not reads or the network ([openmoat run on Windows](/docs/sandboxes/windows/)).
+- **`openmoat run`**: the tier it starts the agent in. Isolated on Linux where bubblewrap works, Lightweight on macOS ([Linux tiers](/docs/sandboxes/linux-tiers/)); on native Windows the Write-restricted tier, a preview: a write-restricted token in a job object, which holds writes outside the project and the agent's processes, not reads or the network. Since 0.28.0, after `openmoat agent-account setup` (preview), the agent runs as its own local account and Windows also refuses its denied reads in your profile and every connection but the one to the run's proxy ([openmoat run on Windows](/docs/sandboxes/windows/#run-the-agent-as-its-own-account-preview)).
 
 ## Summary
 

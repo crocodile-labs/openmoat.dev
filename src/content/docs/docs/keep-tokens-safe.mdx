@@ -18,7 +18,7 @@ import FeatureTop from '../../../components/FeatureTop.astro';
   outNote={"A real run with the default policy: the agent cannot print the token. To broker it, run `openmoat secret add gh` in your own terminal: it brokers `GITHUB_TOKEN` for `api.github.com`, shows the change to your policy and asks before it applies it."}
   change={"`openmoat secret add <name> --host <host> --env <VAR>` brokers another service's token; `openmoat secret list` shows what is brokered."}
   limits={"HTTPS injection works through Claude Code's own sandbox broker, and inside `openmoat run` for a `tls: terminate` secret; elsewhere a request over HTTPS keeps the placeholder."}
-  related={[["Tokens sent to the wrong host", "/docs/keep-tokens-safe/token-egress/"], ["Where it works", "/docs/keep-tokens-safe/where-it-works/"], ["Minted credentials", "/docs/keep-tokens-safe/minted-credentials/"], ["Egress proxy", "/docs/egress-proxy/"], ["Secrets and .env files", "/docs/env-files/"], ["Scrubbed environment", "/docs/sandboxes/scrubbed-environment/"], ["Decoy keys", "/docs/env-files/decoy-keys/"]]}
+  related={[["Tokens sent to the wrong host", "/docs/keep-tokens-safe/token-egress/"], ["Hidden by an encoding", "/docs/keep-tokens-safe/encoded-secrets/"], ["Where it works", "/docs/keep-tokens-safe/where-it-works/"], ["Minted credentials", "/docs/keep-tokens-safe/minted-credentials/"], ["Egress proxy", "/docs/egress-proxy/"], ["Secrets and .env files", "/docs/env-files/"], ["Scrubbed environment", "/docs/sandboxes/scrubbed-environment/"], ["Decoy keys", "/docs/env-files/decoy-keys/"]]}
 />
 
 
@@ -77,6 +77,8 @@ An agent that can read a token can send it anywhere a prompt injection tells it 
 
 Even without a brokered secret, `token-egress` denies a well-known token (GitHub, OpenAI, Anthropic, AWS, Slack, Google, npm, GitLab) sent to a host that is not its service's, allowed hosts included: a GitHub token to `registry.npmjs.org` is denied, to `api.github.com` it is not. Each token's hosts, and what it does not see: [Tokens sent to the wrong host](/docs/keep-tokens-safe/token-egress/).
 
+Since 0.28.0, after `openmoat policy upgrade`: a token or credential hidden by URL encoding, base64, hex or zero-width characters is decoded and held for review on its way to another host (`encoded-secret-egress`), and so is a host whose name carries encoded data (`hostname-data`): [Secrets hidden by an encoding, and data in host names](/docs/keep-tokens-safe/encoded-secrets/).
+
 ## Another service
 
 Add the secret, and allow its host: a secret opens nothing by itself.
@@ -130,7 +132,7 @@ A secret opens no host: its host still needs a `net` or `fetch` allow rule. `ope
 ## Limits
 
 - **HTTPS injection works through Claude Code's own sandbox broker, and inside `openmoat run` for a `tls: terminate` secret.** Through the standalone `openmoat proxy` and the other agents' sandboxes a request over HTTPS keeps the placeholder, and the server rejects it ([above](#where-it-works-today)).
-- **`token-egress` sees only prefixed token formats where the hook sees them**: not a token in an uploaded file, a here-document, a variable not on the command line, or an encoded or split token.
+- **`token-egress` sees only prefixed token formats where the hook sees them**: not a token in an uploaded file, a here-document, a variable not on the command line, or a split token. A token hidden by an encoding is held for review since 0.28.0, not denied ([Secrets hidden by an encoding](/docs/keep-tokens-safe/encoded-secrets/#limits)).
 - **A variable you export before starting the agent** is still passed to the programs it runs, unless it is brokered under `openmoat run`.
 
 More in [Limits](/docs/limits/).
