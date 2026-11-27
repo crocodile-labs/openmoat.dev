@@ -1,0 +1,23 @@
+---
+title: "OpenMoat 0.30.0"
+description: "OpenMoat decides faster with the same answers, by building each policy pattern's matcher only when a call first needs it, and matches home, project and moved directory names literally, so a project whose path holds a glob character gets its ${project} rules."
+sidebar:
+  label: "0.30.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-27. [GitHub release v0.30.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.30.0).
+
+<Aside type="caution" title="Upgrading">
+
+Update every `openmoat` on the machine together (a Homebrew install beside a `cargo install`, say), then run `openmoat doctor` in your own terminal: it names a hook that still runs another binary. There is nothing else to run. The audit log stays at schema version 13, so an older `openmoat` beside the new one still opens it. The default policy is unchanged, so `openmoat policy upgrade` has nothing new to offer. All the steps: [Upgrade](/docs/upgrade/#what-each-release-needs).
+
+</Aside>
+
+- **Home, project and moved directory names matched literally.** When a rule names `~`, `${project}` or a moved agent directory (one that `MOAT_HOME`, `CLAUDE_CONFIG_DIR`, `CODEX_HOME` or `CURSOR_CONFIG_DIR` points elsewhere), a name holding `*`, `?`, `[`, `]`, `{`, `}` or `,` is now matched as written. Before, such a name was read as a wildcard that could match other directories: `${project}/**` for a project at `/w/a*b` now matches `/w/a*b/x` and not `/w/aXb/x`. A `\` in such a name is read as `/`, as in every path a rule is matched against. A project whose path holds one of these characters now gets the rules that name `${project}`, which before matched nothing for it, and such a home no longer stops the policy from compiling. A name without these characters is matched as before. To see what a command gets in such a project: `openmoat policy check --project '<dir>' '<command>'`. [Names with glob characters](/docs/policy-file/patterns/#names-with-glob-characters) ([#881](https://github.com/crocodile-labs/openmoat/pull/881))
+- **Faster decisions, with the same answers.** `openmoat guard`, the command each agent's hook runs before a tool call, compiles the policy for every call. It now builds each pattern's matcher only when a call first needs it, instead of all of them up front: a call uses at most a few of the 1,300 or more globs the default policy spells. A pattern that could fail to build is still built up front, so a bad pattern fails as before, and should a matcher built later fail anyway, every decision of that call is the same `kernel-error` deny a compile error gives. A pattern is also spelled once per home directory spelling only when it names `~`, and once per project spelling only when it names `${project}`. No decision or error changes. Measured with `openmoat bench` on one developer Mac, ordinary work went from p50 77 ms, p95 123 ms and p99 193 ms on 0.29.0 to 41, 67 and 109 ms, and its `compile` phase from 36.9 to 8.7 ms. These are that one machine's figures, not a promise: your times depend on the machine and its load. [Benchmarks](/docs/benchmarks/) ([#882](https://github.com/crocodile-labs/openmoat/pull/882))
+- **`openmoat bench` uses the resolved temporary directory** (`/private/var/…` on macOS) for its throwaway home, so the home has one spelling and the `compile` phase it reports is what a guard in an ordinary home pays.
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0300---2026-11-27).
