@@ -1,0 +1,24 @@
+---
+title: "OpenMoat 0.29.0"
+description: "OpenMoat decides faster with the same answers, shows how long each phase of a decision takes in openmoat audit stats and openmoat bench, and says what to do when your authenticator app no longer has OpenMoat's entry."
+sidebar:
+  label: "0.29.0"
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Released 2026-11-27. [GitHub release v0.29.0](https://github.com/crocodile-labs/openmoat/releases/tag/v0.29.0).
+
+<Aside type="caution" title="Upgrading">
+
+Update every `openmoat` on the machine together (a Homebrew install beside a `cargo install`, say). The audit log moves to schema version 13, which the new build adds the first time it opens the log; an older `openmoat` then refuses the log ("audit database schema version 13 is newer than this build supports") and its hook denies every call. Restart a running `openmoat proxy`, `openmoat approvals listen` and any agent with a wrapped MCP server, so no process of the older build is left, then run `openmoat doctor` in your own terminal: it names a hook that still runs another binary. The default policy is unchanged, so `openmoat policy upgrade` has nothing new to offer. All the steps: [Upgrade](/docs/upgrade/#what-each-release-needs).
+
+</Aside>
+
+- **Faster decisions, with the same answers.** `openmoat guard`, the command each agent's hook runs before a tool call, now builds only the patterns a call needs: the policy's globs once each, shared by every rule that names the same text, and the audit log's credential patterns only when a text could hold a match. Loading a policy also reads the file once instead of twice. No decision or error changes. Measured with `openmoat bench` on one developer Mac, ordinary work went from p50 102 ms, p95 192 ms and p99 260 ms on 0.28.0 to 87, 123 and 156 ms, and reading the session's earlier calls from 22.7 to 10.9 ms. These are that one machine's figures, not a promise: your times depend on the machine and its load. [Benchmarks](/docs/benchmarks/)
+- **Where the guard's time goes.** Each call's audit row records how long the guard spent in each of its phases (reading the call, the lock check, loading and compiling the policy, deciding, reading the session's earlier calls, the session cache, the audit write), in microseconds. `openmoat audit stats` prints p50, p95 and p99 per phase, in text and `--format json`, and `openmoat bench` prints each phase's p50 and p95 for its ordinary work. Only durations and the phase names are recorded; a deadline's deny names the phase it was in. [Where the guard's time goes](/docs/see-what-happened/guard-time/)
+- **If your authenticator app no longer has OpenMoat's entry.** The [gate](/docs/self-protection/loosening-gate/) (`openmoat gate setup`, which makes loosening commands ask for a code) no longer assumes the app is on a phone, and `openmoat gate --help`, `openmoat gate setup` and a wrong code's refusal now say the way back: delete `~/.moat/audit.key.gate` and `~/.moat/gate.json` in your own terminal, which turns the gate off, then run `openmoat gate setup` again if you want it. [If you can no longer get a code](/docs/self-protection/loosening-gate/#if-you-can-no-longer-get-a-code)
+- **Changed wording:** the docs and messages say "readable by your account alone" for files only your account can read. The docs no longer say Windows `openmoat run` holds writes only without naming the agent account, which holds reads and the network too ([openmoat run on Windows](/docs/sandboxes/windows/)), and the limits say the MCP flow check also reads remote servers added with `openmoat mcp login`.
+
+All changes, with their pull requests: [CHANGELOG](https://github.com/crocodile-labs/openmoat/blob/main/CHANGELOG.md#0290---2026-11-27).

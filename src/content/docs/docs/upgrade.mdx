@@ -109,6 +109,13 @@ Until you do, the old hooks keep working through `moat`. `openmoat doctor` says 
 
 ## What each release needs
 
+**To [0.29.0](/docs/releases/v0-29-0/), from 0.28.0:**
+
+- **Update every `openmoat` on the machine together.** The audit log moves to schema version 13 (a `phases_us` column, which holds each call's time per guard phase); the new build adds it the first time it opens the log, with nothing to run. An older `openmoat` then refuses the log ("audit database schema version 13 is newer than this build supports") and its hook denies every call, so a Homebrew install beside a `cargo install`, say, must move together ([Keep one OpenMoat installed](#keep-one-openmoat-installed)).
+- **Restart what keeps running:** a running `openmoat proxy`, `openmoat approvals listen` and any agent with a wrapped MCP server, so that no process of the older build is left. Then run `openmoat doctor` in your own terminal: it names a hook that still runs another binary.
+- **The default policy is unchanged**, so `openmoat policy upgrade` has nothing new to offer.
+- **New, nothing to turn on:** decisions are faster with the same answers, and `openmoat audit stats` shows the time per guard phase for calls recorded after the upgrade ([Where the guard's time goes](/docs/see-what-happened/guard-time/)).
+
 **To [0.28.0](/docs/releases/v0-28-0/), from 0.27.0:**
 
 - **`openmoat policy upgrade`** offers the new default rules: `encoded-secret-egress` holds a token or credential sent hidden by an encoding (URL encoding, base64, hex, zero-width characters), `hostname-data` holds encoded data in the name of a host no allow rule lists ([Secrets hidden by an encoding](/docs/keep-tokens-safe/encoded-secrets/)), the `data-flow` review holds an MCP tool that acts after another MCP server's result ([Data labels by source](/docs/session-taint/data-labels/), preview), and `kernel-self` also keeps agents away from `openmoat mcp login` and its token folder. From the 0.27.0 default it only narrows. To see what a URL gets: `openmoat policy check --kind fetch '<url>'`.

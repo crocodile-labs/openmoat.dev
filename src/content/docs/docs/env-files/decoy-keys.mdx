@@ -29,7 +29,7 @@ import FeatureTop from '../../../../components/FeatureTop.astro';
 | `~/.git-credentials.bak` | a GitHub token in a git credential URL | nothing is at that name |
 | `~/.npmrc.bak` | an npm token | nothing is at that name |
 
-- **Never over a real file.** Each decoy is created only where nothing is at its name, owner-only; it never replaces, appends to or follows a link to anything. No real file is read, changed or replaced.
+- **Never over a real file.** Each decoy is created only where nothing is at its name, readable by your account alone; it never replaces, appends to or follows a link to anything. No real file is read, changed or replaced.
 - **Not where tools load keys.** The standard paths (`~/.aws/credentials`, `~/.git-credentials`, `~/.npmrc`) are loaded by the AWS tools, git and npm on their own, so a fake key there would change what your tools do. A `.bak` beside the real file is what a key hunter finds, and no program reads it unasked. The standard paths stay denied by `secrets-paths`.
 - **You can tell them apart.** Each key has the shape key scanners look for and carries `OpenMoatDecoy` (`OPENMOATDECOY` in the AWS key id, and the git login `openmoat-decoy`); the rest is random per install, so a value seen on the wire is this machine's.
 - **Agents may not read which files are decoys.** The record, `~/.moat/canaries.json`, is pinned by the policy lock and denied to agents (`kernel-self`).

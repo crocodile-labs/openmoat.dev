@@ -24,7 +24,9 @@
 // The rows from Windows agent account on came with 0.28.0, from ADR-122 to ADR-129,
 // docs/USAGE.md ("Run the agent as its own Windows account", "Remote MCP servers"),
 // POLICY.md §4.7 and §6, MERGE_CHECK.md "Supply chain", SANDBOX.md, LIMITS.md and
-// INSTALL.md "From 0.27.0 to 0.28.0".
+// INSTALL.md "From 0.27.0 to 0.28.0". The row Time per guard phase came with 0.29.0,
+// from ADR-130, docs/USAGE.md ("audit stats: time per guard phase"), DISTURBANCE.md and
+// INSTALL.md "From 0.28.0 to 0.29.0".
 import { agents } from './agents';
 
 type Extra = { hooks: string; injected: string | null; written: string | null; liveness: string | null; start: string | null };
@@ -93,4 +95,5 @@ export const byFeature: { name: string; href: string; where: string }[] = [
   { name: 'Data labels by source (preview)', href: '/docs/session-taint/data-labels/', where: 'Every agent’s sessions; only where a deny or review rule names the flow. The default <code>data-flow</code> review, after <code>openmoat policy upgrade</code>, names one: an MCP tool that acts after another server’s result (since 0.28.0).' },
   { name: 'Remote MCP servers (preview)', href: '/docs/mcp-servers/remote-servers/', where: 'Streamable HTTP servers you name with <code>openmoat mcp login</code> and point the agent’s configuration at <code>openmoat mcp remote</code>; not a remote server the agent reaches directly. No OAuth sign-in yet (since 0.28.0).' },
   { name: 'Lockfiles in the merge check', href: '/docs/check-a-pull-request/lockfiles/', where: '<code>openmoat policy check-diff</code> and the GitHub Action: <code>package-lock.json</code>, <code>pnpm-lock.yaml</code>, <code>yarn.lock</code>, <code>Cargo.lock</code>, <code>poetry.lock</code>, <code>uv.lock</code> and <code>go.sum</code> (since 0.28.0).' },
+  { name: 'Time per guard phase', href: '/docs/see-what-happened/guard-time/', where: 'Every agent’s calls recorded in the audit log: <code>openmoat audit stats</code> prints p50, p95 and p99 per phase, and <code>openmoat bench</code> each phase’s p50 and p95 for its ordinary work. Calls recorded before the upgrade have none (since 0.29.0).' },
 ];

@@ -28,14 +28,12 @@ const three = [
 // Each release also updates: the NEW line below (its link and text), the footer's version
 // (components/SiteFooter.astro), data/features.ts, and the docs' release and upgrade pages.
 const newest = {
-  version: '0.28.0',
-  href: '/docs/releases/v0-28-0/',
+  version: '0.29.0',
+  href: '/docs/releases/v0-29-0/',
   items: [
-    { name: 'Windows: the agent as its own account (preview)', does: 'Windows itself refuses the agent’s reads of your keys and every connection but OpenMoat’s proxy, not only its writes.', cmd: 'openmoat agent-account setup', href: '/docs/sandboxes/windows/#try-it' },
-    { name: 'Secrets hidden by an encoding', does: 'A token sent in base64, hex or URL encoding, or data packed into a host name, is held for you.', cmd: "openmoat policy check --kind fetch '<url>'", href: '/docs/keep-tokens-safe/encoded-secrets/#try-it' },
-    { name: 'Data labels by source (preview)', does: 'One MCP server’s data sent through another server’s tool is held, however the model reworded it.', cmd: "openmoat policy check '@data-flow mcp:tickets mcp-send mcp:slack'", href: '/docs/session-taint/data-labels/#try-it' },
-    { name: 'Remote MCP servers (preview)', does: 'A remote MCP server goes through OpenMoat’s gateway, and the agent never holds its token.', cmd: 'openmoat mcp login <server> --url <url>', href: '/docs/mcp-servers/remote-servers/#try-it' },
-    { name: 'Lockfiles in a pull request', does: 'A look-alike package or a new install script is flagged, even when a dependency pulls it in.', cmd: 'openmoat policy check-diff --base origin/main', href: '/docs/check-a-pull-request/lockfiles/#try-it' },
+    { name: 'Faster decisions, the same answers', does: 'On one developer Mac, the median check went from 102 to 87 ms, and the time 95 checks in 100 stay under from 192 to 123 ms.', cmd: 'openmoat bench', href: '/docs/see-what-happened/guard-time/#the-same-line-in-openmoat-bench' },
+    { name: 'Where the guard’s time goes', does: 'Each check’s time, split by step: the lock check, loading and compiling the policy, deciding, the session, the audit write.', cmd: 'openmoat audit stats', href: '/docs/see-what-happened/guard-time/#try-it' },
+    { name: 'If you can no longer get a code', does: 'Your authenticator app lost OpenMoat’s entry: delete the gate’s two files in your own terminal, then set it up again.', cmd: 'openmoat gate --help', href: '/docs/self-protection/loosening-gate/#if-you-can-no-longer-get-a-code' },
   ],
 };
 const os = [
@@ -50,7 +48,7 @@ const os = [
 
   <section class="hero wrap">
     <div class="hero-text">
-      <a class="release" href="/docs/releases/v0-28-0/"><span class="new">NEW</span> 0.28.0: OpenMoat now holds secrets hidden by an encoding, and on Windows can keep an agent from your keys and the network (preview) →</a>
+      <a class="release" href="/docs/releases/v0-29-0/"><span class="new">NEW</span> 0.29.0: OpenMoat now decides faster with the same answers, and shows where each check’s time goes →</a>
       <h1 class="display">Your AI agents,<br><span class="under">checked first.<svg viewBox="0 0 300 18" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12 Q75 2 150 10 T298 8" stroke="#f0a93b" stroke-width="6" fill="none" stroke-linecap="round"></path></svg></span></h1>
       <p class="lead">OpenMoat sits between your coding agent and your machine. It checks each call before it runs: your work goes through, reading your keys does not.</p>
       <div class="ctas">

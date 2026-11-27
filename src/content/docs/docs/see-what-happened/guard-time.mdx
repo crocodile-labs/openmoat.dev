@@ -1,0 +1,101 @@
+---
+title: "Where the guard's time goes"
+description: "openmoat audit stats prints how long openmoat guard spent in each of its phases, at p50, p95 and p99, from your own audit log; openmoat bench prints the same for its ordinary work. Only durations and phase names are recorded."
+sidebar:
+  label: "Where the time goes"
+---
+
+import FeatureTop from '../../../../components/FeatureTop.astro';
+
+New in 0.29.0 (ADR-130). Nothing to turn on: every call recorded after the upgrade carries its phase times.
+
+<FeatureTop
+  does={"Each time an agent is about to make a tool call, its hook runs `openmoat guard`, which decides the call and records it in the audit log. The guard works in steps, called phases here: reading the call, checking the policy lock, loading and compiling the policy, deciding, reading the session's earlier calls, writing the audit log. Each call's audit row now records how long each phase took, and `openmoat audit stats` prints them, so when a decision is slow you can see which step the time went to."}
+  whenText={"When an agent feels slow under OpenMoat, before you report it, or to compare two machines or two releases."}
+  cmd={"openmoat audit stats"}
+  outNote={"After the per-agent table, a table of the time per guard phase for the calls in the window (the last 7 days by default). It reads the log only and sends nothing."}
+  change={"Pick the window with `--since` and `--until`, one agent with `--host <agent>`, and `--format json` for a script. Nothing to switch off: only durations and the phase names are stored."}
+  limits={"Calls recorded before 0.29.0 have no phase times. The times are your machine's and depend on its load. The phase that writes the audit row cannot hold the time of its own write."}
+  related={[["Audit log, watch and why", "/docs/see-what-happened/"], ["A slow check is denied", "/docs/hook-deadline/"], ["Benchmarks", "/docs/benchmarks/"]]}
+/>
+
+## Try it
+
+In your own terminal (an agent's sandbox may block reading the audit log), after the agents have made a few calls with 0.29.0:
+
+```bash
+openmoat audit stats                       # the last 7 days, per agent and over all, then the time per phase
+openmoat audit stats --since today         # a shorter window (all, today, yesterday, 12h, 7d, 2w or YYYY-MM-DD)
+openmoat audit stats --host claude-code    # one agent
+openmoat audit stats --format json         # the same figures for a script, in microseconds
+```
+
+The phase table, as [USAGE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/USAGE.md#audit-stats-time-per-guard-phase) shows it:
+
+```text
+time per guard phase, all calls in the table (`record` counts up to the row's write):
+  phase      calls  p50 ms  p95 ms  p99 ms
+  stdin          4     0.1     0.1     0.1
+  parse          4     0.4     0.5     0.5
+  lock           4     4.0     8.0     8.0
+  placed         4     0.6     0.7     0.7
+  context        4     3.0     3.4     3.4
+  policy         4     5.0     5.6     5.6
+  secrets        4     0.1     0.1     0.1
+  snapshot       4     0.3     0.3     0.3
+  compile        4     9.0     9.0     9.0
+  decide         4     2.0     2.4     2.4
+  audit          4     1.0     1.2     1.2
+  taint          4     2.5     3.1     3.1
+  record         4     1.5     1.5     1.5
+```
+
+`calls` is how many calls went through the phase. p50 is the median: half the calls took this long or less; p95 and p99 are the times 95 and 99 calls in 100 stayed under, so they show the slow calls. In `--format json` the same figures are under `phases`, in `overall` and in each agent, as `p50_us`, `p95_us`, `p99_us` and `max_us` (microseconds).
+
+Nothing is written, so there is nothing to undo.
+
+## The same line in `openmoat bench`
+
+`openmoat bench` sends OpenMoat's bundled test scenarios (MoatBench) to `openmoat guard` as each agent's hook would, in a throwaway home, and ends with figures for its ordinary work: everyday development steps, not attacks. From 0.29.0 that part adds one line with each phase's p50 and p95 in microseconds:
+
+```bash
+openmoat bench
+# … by guard phase (p50/p95 µs): stdin 80/120, lock 900/2400, …
+```
+
+`openmoat bench --format json` has the same as `ordinary_work.overall.phases`. CI runs `openmoat bench` on Linux, macOS and Windows on every change, so each run shows where the decision time went on that runner. Run it on your machine to compare with your own `openmoat audit stats`.
+
+## What each phase covers
+
+In the order the guard runs them:
+
+| Phase | What it covers |
+|---|---|
+| `stdin` | reading the tool call the hook was handed |
+| `relay` | waiting for `openmoat run` to decide, for an agent started under it |
+| `parse` | parsing the call and finding OpenMoat's state directory |
+| `lock` | checking the policy lock: the digests `openmoat init` recorded of your policy and the agents' hook files |
+| `placed` | placing the call's paths and agent, and checking its MCP server's pin |
+| `context` | loading the call's project, home and search path, and the decoy keys |
+| `policy` | loading your policy with the project's |
+| `secrets` | reading the secret values to mask, and the required protection level |
+| `snapshot` | loading the search path snapshot `openmoat init` took |
+| `compile` | compiling the policy |
+| `decide` | deciding the call: resolving its paths and programs on disk, and the project settings check |
+| `audit` | opening the audit log |
+| `taint` | reading the session's earlier calls ([session taint](/docs/session-taint/)) |
+| `approval` | waiting for an approver on another device ([remote approvals](/docs/remote-approvals/)) |
+| `cache` | writing the session cache |
+| `record` | writing the audit log, up to the moment the row is written |
+
+A call shows only the phases it went through. A call denied because it ran out of time names the phase it was in ([A slow check is denied](/docs/hook-deadline/)).
+
+## Limits
+
+- **Calls from before 0.29.0 have no phase times.** Until new calls are recorded, the phase table is missing.
+- **Rows from a build with the first, coarser split** carry fewer names (`stdin`, `lock`, `context`, `compile`, `taint`, `approval`, `cache`, `record`) and are counted under those names, so a window with both kinds shows a wider `lock` or `compile`.
+- **`record` stops at the row's write**, since a row cannot hold the time of its own write.
+- **The times are your machine's,** and change with its load. They are measurements, not a promise.
+- **Only durations and the fixed phase names are recorded,** nothing from the call.
+
+What each number in `openmoat audit stats` means: [DISTURBANCE.md](https://github.com/crocodile-labs/openmoat/blob/main/docs/DISTURBANCE.md#what-each-number-means). The design: [ADR-130](https://github.com/crocodile-labs/openmoat/blob/main/docs/adr/ADR-130-guard-phase-times.md). More in [Limits](/docs/limits/).

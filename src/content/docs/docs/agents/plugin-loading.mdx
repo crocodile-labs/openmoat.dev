@@ -20,7 +20,7 @@ goose also runs OpenMoat from a plugin, but its plugin is a `hooks.json` file wi
 
 ## What it does
 
-OpenMoat's plugin runs `openmoat guard --heartbeat --host <id>` as the agent loads it. That records the time in `loaded/<id>.json` in OpenMoat's state directory: owner-only, holding the agent, the time and the OpenMoat release, nothing else. Under the agent's hook line, `openmoat status` and `openmoat doctor` then print one of:
+OpenMoat's plugin runs `openmoat guard --heartbeat --host <id>` as the agent loads it. That records the time in `loaded/<id>.json` in OpenMoat's state directory, readable by your account alone and holding the agent, the time and the OpenMoat release, nothing else. Under the agent's hook line, `openmoat status` and `openmoat doctor` then print one of:
 
 | Line | Means |
 |---|---|
