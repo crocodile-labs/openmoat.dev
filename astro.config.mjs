@@ -118,7 +118,7 @@ export default defineConfig({
           sub('MCP pinning, gateway and browsers', 'mcp-servers', ['tool-pinning', 'gateway', 'cross-server', 'browser-pages', 'protocol-2026-07-28', 'remote-servers']),
           sub('Session taint', 'session-taint', ['data-labels']), ['Private data and a way out', 'lethal-trifecta'], 'injected-input',
           sub('Code the agent wrote', 'session-written-code', ['opaque-code']), 'runs-later', sub('Self-protection and lock', 'self-protection', ['loosening-gate']), ['Is my agent still protected?', 'hook-liveness'], ['A slow check is denied', 'hook-deadline'], 'other-hooks', 'snapshots',
-          sub('Audit log, watch and why', 'see-what-happened', ['watch-and-why', 'provenance', 'siem-delivery', 'signed-checkpoints']),
+          sub('Audit log, watch and why', 'see-what-happened', ['watch-and-why', 'provenance', 'siem-delivery', 'signed-checkpoints', 'guard-time']),
           sub('Merge check', 'check-a-pull-request', ['lockfiles']),
           sub('Team rules and packs', 'team-rules', ['repository-policy', 'policy-packs', 'required-protection', 'team-mode']),
           'compliance-evidence', 'auto-approve-and-ci', 'remote-approvals', 'sdk']),
@@ -135,7 +135,7 @@ export default defineConfig({
         {
           label: 'Releases',
           collapsed: true,
-          items: ['docs/releases', ...['v0-28-0', 'v0-27-0', 'v0-26-0', 'v0-25-0', 'v0-24-0', 'v0-23-1', 'v0-23-0', 'v0-22-1', 'v0-22-0', 'v0-21-0', 'v0-20-0', 'v0-19-0', 'v0-18-0', 'v0-17-0', 'v0-16-0', 'v0-15-0', 'v0-14-0', 'v0-13-0', 'v0-12-1', 'v0-12-0', 'v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
+          items: ['docs/releases', ...['v0-29-0', 'v0-28-0', 'v0-27-0', 'v0-26-0', 'v0-25-0', 'v0-24-0', 'v0-23-1', 'v0-23-0', 'v0-22-1', 'v0-22-0', 'v0-21-0', 'v0-20-0', 'v0-19-0', 'v0-18-0', 'v0-17-0', 'v0-16-0', 'v0-15-0', 'v0-14-0', 'v0-13-0', 'v0-12-1', 'v0-12-0', 'v0-11-0', 'v0-10-1','v0-10-0', 'v0-9-0', 'v0-8-0', 'v0-7-0', 'v0-6-0', 'v0-5', 'v0-1-to-0-4']
             .map((v) => `docs/releases/${v}`)],
         },
       ],
