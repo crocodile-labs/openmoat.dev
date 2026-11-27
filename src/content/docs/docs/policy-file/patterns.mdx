@@ -20,4 +20,14 @@ Flags are compared as written: `rm -rf ~` does not match `rm -fr ~`. Guard the p
 
 `${project}` stands for whichever project the call runs in, so a rule with it applies in every project. To make a rule hold for one project only, name its path (`~/work/app/deploy/**`); see [Rules for one project](/docs/your-projects/#your-own-rules-for-one-project).
 
+## Names with glob characters
+
+`~`, `${project}` and a moved agent directory (one that `MOAT_HOME`, `CLAUDE_CONFIG_DIR`, `CODEX_HOME` or `CURSOR_CONFIG_DIR` points elsewhere) are put into a pattern as the folder's name, matched as written. Since [0.30.0](/docs/releases/v0-30-0/), a name holding `*`, `?`, `[`, `]`, `{`, `}` or `,` is not read as a wildcard: for a project at `/w/a*b`, `${project}/**` matches `/w/a*b/x` and not `/w/aXb/x`. A `\` in such a name is read as `/`, as in every path a rule is matched against. Before 0.30.0, the rules naming `${project}` matched nothing in such a project, and such a home stopped the policy from compiling.
+
+To see what a command gets in such a project, with `<dir>` the project's folder (quoted, so your shell does not expand its characters):
+
+```sh
+openmoat policy check --project '<dir>' --cwd '<dir>' 'cat README.md'
+```
+
 The full syntax, shell pipelines included: [POLICY.md §3](https://github.com/crocodile-labs/openmoat/blob/main/docs/POLICY.md#3-pattern-syntax).

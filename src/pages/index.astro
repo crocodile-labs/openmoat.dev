@@ -28,12 +28,11 @@ const three = [
 // Each release also updates: the NEW line below (its link and text), the footer's version
 // (components/SiteFooter.astro), data/features.ts, and the docs' release and upgrade pages.
 const newest = {
-  version: '0.29.0',
-  href: '/docs/releases/v0-29-0/',
+  version: '0.30.0',
+  href: '/docs/releases/v0-30-0/',
   items: [
-    { name: 'Faster decisions, the same answers', does: 'On one developer Mac, the median check went from 102 to 87 ms, and the time 95 checks in 100 stay under from 192 to 123 ms.', cmd: 'openmoat bench', href: '/docs/see-what-happened/guard-time/#the-same-line-in-openmoat-bench' },
-    { name: 'Where the guard’s time goes', does: 'Each check’s time, split by step: the lock check, loading and compiling the policy, deciding, the session, the audit write.', cmd: 'openmoat audit stats', href: '/docs/see-what-happened/guard-time/#try-it' },
-    { name: 'If you can no longer get a code', does: 'Your authenticator app lost OpenMoat’s entry: delete the gate’s two files in your own terminal, then set it up again.', cmd: 'openmoat gate --help', href: '/docs/self-protection/loosening-gate/#if-you-can-no-longer-get-a-code' },
+    { name: 'Faster decisions, the same answers', does: 'Each pattern’s matcher is built only when a check first needs it. On one developer Mac, the median check went from 77 to 41 ms, and the time 95 checks in 100 stay under from 123 to 67 ms.', cmd: 'openmoat bench', href: '/docs/see-what-happened/guard-time/#the-same-line-in-openmoat-bench' },
+    { name: 'Folder names matched as written', does: 'A home or project folder whose name holds *, ?, [, ], {, } or , is no longer read as a wildcard, and such a project gets its ${project} rules.', cmd: "openmoat policy check --project '<dir>' '<command>'", href: '/docs/policy-file/patterns/#names-with-glob-characters' },
   ],
 };
 const os = [
@@ -48,7 +47,7 @@ const os = [
 
   <section class="hero wrap">
     <div class="hero-text">
-      <a class="release" href="/docs/releases/v0-29-0/"><span class="new">NEW</span> 0.29.0: OpenMoat now decides faster with the same answers, and shows where each check’s time goes →</a>
+      <a class="release" href="/docs/releases/v0-30-0/"><span class="new">NEW</span> 0.30.0: OpenMoat now decides faster with the same answers, and matches home and project folder names as written →</a>
       <h1 class="display">Your AI agents,<br><span class="under">checked first.<svg viewBox="0 0 300 18" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12 Q75 2 150 10 T298 8" stroke="#f0a93b" stroke-width="6" fill="none" stroke-linecap="round"></path></svg></span></h1>
       <p class="lead">OpenMoat sits between your coding agent and your machine. It checks each call before it runs: your work goes through, reading your keys does not.</p>
       <div class="ctas">

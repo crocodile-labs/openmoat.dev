@@ -109,6 +109,13 @@ Until you do, the old hooks keep working through `moat`. `openmoat doctor` says 
 
 ## What each release needs
 
+**To [0.30.0](/docs/releases/v0-30-0/), from 0.29.0:**
+
+- **Nothing to run beyond the upgrade itself.** Update every `openmoat` on the machine together ([Keep one OpenMoat installed](#keep-one-openmoat-installed)), then run `openmoat doctor` in your own terminal: it names a hook that still runs another binary. The audit log stays at schema version 13, so an older `openmoat` beside the new one still opens it.
+- **The default policy is unchanged**, so `openmoat policy upgrade` has nothing new to offer.
+- **Home, project and moved directory names are matched literally:** when a rule names `~`, `${project}` or a moved agent directory, a name holding `*`, `?`, `[`, `]`, `{`, `}` or `,` is matched as written, not as a wildcard that could match other directories, and a `\` in such a name is read as `/`. A project whose path holds one of these characters now gets the rules that name `${project}`, which before matched nothing for it. A name without these characters is matched as before ([Patterns](/docs/policy-file/patterns/#names-with-glob-characters)).
+- **New, nothing to turn on:** decisions are faster with the same answers ([Benchmarks](/docs/benchmarks/)).
+
 **To [0.29.0](/docs/releases/v0-29-0/), from 0.28.0:**
 
 - **Update every `openmoat` on the machine together.** The audit log moves to schema version 13 (a `phases_us` column, which holds each call's time per guard phase); the new build adds it the first time it opens the log, with nothing to run. An older `openmoat` then refuses the log ("audit database schema version 13 is newer than this build supports") and its hook denies every call, so a Homebrew install beside a `cargo install`, say, must move together ([Keep one OpenMoat installed](#keep-one-openmoat-installed)).
